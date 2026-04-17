@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useApi } from '@/lib/use-api'
+import { pageWrap, textSectionTitle } from '@/lib/ui-tokens'
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -201,75 +202,33 @@ export default function ReviewWorkbench() {
   }
 
   return (
-    <div>
+    <div className={pageWrap}>
       {/* Banner */}
       <div
+        className="rounded-xl px-8 py-7 relative overflow-hidden"
         style={{
           background: 'linear-gradient(135deg, #6366f1 0%, #818cf8 50%, #a78bfa 100%)',
-          borderRadius: 16,
-          padding: '28px 32px',
-          marginBottom: 24,
-          position: 'relative',
-          overflow: 'hidden',
         }}
       >
         {/* Decorative circles */}
-        <div
-          style={{
-            position: 'absolute',
-            right: -30,
-            top: -30,
-            width: 160,
-            height: 160,
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,0.08)',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            right: 80,
-            bottom: -40,
-            width: 100,
-            height: 100,
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,0.05)',
-          }}
-        />
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 6 }}>
+        <div className="absolute -right-[30px] -top-[30px] w-40 h-40 rounded-full bg-white/[0.08]" />
+        <div className="absolute right-20 -bottom-10 w-[100px] h-[100px] rounded-full bg-white/[0.05]" />
+        <div className="relative z-[1]">
+          <div className="text-xl font-bold text-white mb-1.5">
             当严谨的评审，遇见流动的旋律
           </div>
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>
+          <div className="text-sm text-white/75">
             评审工作台 | 专业音乐评审平台
           </div>
         </div>
       </div>
 
       {/* 4 stat cards */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: 16,
-          marginBottom: 28,
-        }}
-      >
+      <div className="grid grid-cols-4 gap-4">
         {STAT_CARDS.map((s) => (
           <div
             key={s.key}
-            style={{
-              background: '#fff',
-              border: '1px solid #e8edf5',
-              borderRadius: 12,
-              padding: '20px 18px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 14,
-              boxShadow: '0 1px 4px rgba(99,102,241,.05)',
-              transition: 'all .2s',
-              cursor: 'default',
-            }}
+            className="bg-white border border-[var(--border)] rounded-xl px-[18px] py-5 flex items-center gap-3.5 shadow-[0_1px_4px_rgba(99,102,241,0.05)] transition-all cursor-default"
             onMouseOver={(e) => {
               e.currentTarget.style.transform = 'translateY(-2px)'
               e.currentTarget.style.boxShadow = `0 8px 20px ${s.shadow}`
@@ -280,23 +239,17 @@ export default function ReviewWorkbench() {
             }}
           >
             <div
+              className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
               style={{
-                width: 48,
-                height: 48,
-                borderRadius: '50%',
                 background: s.grad,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
                 boxShadow: `0 4px 12px ${s.shadow}`,
               }}
             >
               {s.icon}
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 4 }}>{s.label}</div>
-              <div style={{ fontSize: 26, fontWeight: 700, color: '#1e293b', lineHeight: 1 }}>
+            <div className="flex-1 min-w-0">
+              <div className="text-[11px] text-[var(--text3)] mb-1">{s.label}</div>
+              <div className="text-[26px] font-bold text-[var(--text)] leading-none">
                 {cardValues[s.key]}
               </div>
             </div>
@@ -305,21 +258,12 @@ export default function ReviewWorkbench() {
       </div>
 
       {/* Trend chart */}
-      <div
-        style={{
-          background: '#fff',
-          border: '1px solid #e8edf5',
-          borderRadius: 12,
-          padding: '20px 24px',
-          marginBottom: 28,
-          boxShadow: '0 1px 4px rgba(99,102,241,.06)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1e293b', margin: 0 }}>
+      <div className="bg-white border border-[var(--border)] rounded-xl px-6 py-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className={textSectionTitle}>
             近30天评审数量
           </h2>
-          <span style={{ fontSize: 12, color: '#94a3b8' }}>
+          <span className="text-xs text-[var(--text3)]">
             按日统计
           </span>
         </div>
@@ -327,38 +271,16 @@ export default function ReviewWorkbench() {
       </div>
 
       {/* Quick actions + recent reviews */}
-      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 20 }}>
+      <div className="grid gap-5" style={{ gridTemplateColumns: '280px 1fr' }}>
         {/* Quick actions */}
-        <div
-          style={{
-            background: '#fff',
-            border: '1px solid #e8edf5',
-            borderRadius: 12,
-            padding: '20px',
-            boxShadow: '0 1px 4px rgba(99,102,241,.06)',
-          }}
-        >
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1e293b', margin: '0 0 16px' }}>
+        <div className="bg-white border border-[var(--border)] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]">
+          <h2 className={`${textSectionTitle} mb-4`}>
             快捷入口
           </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="flex flex-col gap-2.5">
             <button
               onClick={() => router.push('/review/queue')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '14px 16px',
-                background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 10,
-                fontSize: 14,
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all .2s',
-                boxShadow: '0 2px 8px rgba(99,102,241,.25)',
-              }}
+              className="flex items-center gap-2.5 px-4 py-3.5 text-white border-0 rounded-[10px] text-sm font-semibold cursor-pointer transition-all shadow-[0_2px_8px_rgba(99,102,241,0.25)] bg-gradient-to-br from-[var(--accent)] to-[var(--accent2)]"
               onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-1px)' }}
               onMouseOut={(e) => { e.currentTarget.style.transform = '' }}
             >
@@ -370,20 +292,7 @@ export default function ReviewWorkbench() {
             </button>
             <button
               onClick={() => router.push('/review/stats')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '14px 16px',
-                background: '#f8faff',
-                color: '#6366f1',
-                border: '1px solid #e8edf5',
-                borderRadius: 10,
-                fontSize: 14,
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all .2s',
-              }}
+              className="flex items-center gap-2.5 px-4 py-3.5 bg-[#f8faff] text-[var(--accent)] border border-[var(--border)] rounded-[10px] text-sm font-medium cursor-pointer transition-all"
               onMouseOver={(e) => { e.currentTarget.style.background = '#f0f2ff' }}
               onMouseOut={(e) => { e.currentTarget.style.background = '#f8faff' }}
             >
@@ -396,35 +305,19 @@ export default function ReviewWorkbench() {
         </div>
 
         {/* Recent reviews */}
-        <div
-          style={{
-            background: '#fff',
-            border: '1px solid #e8edf5',
-            borderRadius: 12,
-            overflow: 'hidden',
-            boxShadow: '0 1px 4px rgba(99,102,241,.06)',
-          }}
-        >
-          <div style={{ padding: '16px 20px 12px', borderBottom: '1px solid #e8edf5' }}>
-            <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1e293b', margin: 0 }}>
+        <div className="bg-white border border-[var(--border)] rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(99,102,241,0.06)]">
+          <div className="px-5 pt-4 pb-3 border-b border-[var(--border)]">
+            <h2 className={textSectionTitle}>
               最近评审记录
             </h2>
           </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table className="w-full border-collapse">
             <thead>
-              <tr style={{ borderBottom: '1px solid #e8edf5' }}>
+              <tr className="border-b border-[var(--border)]">
                 {['歌曲', '创作者', '评分', '建议', '日期'].map((col) => (
                   <th
                     key={col}
-                    style={{
-                      padding: '12px 18px',
-                      textAlign: 'left',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: '#94a3b8',
-                      background: '#fafbfe',
-                      whiteSpace: 'nowrap',
-                    }}
+                    className="px-[18px] py-3 text-left text-xs font-semibold text-[var(--text3)] bg-[#fafbfe] whitespace-nowrap"
                   >
                     {col}
                   </th>
@@ -434,7 +327,7 @@ export default function ReviewWorkbench() {
             <tbody>
               {recentHistory.length === 0 && (
                 <tr>
-                  <td colSpan={5} style={{ padding: 32, textAlign: 'center', fontSize: 13, color: '#94a3b8' }}>
+                  <td colSpan={5} className="p-8 text-center text-sm text-[var(--text3)]">
                     暂无评审记录
                   </td>
                 </tr>
@@ -442,31 +335,30 @@ export default function ReviewWorkbench() {
               {recentHistory.map((row) => (
                 <tr
                   key={row.id}
-                  style={{ borderBottom: '1px solid #f1f5f9', transition: 'background .15s' }}
+                  className="border-b border-[var(--border)] transition-colors"
                   onMouseOver={(e) => { e.currentTarget.style.background = '#f8faff' }}
                   onMouseOut={(e) => { e.currentTarget.style.background = '' }}
                 >
-                  <td style={{ padding: '14px 18px', fontSize: 13, fontWeight: 500, color: '#1e293b' }}>
+                  <td className="px-[18px] py-3.5 text-sm font-medium text-[var(--text)]">
                     {row.songTitle}
                   </td>
-                  <td style={{ padding: '14px 18px', fontSize: 13, color: '#64748b' }}>
+                  <td className="px-[18px] py-3.5 text-sm text-[var(--text2)]">
                     {row.creatorName}
                   </td>
-                  <td style={{ padding: '14px 18px' }}>
+                  <td className="px-[18px] py-3.5">
                     <span
+                      className="text-sm font-bold"
                       style={{
-                        fontSize: 14,
-                        fontWeight: 700,
-                        color: (row.totalScore ?? 0) >= 80 ? '#16a34a' : '#d97706',
+                        color: (row.totalScore ?? 0) >= 80 ? 'var(--green2)' : 'var(--orange)',
                       }}
                     >
                       {row.totalScore ?? '-'}
                     </span>
                   </td>
-                  <td style={{ padding: '14px 18px', fontSize: 13, color: '#64748b' }}>
+                  <td className="px-[18px] py-3.5 text-sm text-[var(--text2)]">
                     {REC_LABELS[row.recommendation ?? ''] ?? '-'}
                   </td>
-                  <td style={{ padding: '14px 18px', fontSize: 13, color: '#94a3b8' }}>
+                  <td className="px-[18px] py-3.5 text-sm text-[var(--text3)]">
                     {row.reviewedAt ? new Date(row.reviewedAt).toLocaleDateString() : '-'}
                   </td>
                 </tr>

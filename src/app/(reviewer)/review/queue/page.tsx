@@ -5,15 +5,9 @@ import { useRouter } from 'next/navigation'
 import { PageHeader } from '@/components/admin/page-header'
 import { DataTable, Column } from '@/components/admin/data-table'
 import { useApi } from '@/lib/use-api'
+import { pageWrap, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'
 
 const GENRE_OPTIONS = ['全部', 'Pop', 'Rock', '电子', 'Hip-Hop', '民谣', '古典']
-
-const btnPrimary =
-  'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0'
-const btnGhost =
-  'bg-transparent text-[var(--text2)] border border-[var(--border)] px-4 py-2 rounded-lg text-sm font-medium cursor-pointer'
-const cardCls =
-  'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
 
 interface QueueSong {
   id: number
@@ -100,7 +94,7 @@ export default function ReviewQueuePage() {
               e.stopPropagation()
               handleStartReview(song.id)
             }}
-            className="text-[#6366f1] hover:text-[#4f46e5] text-sm font-medium cursor-pointer bg-transparent border-0"
+            className="text-[var(--accent)] hover:text-[var(--accent2)] text-sm font-medium cursor-pointer bg-transparent border-0"
           >
             开始评审
           </button>
@@ -118,19 +112,19 @@ export default function ReviewQueuePage() {
   }
 
   return (
-    <div>
+    <div className={pageWrap}>
       <PageHeader
         title="待评审列表"
         subtitle={`${filtered.length} 首歌曲等待评审`}
       />
 
       {/* Filter bar */}
-      <div className="flex items-center gap-3 mb-5">
+      <div className="flex items-center gap-3">
         <span className="text-sm text-[var(--text2)]">流派</span>
         <select
           value={genre}
           onChange={(e) => setGenre(e.target.value)}
-          className="px-3 py-2 bg-white border border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none cursor-pointer min-w-[120px]"
+          className="px-3 py-2 bg-white border border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none cursor-pointer min-w-[120px]"
         >
           {GENRE_OPTIONS.map((g) => (
             <option key={g} value={g}>
@@ -147,7 +141,7 @@ export default function ReviewQueuePage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            className="pl-8 pr-3 py-2 bg-white border border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none w-[200px] focus:border-[var(--accent)]"
+            className="pl-8 pr-3 py-2 bg-white border border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none w-[200px] focus:border-[var(--accent)]"
           />
         </div>
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useApi } from '@/lib/use-api'
+import { pageWrap, textPageTitle, textSectionTitle } from '@/lib/ui-tokens'
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -223,41 +224,21 @@ export default function ReviewStatsPage() {
   }))
 
   return (
-    <div>
+    <div className={pageWrap}>
       {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text, #1e293b)', margin: 0 }}>
-            我的绩效
-          </h1>
-          <span style={{ fontSize: 13, color: 'var(--text3, #94a3b8)' }}>2026年3月</span>
-        </div>
+      <div className="flex items-baseline gap-2.5">
+        <h1 className={textPageTitle}>
+          我的绩效
+        </h1>
+        <span className="text-sm text-[var(--text3)]">2026年3月</span>
       </div>
 
       {/* 4 stat cards */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: 14,
-          marginBottom: 28,
-        }}
-      >
+      <div className="grid grid-cols-4 gap-3.5">
         {STAT_CARD_CONFIG.map((s, i) => (
           <div
             key={i}
-            style={{
-              background: '#fff',
-              border: '1px solid #e8edf5',
-              borderRadius: 12,
-              padding: '20px 18px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 14,
-              boxShadow: '0 1px 4px rgba(99,102,241,.05)',
-              transition: 'all .2s',
-              cursor: 'default',
-            }}
+            className="bg-white border border-[var(--border)] rounded-xl px-[18px] py-5 flex items-center gap-3.5 shadow-[0_1px_4px_rgba(99,102,241,0.05)] transition-all cursor-default"
             onMouseOver={(e) => {
               e.currentTarget.style.transform = 'translateY(-2px)'
               e.currentTarget.style.boxShadow = `0 8px 20px ${s.shadow}`
@@ -269,24 +250,18 @@ export default function ReviewStatsPage() {
           >
             {/* Circular icon */}
             <div
+              className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
               style={{
-                width: 48,
-                height: 48,
-                borderRadius: '50%',
                 background: s.grad,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
                 boxShadow: `0 4px 12px ${s.shadow}`,
               }}
             >
               <StatIcon type={s.icon} size={22} />
             </div>
             {/* Text */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 4 }}>{s.label}</div>
-              <div style={{ fontSize: 26, fontWeight: 700, color: '#1e293b', lineHeight: 1 }}>
+            <div className="flex-1 min-w-0">
+              <div className="text-[11px] text-[var(--text3)] mb-1">{s.label}</div>
+              <div className="text-[26px] font-bold text-[var(--text)] leading-none">
                 {cards[s.key]}
               </div>
             </div>
@@ -309,17 +284,8 @@ export default function ReviewStatsPage() {
 
         if (monthlyData.length === 0) return null
         return (
-          <div
-            style={{
-              background: '#fff',
-              border: '1px solid #e8edf5',
-              borderRadius: 12,
-              padding: '20px 24px',
-              marginBottom: 28,
-              boxShadow: '0 1px 4px rgba(99,102,241,.06)',
-            }}
-          >
-            <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1e293b', margin: '0 0 16px' }}>
+          <div className="bg-white border border-[var(--border)] rounded-xl px-6 py-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]">
+            <h2 className={`${textSectionTitle} mb-4`}>
               月度评审量趋势
             </h2>
             <MonthlyLineChart data={monthlyData} />
@@ -328,36 +294,20 @@ export default function ReviewStatsPage() {
       })()}
 
       {/* History table */}
-      <div style={{ marginBottom: 12 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text, #1e293b)', margin: 0 }}>
+      <div>
+        <h2 className={textSectionTitle}>
           历史评审记录
         </h2>
       </div>
 
-      <div
-        style={{
-          background: '#fff',
-          border: '1px solid #e8edf5',
-          borderRadius: 12,
-          overflow: 'hidden',
-          boxShadow: '0 1px 4px rgba(99,102,241,.06)',
-        }}
-      >
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <div className="bg-white border border-[var(--border)] rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(99,102,241,0.06)]">
+        <table className="w-full border-collapse">
           <thead>
-            <tr style={{ borderBottom: '1px solid #e8edf5' }}>
+            <tr className="border-b border-[var(--border)]">
               {COLUMNS.map((col) => (
                 <th
                   key={col}
-                  style={{
-                    padding: '13px 18px',
-                    textAlign: 'left',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: '#94a3b8',
-                    background: '#fafbfe',
-                    whiteSpace: 'nowrap',
-                  }}
+                  className="px-[18px] py-[13px] text-left text-xs font-semibold text-[var(--text3)] bg-[#fafbfe] whitespace-nowrap"
                 >
                   {col}
                 </th>
@@ -368,40 +318,39 @@ export default function ReviewStatsPage() {
             {history.map((row) => (
               <tr
                 key={row.id}
-                style={{ borderBottom: '1px solid #f1f5f9', transition: 'background .15s' }}
+                className="border-b border-[var(--border)] transition-colors"
                 onMouseOver={(e) => { e.currentTarget.style.background = '#f8faff' }}
                 onMouseOut={(e) => { e.currentTarget.style.background = '' }}
               >
                 {/* 歌曲 */}
-                <td style={{ padding: '14px 18px', fontSize: 13, fontWeight: 500, color: '#1e293b' }}>
+                <td className="px-[18px] py-3.5 text-sm font-medium text-[var(--text)]">
                   {row.title}
                 </td>
                 {/* 学生 */}
-                <td style={{ padding: '14px 18px', fontSize: 13, color: '#64748b' }}>
+                <td className="px-[18px] py-3.5 text-sm text-[var(--text2)]">
                   {row.student}
                 </td>
                 {/* 总分 */}
-                <td style={{ padding: '14px 18px' }}>
+                <td className="px-[18px] py-3.5">
                   <span
+                    className="text-sm font-bold"
                     style={{
-                      fontSize: 14,
-                      fontWeight: 700,
-                      color: row.score >= 80 ? '#16a34a' : '#d97706',
+                      color: row.score >= 80 ? 'var(--green2)' : 'var(--orange)',
                     }}
                   >
                     {row.score}
                   </span>
                 </td>
                 {/* 建议 */}
-                <td style={{ padding: '14px 18px', fontSize: 13, color: '#64748b' }}>
+                <td className="px-[18px] py-3.5 text-sm text-[var(--text2)]">
                   {row.rec}
                 </td>
                 {/* 用时 */}
-                <td style={{ padding: '14px 18px', fontSize: 13, color: '#64748b' }}>
+                <td className="px-[18px] py-3.5 text-sm text-[var(--text2)]">
                   {row.duration}
                 </td>
                 {/* 日期 */}
-                <td style={{ padding: '14px 18px', fontSize: 13, color: '#94a3b8' }}>
+                <td className="px-[18px] py-3.5 text-sm text-[var(--text3)]">
                   {row.date}
                 </td>
               </tr>

@@ -3,11 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useApi, apiCall } from '@/lib/use-api'
-
-// ── Style helpers ────────────────────────────────────────────────
-const cardCls =
-  'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
-const labelCls = 'block text-[13px] text-[var(--text2)] mb-1.5 font-medium'
+import { pageWrap, textPageTitle, textSectionTitle, cardCls, btnPrimary, labelCls } from '@/lib/ui-tokens'
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -44,9 +40,8 @@ function WaveformPlayer({ isPlaying = false }: { isPlaying?: boolean }) {
       {heights.map((h, i) => (
         <div
           key={i}
-          className="w-1 rounded-sm"
+          className="w-1 rounded-sm bg-gradient-to-t from-[var(--accent)] to-[#818cf8]"
           style={{
-            background: 'linear-gradient(to top, #6366f1, #818cf8)',
             animation: isPlaying ? `waveAnim ${delays[i][0]}s ease-in-out ${delays[i][1]}s infinite` : 'none',
             height: isPlaying ? h : 8 + (h - 8) * 0.3,
             transition: 'height 0.3s ease',
@@ -88,10 +83,10 @@ function AIAnalysisPanel({ songId, bpm }: { songId: number; bpm?: number }) {
 
   return (
     <details className="mt-4">
-      <summary className="cursor-pointer text-[13px] text-[var(--accent2)] py-2">
+      <summary className="cursor-pointer text-sm text-[var(--accent2)] py-2">
         🤖 AI预分析报告（仅供参考）{loading ? ' 分析中...' : data?.summary ? ` · ${data.summary}` : ''}
       </summary>
-      <div className="p-3 bg-[#f0f4fb] rounded-lg mt-2 text-xs grid grid-cols-2 gap-2">
+      <div className="p-3 bg-[var(--bg4)] rounded-lg mt-2 text-xs grid grid-cols-2 gap-2">
         {items.map(([k, v]) => (
           <div key={k} className="p-1.5 bg-white rounded">
             <span className="text-[var(--text3)]">{k}：</span>{v}
@@ -139,7 +134,7 @@ function useToast() {
     setTimeout(() => setMsg(''), 3000)
   }
   const Toast = msg ? (
-    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-[#1e293b] text-white px-5 py-3 rounded-xl text-sm shadow-lg animate-[fadeIn_0.2s]">
+    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-[var(--text)] text-white px-5 py-3 rounded-xl text-sm shadow-lg animate-[fadeIn_0.2s]">
       {msg}
     </div>
   ) : null
@@ -206,9 +201,9 @@ export default function ReviewAssessPage() {
   // ── Empty ─────────────────────────────────────────────────
   if (!song) {
     return (
-      <div>
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-semibold text-[var(--text)]">评审页面</h1>
+      <div className={pageWrap}>
+        <div className="flex items-center justify-between">
+          <h1 className={textPageTitle}>评审页面</h1>
           <button
             className="text-sm text-[var(--text2)] hover:text-[var(--accent)] cursor-pointer"
             onClick={() => router.push('/review/queue')}
@@ -220,7 +215,7 @@ export default function ReviewAssessPage() {
           <Empty text="暂无待评审歌曲，请从待评审列表选择" />
           <div className="flex justify-center mt-4">
             <button
-              className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0"
+              className={btnPrimary}
               onClick={() => router.push('/review/queue')}
             >
               返回列表
@@ -288,13 +283,13 @@ export default function ReviewAssessPage() {
   // ═══════════════════════════════════════════════════════════
 
   return (
-    <div>
+    <div className={pageWrap}>
       {Toast}
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-[var(--text)]">
+          <h1 className={textPageTitle}>
             歌曲评审{' '}
             <span className="text-sm font-normal text-[var(--text3)] ml-2">
               {song.title} · {studentName}
@@ -316,25 +311,25 @@ export default function ReviewAssessPage() {
           <div className={cardCls}>
             {/* Song info header */}
             <div className="flex items-center gap-4 mb-4">
-              <div className="text-5xl w-[72px] h-[72px] bg-[#f0f4fb] rounded-[10px] flex items-center justify-center shrink-0">
+              <div className="text-5xl w-[72px] h-[72px] bg-[var(--bg4)] rounded-[10px] flex items-center justify-center shrink-0">
                 {song.cover}
               </div>
               <div>
                 <div className="text-lg font-semibold text-[var(--text)]">
                   {song.title}
                 </div>
-                <div className="text-[13px] text-[var(--text3)]">
+                <div className="text-sm text-[var(--text3)]">
                   by {studentName} · {song.genre} · {song.bpm} BPM
                 </div>
               </div>
             </div>
 
             {/* Waveform player area */}
-            <div className="p-4 bg-[#f0f4fb] rounded-[10px] mb-3.5">
+            <div className="p-4 bg-[var(--bg4)] rounded-[10px] mb-3.5">
               <div className="flex justify-between items-center mb-2">
                 <div className="flex gap-2">
                   <button
-                    className={`border-none rounded-full w-9 h-9 text-white text-base cursor-pointer flex items-center justify-center transition-all duration-200 ${isPlaying ? 'bg-[#16a34a] shadow-[0_0_8px_rgba(22,163,74,0.4)]' : 'bg-[var(--accent)]'}`}
+                    className={`border-none rounded-full w-9 h-9 text-white text-base cursor-pointer flex items-center justify-center transition-all duration-200 ${isPlaying ? 'bg-[var(--green2)] shadow-[0_0_8px_rgba(22,163,74,0.4)]' : 'bg-[var(--accent)]'}`}
                     onClick={() => setIsPlaying((p) => !p)}
                   >
                     {isPlaying ? '⏸' : '▶'}
@@ -366,20 +361,20 @@ export default function ReviewAssessPage() {
             </div>
 
             {/* Metadata */}
-            <div className="text-[13px]">
+            <div className="text-sm">
               <div className="mb-2.5">
                 <span className="text-[var(--text3)]">AI工具：</span>
                 {song.aiTool}
               </div>
               <div className="mb-2.5">
                 <span className="text-[var(--text3)]">Prompt：</span>
-                <div className="p-2 bg-[#f0f4fb] rounded-md mt-1 text-xs text-[var(--text2)] leading-relaxed">
+                <div className="p-2 bg-[var(--bg4)] rounded-md mt-1 text-xs text-[var(--text2)] leading-relaxed">
                   使用{song.aiTool}生成，风格为{song.genre}，BPM {song.bpm}
                 </div>
               </div>
               <div>
                 <span className="text-[var(--text3)]">歌词：</span>
-                <div className="p-2 bg-[#f0f4fb] rounded-md mt-1 text-xs text-[var(--text2)] leading-relaxed max-h-[120px] overflow-auto whitespace-pre-line">
+                <div className="p-2 bg-[var(--bg4)] rounded-md mt-1 text-xs text-[var(--text2)] leading-relaxed max-h-[120px] overflow-auto whitespace-pre-line">
                   {`这里是歌词内容预览区域...
 每一句歌词都会在这里显示
 方便老师边听边看歌词
@@ -400,7 +395,7 @@ export default function ReviewAssessPage() {
         {/* ──────────── RIGHT COLUMN ──────────── */}
         <div>
           <div className={cardCls}>
-            <h3 className="text-base font-semibold mb-5">📝 评分表单</h3>
+            <h3 className={`${textSectionTitle} mb-5`}>📝 评分表单</h3>
 
             {/* Score sliders */}
             {(
@@ -411,7 +406,7 @@ export default function ReviewAssessPage() {
               ] as const
             ).map((dim) => (
               <div key={dim.key} className="mb-5">
-                <div className="flex justify-between text-[13px] mb-1.5">
+                <div className="flex justify-between text-sm mb-1.5">
                   <span>
                     {dim.label}{' '}
                     <span className="text-[var(--text3)]">({dim.weight})</span>
@@ -487,7 +482,7 @@ export default function ReviewAssessPage() {
                 <span className="text-[var(--text3)]">（≥20字）</span>
               </label>
               <textarea
-                className="w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] resize-y"
+                className="w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] resize-y"
                 style={{ height: 100 }}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
@@ -517,7 +512,7 @@ export default function ReviewAssessPage() {
               ].map((o) => (
                 <label
                   key={o.v}
-                  className="flex items-center gap-2 px-3 py-2 mb-1 rounded-lg cursor-pointer text-[13px] transition-all duration-150"
+                  className="flex items-center gap-2 px-3 py-2 mb-1 rounded-lg cursor-pointer text-sm transition-all duration-150"
                   style={{
                     background:
                       recommendation === o.v ? 'var(--bg2)' : 'transparent',
@@ -540,7 +535,7 @@ export default function ReviewAssessPage() {
 
             {/* Submit button */}
             <button
-              className={`w-full justify-center py-3.5 text-[15px] font-medium rounded-lg cursor-pointer border-0 bg-gradient-to-r from-[#16a34a] to-[#0694a2] text-white shadow-[0_2px_8px_rgba(22,163,74,0.25)] ${submitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`w-full justify-center py-3.5 text-base font-medium rounded-lg cursor-pointer border-0 bg-gradient-to-r from-[var(--green2)] to-[var(--green)] text-white shadow-[0_2px_8px_rgba(22,163,74,0.25)] ${submitting ? 'opacity-50 cursor-not-allowed' : ''}`}
               disabled={submitting}
               onClick={handleSubmit}
             >

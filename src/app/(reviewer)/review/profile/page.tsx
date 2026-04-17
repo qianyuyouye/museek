@@ -2,13 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useApi, apiCall } from '@/lib/use-api'
+import { pageWrap, textPageTitle, textSectionTitle, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
 
-const cardCls = 'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
-const btnGhost = 'bg-transparent text-[var(--text2)] border border-[var(--border)] px-3 py-1 rounded-lg text-xs font-medium cursor-pointer hover:bg-[#f8faff] transition-colors'
-const btnPrimary = 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2.5 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0 w-full flex items-center justify-center'
-const inputCls = 'w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]'
-const labelCls = 'block text-[13px] text-[var(--text2)] mb-1.5 font-medium'
-const rowCls = 'flex justify-between items-center px-3 py-2.5 bg-[#f0f4fb] rounded-md text-[13px]'
+const rowCls = 'flex justify-between items-center px-3 py-2.5 bg-[var(--bg4)] rounded-md text-sm'
 
 interface ProfileData {
   id: number
@@ -56,34 +52,34 @@ export default function ReviewerProfilePage() {
   }
 
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 20 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1e293b' }}>个人中心</h1>
-        <span style={{ fontSize: 13, color: '#94a3b8' }}>评审账号信息管理</span>
+    <div className={pageWrap}>
+      <div className="flex items-baseline gap-2.5">
+        <h1 className={textPageTitle}>个人中心</h1>
+        <span className="text-sm text-[var(--text3)]">评审账号信息管理</span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="grid grid-cols-2 gap-4">
         {/* 基本信息 */}
         <div className={cardCls}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1e293b' }}>基本信息</h2>
-            <div style={{ display: 'flex', gap: 8 }}>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className={textSectionTitle}>基本信息</h2>
+            <div className="flex gap-2">
               <button className={btnGhost} onClick={() => setModal('edit')}>✏️ 编辑</button>
               <button className={btnGhost} onClick={() => setModal('password')}>🔒 修改密码</button>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-            <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[var(--accent)] to-[#8b5cf6] flex items-center justify-center text-[28px]">
               🎧
             </div>
             <div>
-              <div style={{ fontSize: 16, fontWeight: 600, color: '#1e293b' }}>{user.name}</div>
-              <div style={{ fontSize: 12, color: '#94a3b8' }}>{user.role}</div>
+              <div className="text-base font-semibold text-[var(--text)]">{user.name}</div>
+              <div className="text-xs text-[var(--text3)]">{user.role}</div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="flex flex-col gap-2">
             {[
               ['姓名', user.name],
               ['手机号', user.phone],
@@ -92,8 +88,8 @@ export default function ReviewerProfilePage() {
               ['注册时间', user.registeredAt],
             ].map(([k, v]) => (
               <div key={k} className={rowCls}>
-                <span style={{ color: '#64748b' }}>{k}</span>
-                <span style={{ color: '#1e293b', fontWeight: 500 }}>{v}</span>
+                <span className="text-[var(--text2)]">{k}</span>
+                <span className="text-[var(--text)] font-medium">{v}</span>
               </div>
             ))}
           </div>
@@ -101,26 +97,26 @@ export default function ReviewerProfilePage() {
 
         {/* 登录日志 */}
         <div className={cardCls}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1e293b', marginBottom: 16 }}>登录日志</h2>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <h2 className={`${textSectionTitle} mb-4`}>登录日志</h2>
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr style={{ borderBottom: '1px solid #e8edf5' }}>
+              <tr className="border-b border-[var(--border)]">
                 {['登录时间', 'IP地址', '设备/浏览器'].map(h => (
-                  <th key={h} style={{ textAlign: 'left', padding: '8px 10px', color: '#94a3b8', fontWeight: 500, fontSize: 12 }}>{h}</th>
+                  <th key={h} className="text-left px-2.5 py-2 text-[var(--text3)] font-medium text-xs">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {(loginLogs || []).map((log) => (
-                <tr key={log.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px', color: '#1e293b' }}>{new Date(log.time).toLocaleString('zh-CN')}</td>
-                  <td style={{ padding: '10px', color: '#64748b', fontFamily: 'monospace' }}>{log.ip}</td>
-                  <td style={{ padding: '10px', color: '#64748b' }}>{log.userAgent}</td>
+                <tr key={log.id} className="border-b border-[var(--border)]">
+                  <td className="p-2.5 text-[var(--text)]">{new Date(log.time).toLocaleString('zh-CN')}</td>
+                  <td className="p-2.5 text-[var(--text2)] font-mono">{log.ip}</td>
+                  <td className="p-2.5 text-[var(--text2)]">{log.userAgent}</td>
                 </tr>
               ))}
               {loginLogs && loginLogs.length === 0 && (
                 <tr>
-                  <td colSpan={3} style={{ padding: '16px', textAlign: 'center', color: '#94a3b8' }}>暂无登录记录</td>
+                  <td colSpan={3} className="p-4 text-center text-[var(--text3)]">暂无登录记录</td>
                 </tr>
               )}
             </tbody>
@@ -130,23 +126,23 @@ export default function ReviewerProfilePage() {
 
       {/* Edit Modal */}
       {modal === 'edit' && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }} onClick={() => setModal(null)}>
-          <div style={{ background: '#fff', borderRadius: 14, padding: 28, width: 400 }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20 }}>编辑个人信息</h3>
-            <div style={{ marginBottom: 14 }}>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setModal(null)}>
+          <div className="bg-white rounded-xl p-7 w-[400px]" onClick={e => e.stopPropagation()}>
+            <h3 className="text-base font-semibold mb-5">编辑个人信息</h3>
+            <div className="mb-3.5">
               <label className={labelCls}>昵称</label>
               <input className={inputCls} value={editName} onChange={e => setEditName(e.target.value)} />
             </div>
-            <div style={{ marginBottom: 14 }}>
+            <div className="mb-3.5">
               <label className={labelCls}>邮箱</label>
               <input className={inputCls} value={editEmail} onChange={e => setEditEmail(e.target.value)} />
             </div>
-            <div style={{ marginBottom: 20 }}>
+            <div className="mb-5">
               <label className={labelCls}>手机号</label>
               <input className={inputCls} value={user.phone} disabled style={{ opacity: 0.5 }} />
-              <span style={{ fontSize: 11, color: '#94a3b8' }}>修改手机号需验证码</span>
+              <span className="text-[11px] text-[var(--text3)]">修改手机号需验证码</span>
             </div>
-            <button className={btnPrimary} onClick={async () => {
+            <button className={`${btnPrimary} w-full flex items-center justify-center`} onClick={async () => {
               const res = await apiCall('/api/profile', 'PUT', { name: editName, email: editEmail })
               if (res.ok) {
                 showToast('✅ 个人信息已更新')
@@ -162,22 +158,22 @@ export default function ReviewerProfilePage() {
 
       {/* Password Modal */}
       {modal === 'password' && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }} onClick={() => setModal(null)}>
-          <div style={{ background: '#fff', borderRadius: 14, padding: 28, width: 400 }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20 }}>修改密码</h3>
-            <div style={{ marginBottom: 14 }}>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setModal(null)}>
+          <div className="bg-white rounded-xl p-7 w-[400px]" onClick={e => e.stopPropagation()}>
+            <h3 className="text-base font-semibold mb-5">修改密码</h3>
+            <div className="mb-3.5">
               <label className={labelCls}>当前密码</label>
               <input className={inputCls} type="password" value={oldPw} onChange={e => setOldPw(e.target.value)} />
             </div>
-            <div style={{ marginBottom: 14 }}>
+            <div className="mb-3.5">
               <label className={labelCls}>新密码</label>
               <input className={inputCls} type="password" value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="≥8位，含字母和数字" />
             </div>
-            <div style={{ marginBottom: 20 }}>
+            <div className="mb-5">
               <label className={labelCls}>确认新密码</label>
               <input className={inputCls} type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} />
             </div>
-            <button className={btnPrimary} onClick={async () => {
+            <button className={`${btnPrimary} w-full flex items-center justify-center`} onClick={async () => {
               if (!oldPw || !newPw || !confirmPw) { showToast('❌ 请填写所有密码字段'); return }
               if (newPw.length < 8) { showToast('❌ 新密码至少8位'); return }
               if (newPw !== confirmPw) { showToast('❌ 两次密码不一致'); return }
@@ -195,7 +191,7 @@ export default function ReviewerProfilePage() {
 
       {/* Toast */}
       {toast && (
-        <div style={{ position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)', background: '#1e293b', color: '#fff', padding: '10px 24px', borderRadius: 8, fontSize: 13, zIndex: 100, boxShadow: '0 4px 12px rgba(0,0,0,.15)' }}>
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-[var(--text)] text-white px-6 py-2.5 rounded-lg text-sm z-[100] shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
           {toast}
         </div>
       )}
