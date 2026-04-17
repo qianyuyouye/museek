@@ -805,7 +805,7 @@ P1-3 (名称匹配) ─> 完整收益流 ─────┘        │
 - [x] P1-7 创作者头像上传 — commit `8bc37e6`（2026-04-17）
 - [x] P2-1 学习进度表 LearningRecord — commit `91c3c58`（2026-04-17）
 - [x] P2-2 operation_logs 写操作全覆盖 — commit `c481ddb`（2026-04-17）
-- [x] P2-3 批量下载三条件校验报告 — commit pending（2026-04-17）
+- [x] P2-3 批量下载三条件校验报告 — commit `e4dcbec`（2026-04-17）
 
 ---
 
