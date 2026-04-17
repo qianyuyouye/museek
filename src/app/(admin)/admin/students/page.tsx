@@ -289,7 +289,10 @@ export default function AdminStudentsPage() {
                   </div>
                   <button
                     className={btnGhost}
-                    onClick={() => showToast('已通知用户重新提交实名认证')}
+                    onClick={async () => {
+                      const res = await apiCall(`/api/admin/students/${s.id}/notify`, 'POST', { preset: 'realname_resubmit' })
+                      showToast(res.ok ? '✅ 已通知用户重新提交实名认证' : (res.message || '发送失败'))
+                    }}
                   >
                     发送提醒
                   </button>
@@ -312,7 +315,10 @@ export default function AdminStudentsPage() {
                   </div>
                   <button
                     className={btnGhost}
-                    onClick={() => showToast('已向用户发送实名认证提醒')}
+                    onClick={async () => {
+                      const res = await apiCall(`/api/admin/students/${s.id}/notify`, 'POST', { preset: 'realname_unverified' })
+                      showToast(res.ok ? '✅ 已向用户发送实名认证提醒' : (res.message || '发送失败'))
+                    }}
                   >
                     发送提醒
                   </button>
