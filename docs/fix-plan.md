@@ -364,25 +364,391 @@ commit 但不 push。完成后告诉我下一步建议。
 
 ---
 
-# P2-P3 任务（精简版，不展开）
+# P2 任务（功能补齐/合规，10 张）
 
-见 `docs/traceability-matrix.md` 第 9 节。主要包括：
-- 批量下载三条件校验报告
-- OSS 生产签名 URL（用 `ali-oss` SDK）
-- operation_logs 覆盖写入（删除/禁用/发行/结算等)
-- LearningRecord 表 + API + UI
-- CMS sections/duration 字段
-- 创作者手机号改（验证码）
-- songs 退回/下架按钮暴露
-- 阿里云 SMS 生产配置（env）
-- 评审端波形标记 + 时间轴（PRD §7.2.3）
-- 创作者收益更新时间戳
-- 作品广场分享 clipboard
-- 登录速率限制
-- 评审列表时间格式化
+> **审计基线**：2026-04-17 P1 全部完成后的交叉验证，整体完成度 ≈ 89%。下面 P2 完成后预计进 95%+。
 
-**P2 工时合计**：约 12-15 小时  
-**P3 工时合计**：约 4-6 小时
+## P2-1 学习进度表 LearningRecord
+
+**目标**：创作者 "我的学习" 页面从全硬编码改为真实进度追踪（PRD §7.1.6）。
+
+**涉及文件**：
+- `prisma/schema.prisma`（新增 `LearningRecord` 模型）
+- **新建** `src/app/api/learning/route.ts`（GET 列表 + POST 记录学习）
+- **新建** `src/app/api/learning/achievements/route.ts`（GET 徽章+时长汇总）
+- `src/app/(creator)/creator/learning/page.tsx`（删硬编码，接真实 API）
+- `src/app/(creator)/creator/courses/page.tsx`（课程详情/视频页埋点记录学习）
+
+**Schema 设计**：
+```prisma
+model LearningRecord {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  contentId   Int      @map("content_id")       // 关联 cms_contents
+  progress    Int      @default(0) @db.SmallInt // 0-100
+  duration    Int      @default(0)              // 累计学习秒数
+  completedAt DateTime? @map("completed_at")
+  lastViewedAt DateTime @default(now()) @map("last_viewed_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user        User      @relation(fields: [userId], references: [id])
+  content     CmsContent @relation(fields: [contentId], references: [id])
+
+  @@unique([userId, contentId])
+  @@index([userId, lastViewedAt])
+  @@map("learning_records")
+}
+```
+
+**实现思路**：
+1. schema 新增 + `npx prisma db push`
+2. 课程详情页进入时 `POST /api/learning { contentId, progress, delta }`（每 30 秒心跳或退出时提交）
+3. learning 页 `GET /api/learning/achievements` 返回：总时长、完成课程数、连续学习天数、徽章（完成 N 课、学习 N 小时）
+4. 徽章规则写死在后端（最简：5 课 / 10 小时 / 30 课 / 50 小时 / 连续 7 天 / 连续 30 天）
+
+**验收标准**：
+- [ ] 进入任意课程详情，后端收到 LearningRecord upsert
+- [ ] learning 页总时长/徽章从 API 取（刷新后数据持久）
+- [ ] 不同 creator 看到不同数据
+- [ ] 未登录创作者 API 返回 401
+
+**预计工作量**：4 小时  
+**依赖**：无（独立功能）
+
+---
+
+## P2-2 operation_logs 写操作全覆盖
+
+**目标**：PRD §7.3.18 要求"记录所有写操作"，当前仅 `/api/admin/logs/record` 路由调用 `logAction`，**46 个 admin API 的 CUD 全部没日志**。
+
+**涉及文件**：
+- `src/lib/log-action.ts`（确认 signature）
+- **批量改**：`src/app/api/admin/**/route.ts` 里所有 POST/PUT/DELETE（约 46 个）
+
+**实现思路**：
+1. 在 `api-utils.ts` 或 `log-action.ts` 提供便捷包装 `logWrite(auth, action, targetType, targetId, snapshot?)`
+2. 对每个 admin 写路由末尾（成功响应前）追加：
+   ```ts
+   await logAction({
+     userId: auth.userId,
+     action: 'delete_song',
+     targetType: 'platform_song',
+     targetId: song.id,
+     detail: { title: song.title, version: song.version },
+   })
+   ```
+3. action 命名表（建议统一）：
+   - 用户组：`create_group / update_group / delete_group / regen_invite_code / toggle_group_status`
+   - 歌曲：`update_song / delete_song / publish_song / archive_song / restore_song`
+   - ISRC：`assign_isrc / import_isrc_csv`
+   - 结算：`mark_paid / export_settlement`
+   - 映射：`bind_mapping / confirm_mapping / reject_mapping`
+   - 账号：`create_admin / update_admin / disable_user / reset_password`
+   - 角色：`create_role / update_role / delete_role`
+   - 内容：`publish_content / unpublish_content`
+   - 设置：`update_system_setting`
+4. 批量下载（`admin/batch-download`）单独加一条 `batch_download_songs`
+
+**验收标准**：
+- [ ] 任意 CUD 操作后，`operation_logs` 新增记录
+- [ ] `/admin/logs` 页面能查到完整操作链
+- [ ] detail 字段有关键上下文（不只是 id）
+
+**预计工作量**：6 小时（批量但重复性高）  
+**依赖**：无
+
+---
+
+## P2-3 批量下载三条件校验报告
+
+**目标**：PRD §7.3.7 要求下载前校验协议 + 实名 + ISRC，报告文件里红标缺失项，当前只有打包无校验。
+
+**涉及文件**：
+- `src/app/api/admin/batch-download/route.ts`（校验逻辑）
+- `src/app/(admin)/admin/batch-download/page.tsx`（UI 展示报告预览）
+
+**实现思路**：
+1. 打包前对每首歌取 `user.agencyContract / user.realNameStatus / song.isrc` 判断：
+   - 三项全满足 → 正常入包
+   - 任一缺失 → 入包但在 `validation-report.txt` 标红行
+2. report 格式：
+   ```
+   Museek 批量下载校验报告
+   生成时间：2026-04-17 15:30
+   
+   ==== 通过 (18) ====
+   [AIMU-2026-000001] 告白气球 — 张三
+   ...
+   
+   ==== 不合规 (3) ====
+   [AIMU-2026-000042] 夜空中最亮的星 — 李四
+     ❌ 未签代理协议
+     ❌ 未实名认证
+   [AIMU-2026-000051] 晴天 — 王五
+     ⚠️ ISRC 未申报
+   ```
+3. 前端下载前在 Modal 里显示预览，让管理员决定是否继续
+4. 所有下载动作 `logAction('batch_download_songs', detail={count, unverifiedCount})`
+
+**验收标准**：
+- [ ] 下载任意选集，ZIP 内必有 `validation-report.txt`
+- [ ] 至少一个缺项的歌曲，报告列出具体缺失项
+- [ ] 操作日志记录批量下载
+- [ ] UI 在下载前给出不合规歌曲数提示
+
+**预计工作量**：2 小时  
+**依赖**：建议和 P2-2 一起做（都要 logAction）
+
+---
+
+## P2-4 手机号修改（验证码流程）
+
+**目标**：创作者/评审个人中心的"更换手机"按钮打通验证码流程，当前只弹 toast。
+
+**涉及文件**：
+- **新建** `src/app/api/profile/phone/send-code/route.ts`（给新手机发验证码）
+- **新建** `src/app/api/profile/phone/verify/route.ts`（验证并更新）
+- `src/app/(creator)/creator/profile/page.tsx` + `src/app/(reviewer)/review/profile/page.tsx`（Modal 表单）
+- `src/lib/sms.ts`（复用阿里云 SMS 工具）
+
+**实现思路**：
+1. 复用现有注册短信通道（`sms_codes` 表），`scene='change_phone'`
+2. 两步流程：
+   - Step 1：输入新手机号 → `POST /api/profile/phone/send-code { newPhone }`（校验新号不占用，发送 6 位码）
+   - Step 2：输入验证码 → `POST /api/profile/phone/verify { newPhone, code }` → 更新 `user.phone`
+3. 原手机不强制二次校验（用户已登录 JWT）
+4. 成功后 `logAction('update_phone', detail={old, new})`
+
+**验收标准**：
+- [ ] unverified/verified 创作者都可改
+- [ ] 新号已被他人占用 → 400
+- [ ] 验证码错误 → 400
+- [ ] 成功后 `user.phone` 更新，刷新 profile 可见
+
+**预计工作量**：3 小时  
+**依赖**：生产需配阿里云 SMS env（`ALIYUN_ACCESS_KEY_ID/SECRET/SIGN_NAME/TEMPLATE_CODE`）
+
+---
+
+## P2-5 CSV 总收入校验 + GBK 编码检测
+
+**目标**：PRD §5.2 要求校验"总收入 = 抖音 + 汽水"，且 Windows 用户常上传 GBK 编码 CSV，当前假设 UTF-8 会乱码。
+
+**涉及文件**：
+- `src/app/api/admin/revenue/imports/route.ts`（编码检测 + 校验）
+- **可选** `package.json` 新增 `iconv-lite`（不依赖 jschardet，用 BOM + 采样）
+
+**实现思路**：
+1. **编码检测**：
+   ```ts
+   const buf = Buffer.from(await file.arrayBuffer())
+   let text: string
+   if (buf[0] === 0xEF && buf[1] === 0xBB && buf[2] === 0xBF) {
+     text = buf.toString('utf8') // UTF-8 BOM
+   } else if (looksLikeGBK(buf)) {
+     text = iconv.decode(buf, 'gbk')
+   } else {
+     text = buf.toString('utf8')
+   }
+   ```
+   简单启发：前 1KB 里出现 0x81-0xFE 字节对占比 > 30% 且不符合 UTF-8 序列就当 GBK
+2. **总收入校验**：
+   ```ts
+   if (Math.abs(t - (d + q)) > 0.01) {
+     errors.push(`第 ${i+1} 行: 总收入 ${t} ≠ 抖音 ${d} + 汽水 ${q}`)
+     continue
+   }
+   ```
+3. 错误行跳过而不是整文件失败，返回 `parseErrors` 给前端展示
+
+**验收标准**：
+- [ ] UTF-8 + GBK 两种 CSV 都能正确解析（无乱码）
+- [ ] 总收入错行列入 parseErrors，不入库
+- [ ] 前端上传后弹框展示 parseErrors 明细
+
+**预计工作量**：2 小时  
+**依赖**：`npm i iconv-lite`
+
+---
+
+## P2-6 CMS sections / duration 字段
+
+**目标**：PRD 要求课程内容可分章节，视频有时长，当前 `cms_contents` 只存 title+body。
+
+**涉及文件**：
+- `prisma/schema.prisma`（CmsContent 新增 `sections Json?` + `duration Int?`）
+- `src/app/api/admin/content/[id]/route.ts`（PUT 接收新字段）
+- `src/app/(admin)/admin/content/page.tsx`（编辑器 UI）
+- `src/app/(creator)/creator/courses/page.tsx`（播放页展示 sections 目录 + 时长）
+
+**Schema**：
+```prisma
+sections Json?   // [{ title: string, startAt: number, duration: number }]
+duration Int?   // 秒，视频/课程总时长
+```
+
+**实现思路**：
+1. db push 字段
+2. 管理端视频详情编辑器新增"章节列表"表单（可增删行）
+3. 创作者课程页左侧列出章节目录，点击跳转到视频 startAt
+4. duration 从上传音频/视频文件 metadata 提取（`<video>.duration`）
+
+**验收标准**：
+- [ ] 管理员能为视频加 3+ 章节并保存
+- [ ] 创作者课程页显示目录和总时长
+- [ ] 章节点击 seek 正确
+
+**预计工作量**：1.5 小时  
+**依赖**：无
+
+---
+
+## P2-7 OSS 生产签名 URL
+
+**目标**：`lib/upload.ts` 有 `OSS_BUCKET` 分支但**未用 `ali-oss` SDK 生成 signatureUrl**，生产环境会 403。
+
+**涉及文件**：
+- `src/lib/upload.ts`（`getOSSToken` 实装）
+- `package.json`（`ali-oss` 依赖）
+
+**实现思路**：
+```ts
+import OSS from 'ali-oss'
+const client = new OSS({
+  region: process.env.ALIYUN_OSS_REGION!,
+  accessKeyId: process.env.ALIYUN_ACCESS_KEY_ID!,
+  accessKeySecret: process.env.ALIYUN_ACCESS_KEY_SECRET!,
+  bucket: process.env.ALIYUN_OSS_BUCKET!,
+})
+const uploadUrl = client.signatureUrl(key, {
+  method: 'PUT',
+  expires: 300,
+  'Content-Type': mimeType,
+})
+```
+注意前端 PUT 时必须用相同的 `Content-Type` header，否则签名不通过。
+
+**验收标准**：
+- [ ] 配置 OSS env 后，音频/封面直传到 OSS（bucket 里能看到文件）
+- [ ] fileUrl 能 GET 到文件
+- [ ] 不配 env 时 fallback 到本地上传
+
+**预计工作量**：2 小时  
+**依赖**：`npm i ali-oss`，生产 env 需配齐
+
+---
+
+## P2-8 邀请码改后端生成
+
+**目标**：`admin/groups/page.tsx` 第 280/555 行用 `Math.random().toString(36)` 在客户端生成邀请码，不安全（碰撞/可预测）。
+
+**涉及文件**：
+- `src/app/api/admin/groups/[id]/regen-code/route.ts`（**新建** 或合并到现有 PUT）
+- `src/app/(admin)/admin/groups/page.tsx`
+
+**实现思路**：
+1. 后端用 `crypto.randomBytes(6).toString('base64url').slice(0, 8).toUpperCase()` 生成
+2. 数据库校验唯一，冲突则重试 3 次
+3. 前端"重新生成"按钮改调 `POST /api/admin/groups/:id/regen-code` 返回新码
+4. 创建新组时也走后端
+
+**验收标准**：
+- [ ] 前端无 `Math.random` 生成邀请码代码
+- [ ] 连续点 3 次，后端生成 3 个不同码
+- [ ] 操作 `logAction('regen_invite_code')`（和 P2-2 合并）
+
+**预计工作量**：1 小时  
+**依赖**：建议和 P2-2 一起
+
+---
+
+## P2-9 Creator revenue 时间戳动态化
+
+**目标**：`creator/revenue/page.tsx` 第 174-176 行硬编码"数据更新于 2026-04-10 / 下次更新 2026-07-10"，应读最近一次 RevenueImport 时间。
+
+**涉及文件**：
+- `src/app/api/creator/revenue/route.ts`（响应新增 `lastImportAt` + `nextEstimatedImport`）
+- `src/app/(creator)/creator/revenue/page.tsx`
+
+**实现思路**：
+1. 后端查 `revenue_imports` 的 `max(importedAt)`（全平台或关联当前 creator 的均可）
+2. 下次预计 = 上次 + 90 天（或从 system_settings 配一个 `revenue_import_cycle_days`）
+3. 前端 `new Date(lastImportAt).toLocaleDateString('zh-CN')`
+
+**验收标准**：
+- [ ] 页面显示真实上次导入时间
+- [ ] 再次导入新 CSV 后，页面数字更新
+- [ ] 从未导入时显示"尚无收益数据"
+
+**预计工作量**：1 小时  
+**依赖**：无
+
+---
+
+## P2-10 发行状态 sync 外部对账
+
+**目标**：`admin/publish-confirm` 的 `sync` action 目前始终返回 mock，需对接汽水平台 OpenAPI。
+
+**涉及文件**：
+- `src/app/api/admin/publish-confirm/sync/route.ts`（或现有 action 入口）
+- **新建** `src/lib/qishui-client.ts`（封装汽水 HTTP 调用 + 鉴权）
+
+**实现思路**：
+1. **先停**：用户需提供汽水 OpenAPI 文档或 Mock Server（当前无外部数据源）
+2. 完成后的实装：
+   - `lib/qishui-client.ts` 封装 token 刷新、HTTP 调用
+   - sync 批量拉取最近 7 天发行状态，对比本地 `distributions.status` 更新
+   - 差异写入 `distributions.syncNote` 并 `logAction('sync_distribution')`
+
+**验收标准**：
+- [ ] 接入文档后真实 fetch 而非 mock
+- [ ] UI 按钮能拉到本地-远端差异列表
+- [ ] 网络/鉴权失败给明确错误
+
+**预计工作量**：2 小时（假设文档齐全）+ 文档对接期  
+**依赖**：⚠️ **需用户提供汽水 OpenAPI 文档**，否则暂不动
+
+---
+
+# P3 任务（精细化/体验，6 项）
+
+工时各 ≤ 1.5 小时，顺序随意。
+
+## P3-1 作品广场分享改真实 clipboard
+**改动**：`creator/community/page.tsx:240` `onClick` 把 `showToast('已复制')` 改成 `navigator.clipboard.writeText(url).then(() => showToast(...))`  
+**工时**：20 分钟
+
+## P3-2 songs 退回/下架按钮暴露
+**改动**：`admin/songs/page.tsx` 详情 Modal 根据状态加按钮：`ready_to_publish|reviewed` → 退回 needs_revision；`published` → 下架到 reviewed  
+**后端**：`/api/admin/songs/[id]/status` 已支持 action，不需改  
+**工时**：1 小时
+
+## P3-3 评审列表时间格式化
+**改动**：`review/queue/page.tsx` 第 83 行 `{v as string}` 改 `new Date(v as string).toLocaleString('zh-CN')`  
+**工时**：10 分钟
+
+## P3-4 登录速率限制
+**改动**：**新建** `src/lib/rate-limit.ts`（内存滑窗或 redis）+ `/api/auth/login` 接入：同 IP 1 分钟 5 次失败锁 10 分钟  
+**工时**：1.5 小时
+
+## P3-5 ENCRYPTION_KEY 写入 .env.example + docker-compose.yml
+**改动**：两份文件都加 `ENCRYPTION_KEY=`（注释说明 `openssl rand -hex 32`），README 部署章节加一句提示  
+**工时**：15 分钟
+
+## P3-6 字段为空提示文案统一
+**改动**：三端搜 `'-'` 和"未填写"占位符，统一改为具体提示（如"创作者未填写"）；P1-1 已覆盖部分  
+**工时**：30 分钟
+
+---
+
+**P2 工时合计**：≈ 24.5 小时（P2-10 依赖外部文档可推后）  
+**P3 工时合计**：≈ 4 小时
+
+**推荐一次会话做完的组合**：
+- 会话 D（~8h）：P2-1 + P2-2 + P2-3 — 学习表 + 日志覆盖 + 下载报告，完成率到 95%+
+- 会话 E（~6h）：P2-4 + P2-5 + P2-8 + P2-9 — 手机号 + CSV 健壮性 + 小项
+- 会话 F（~4h）：P2-6 + P2-7 + P3 全部 — CMS 扩展 + OSS 接通 + 体验精修
+- 会话 G：P2-10 — 待汽水文档
 
 ---
 
@@ -402,10 +768,12 @@ P1-3 (名称匹配) ─> 完整收益流 ─────┘        │
                               (管理端整体联调收敛到 95%+)
 ```
 
-**推荐一次会话做完的组合**：
-- 会话 A（~4h）：P0-1 + P0-2（两个独立 UI 功能）
-- 会话 B（~5h）：P0-3 + P0-4 + P0-5（收益后端逻辑一批）
-- 会话 C（~4h）：P1-1 到 P1-7（小型补丁集）
+**已执行会话回顾**：
+- 会话 A（~4h）：P0-1 + P0-2 ✅
+- 会话 B（~5h）：P0-3 + P0-4 + P0-5 ✅
+- 会话 C（~4h）：P1-1 到 P1-7 ✅
+
+**待执行会话**：P2/P3 组合见上文"P2 任务"章节末尾。
 
 ---
 
