@@ -93,16 +93,23 @@ export default function AdminIsrcPage() {
             className="text-[var(--accent)] hover:text-[var(--accent2)] text-sm font-medium cursor-pointer bg-transparent border-0"
             onClick={async (e) => {
               e.stopPropagation()
-              const res = await apiCall(`/api/admin/songs/${song.id}/isrc`, 'POST', { isrc: 'pending' })
+              const input = window.prompt(`请输入「${song.title}」的 ISRC 编码\n（12 位格式，如：CN-A01-24-00001 或 CNA0124000001）`)
+              if (!input) return
+              const cleaned = input.replace(/-/g, '').trim().toUpperCase()
+              if (!/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/.test(cleaned)) {
+                showToast('ISRC 格式错误：应为 2 位国家码 + 3 位注册码 + 7 位数字')
+                return
+              }
+              const res = await apiCall(`/api/admin/songs/${song.id}/isrc`, 'POST', { isrc: cleaned })
               if (res.ok) {
-                showToast(`已提交「${song.title}」的 ISRC 申报`)
+                showToast(`已录入「${song.title}」的 ISRC：${cleaned}`)
                 refetch()
               } else {
-                showToast(res.message ?? '提交失败')
+                showToast(res.message ?? '录入失败')
               }
             }}
           >
-            提交申报
+            录入 ISRC
           </button>
         )
       },

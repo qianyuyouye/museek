@@ -597,7 +597,7 @@ function PermissionForm({
 
       <button
         className={`${btnPrimary} w-full flex justify-center`}
-        onClick={() => onSubmit({ roleAttr, adminLevel: resolveAdminLevel(), groupIds: Array.from(selectedGroups) })}
+        onClick={() => onSubmit({ type: roleAttr, adminLevel: resolveAdminLevel(), groupIds: Array.from(selectedGroups) })}
       >
         确认变更
       </button>

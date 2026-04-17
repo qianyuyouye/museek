@@ -26,6 +26,8 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
         avatarUrl: true,
         status: true,
         multiLogin: true,
+        lastLoginAt: true,
+        lastLoginIp: true,
         createdBy: true,
         createdAt: true,
         role: { select: { id: true, name: true } },

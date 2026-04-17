@@ -103,8 +103,8 @@ export default function PublishConfirmPage() {
     if (res.ok) {
       const labels: Record<string, string> = {
         submit: '📤 已提交发行，等待平台确认上架',
-        confirm_live: '✅ 已确认上架',
-        mark_exception: '⚠️ 已标记为异常',
+        confirm: '✅ 已确认上架',
+        exception: '⚠️ 已标记为异常',
         resubmit: '🔄 已重新提交',
       }
       showToast(labels[action] ?? '操作成功')
@@ -231,7 +231,7 @@ export default function PublishConfirmPage() {
                   className={`${btnSuccess} ${btnSmall}`}
                   onClick={(e) => {
                     e.stopPropagation()
-                    handleAction(t.id, 'confirm_live')
+                    handleAction(t.id, 'confirm')
                   }}
                 >
                   {'✅'} {'确认上架'}
@@ -240,7 +240,7 @@ export default function PublishConfirmPage() {
                   className={`${btnDanger} ${btnSmall}`}
                   onClick={(e) => {
                     e.stopPropagation()
-                    handleAction(t.id, 'mark_exception')
+                    handleAction(t.id, 'exception')
                   }}
                 >
                   {'⚠️'} {'标记异常'}
