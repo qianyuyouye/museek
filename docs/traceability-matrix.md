@@ -33,7 +33,7 @@
 | | 三维打分（30/40/30）+ 加权 | ✅ | 前端实时计算、后端再次校验 |
 | | 快捷评语 + 评语 ≥20 字 | ✅ | |
 | | 推荐等级 → 状态机流转 | ✅ | `/api/review/submit` 事务化处理 |
-| | **评审耗时 `durationSeconds`** | 🔴 | schema 有字段但 submit 未计算存入 |
+| | **评审耗时 `durationSeconds`** | ✅ | P1-2 已修：assess 记录起始时间，submit 入库，stats 返回 avgDuration |
 | **Phase 4 发行** | 待发行列表 | ✅ | |
 | | 发行三条件校验（签约+实名+ISRC） | ✅ | 本次 Phase A 修复，songs GET 已返回 `agencyContract/realNameStatus` |
 | | 确认发行 → `published` | ✅ | `/api/admin/songs/[id]/status` |
@@ -42,7 +42,7 @@
 | | 发行渠道矩阵 | ✅ | 本次 B2 可编辑 Modal |
 | **Phase 5 状态确认** | 自动对账 + 人工确认 + 异常 | 🟡 | `publish-confirm` action 已修复，但 `sync` 对接汽水真实接口是 mock（无外部数据源） |
 | **Phase 6 收益导入** | CSV 解析 | ✅ | 本次 B4 `lib/csv.ts` + `/api/admin/revenue/imports` |
-| | 映射自动匹配（auto_exact/fuzzy） | 🟡 | 只查 qishuiSongId，**未实现按歌名模糊匹配**（PRD §6.1 Step 3） |
+| | 映射自动匹配（auto_exact/fuzzy） | ✅ | P1-3 已修：unmatched 行按歌名 contains 查询，唯一命中→auto_exact/confirmed，多条→auto_fuzzy/suspect，零命中→none/pending |
 | | **分成规则三档（高分/量产/默认）** | ✅ | P0-3 已修：`lib/commission.ts` 按 system_settings.revenue_rules 优先级评估 |
 | | **回溯生成结算**（pending→confirmed 触发） | ✅ | P0-4 已修：`lib/revenue-backfill.ts` 事务批量生成 |
 | | 多维统计 / 导出 | ✅ | |
@@ -63,7 +63,7 @@
 | platform_songs | ✅ | ✅ | `albumName/albumArtist/performer` 保存但前端详情页未展示 |
 | assignments | ✅ | ✅ | |
 | assignment_submissions | ✅ | ✅ | |
-| reviews | ✅ | 🟡 | `durationSeconds` / `tags` 保存但统计未返回 |
+| reviews | ✅ | ✅ | P1-2 已修：durationSeconds 入库 + stats.avgDuration 返回 |
 | form_field_configs | ✅ | ✅ | |
 | song_mappings | ✅ | ✅ | |
 | revenue_imports | ✅ | ✅ | |
@@ -90,7 +90,7 @@
 |---|---|---|---|
 | §7.1.1 Dashboard 实时统计 | `creator/home` | ✅ | 学习进度硬编码 `4/N`，待学习记录表 |
 | §7.1.2 自由上传 3 步 | `creator/upload` | ✅ | 已完整 |
-| §7.1.2 重新提交预填 | 同上 | 🔴 | 按钮跳 `/upload` 无 `?songId=` 参数 |
+| §7.1.2 重新提交预填 | 同上 | ✅ | P1-5 已修：跳 `/creator/upload?songId=x`，upload 支持 songId update-in-place + version++ |
 | §7.1.3 作业提交 | `creator/assignments` | ✅ | 动态表单 / version++ 都通 |
 | §7.1.4 我的作品库 | `creator/songs` | ✅ | 详情波形器为 UI 动画 |
 | §7.1.5 我的收益 2 Tab | `creator/revenue` | 🟡 | 数据更新时间硬编码日期 |
@@ -100,7 +100,7 @@
 | §7.1.6 消息中心 | `creator/notifications` | ✅ | |
 | §7.1.6 个人中心 - 基本信息 | `creator/profile` | ✅ | |
 | §1.3 实名认证入口 | 同上 | ✅ | P0-2 已修：Modal 表单 + POST /api/profile/real-name（加密存储） |
-| §7.1.6 头像上传 | 同上 | 🟠 | `onClick` 只 toast |
+| §7.1.6 头像上传 | 同上 | ✅ | P1-7 已修：POST /api/profile/avatar + 文件选择/直传/回写 |
 | §7.1.6 手机号修改（验证码） | 同上 | 🟠 | 按钮存在无流程 |
 | §7.1.6 协议签署 | 同上 | ✅ | `POST /api/profile/agency` |
 | §7.1.6 登录日志 | 同上 | ✅ | |
@@ -111,18 +111,18 @@
 |---|---|---|---|
 | §7.2.1 工作台统计 | `review/workbench` | ✅ | |
 | §7.2.1 30 天趋势图 | 同上 | ✅ | |
-| §7.2.2 待评审队列 | `review/queue` | 🟡 | 前端期望 `studentName`，API 返回 `userName`（显示为空） |
+| §7.2.2 待评审队列 | `review/queue` | ✅ | P1-6 已修：API 返回 studentName 对齐前端 |
 | §7.2.2 流派/姓名筛选 | 同上 | ✅ | |
 | §7.2.3 **音频播放（A-B+变速）** | `review/assess` | ✅ | P0-1 已修：真实音频播放 + 变速 + A-B 循环 |
 | §7.2.3 AI 预分析 | 同上 | ✅ | |
 | §7.2.3 三维滑块 + 加权 | 同上 | ✅ | |
 | §7.2.3 快捷评语 + 评语校验 | 同上 | ✅ | |
 | §7.2.3 推荐等级 + 状态流转 | 同上 | ✅ | |
-| §7.2.3 歌词全文 | 同上 | 🟠 | 硬编码示例文本，**未从 API 读 `lyrics`** |
-| §7.2.3 Prompt/Style 展示 | 同上 | 🟠 | 组合生成，**未从 API 读 `styleDesc`** |
+| §7.2.3 歌词全文 | 同上 | ✅ | P1-1 已修：读 song.lyrics |
+| §7.2.3 Prompt/Style 展示 | 同上 | ✅ | P1-1 已修：读 song.styleDesc + 新增创作过程说明 |
 | §7.2.3 时间轴标记工具 | 同上 | ✅ | P0-1 已修：Shift+点击波形打标，随 tags JSON 提交 |
 | §7.2.3 波形标记 | 同上 | ✅ | P0-1 已修：标记在波形上显示竖线 + 列表回跳 |
-| §7.2.4 绩效统计 | `review/stats` | ✅ | 历史表 "用时" 列固定显示 `-` |
+| §7.2.4 绩效统计 | `review/stats` | ✅ | P1-2 之后新评审会写入 durationSeconds；stats 返回 avgDuration |
 | §7.2.5 个人中心 | `review/profile` | ✅ | 手机号/头像同 creator 问题 |
 
 ### 3.3 管理端（PRD §7.3 共 18 个模块）
@@ -161,12 +161,12 @@
 |---|---|---|
 | §5.2 第 1 列跳过 | ✅ | |
 | §5.2 Excel 公式 `="..."` 去除 | ✅ | |
-| §5.2 起止日期原始字符串存储 | 🟡 | 代码把 `2026/02/01 - 2026/02/28` 转成 `2026-02`，PRD 要求**直接存储原始字符串** |
+| §5.2 起止日期原始字符串存储 | ✅ | P1-4 已修：parseQishuiCsv 直接保留 `2026/02/01 - 2026/02/28`（配套 scripts/clear-revenue.ts 清空历史数据） |
 | §5.2 总收入校验 = 抖音 + 汽水 | 🔴 | 未校验（PRD 要求） |
 | §5.2 UTF-8/GBK 自动检测 | 🔴 | 代码假设 UTF-8，GBK 会乱码 |
 | §6.1 Step 1 去重 | ✅ | `skipDuplicates` |
-| §6.1 Step 2 映射表查询 4 种状态分流 | 🟡 | 只区分 confirmed/其他，未精确处理 suspect/pending/irrelevant |
-| §6.1 Step 3 **名称精确/模糊匹配** | 🔴 | 完全未实现（PRD 明确要求） |
+| §6.1 Step 2 映射表查询 4 种状态分流 | ✅ | P1-3 已修：confirmed→matched、suspect→suspect、pending/irrelevant→unmatched |
+| §6.1 Step 3 **名称精确/模糊匹配** | ✅ | P1-3 已实现：unmatched 按歌名 contains 命中数决定 auto_exact/auto_fuzzy/none |
 | §6.2 **分成规则三档** | ✅ | P0-3：`resolveCommissionRatio` + UI 条件类型 select |
 | §6.3 **回溯生成**（suspect/pending→confirmed） | ✅ | P0-4：mappings confirm/bind 同步调用 backfillSettlements |
 | §6.4 **手动新增映射直接 confirmed** | 🟡 | `mappings/[id]` PUT `action=bind` 存在，确认逻辑待验证 |
@@ -195,7 +195,7 @@
 | 场景 | 实现 | 差距 |
 |---|---|---|
 | 先有收益后有提交 | ✅ | P0-4：映射 confirm/bind 后 backfillSettlements 扫描历史 rows |
-| 汽水歌名与平台不一致 | 🟡 | 基础匹配失败→pending，但**缺名称模糊匹配**（§6.1 Step 3） |
+| 汽水歌名与平台不一致 | ✅ | P1-3：无 qishuiSongId 映射时 fallback 到 songName contains，命中唯一则自动 confirmed |
 | CSV 不属于本平台 | 🔴 | 标 irrelevant 后下次跳过——未实现 |
 | 一首歌多月收益 | ✅ | `@@unique(qishuiSongId, period)` |
 | 同名歌曲不同创作者 | 🔴 | 未实现 suspect 候选展示 |
@@ -246,13 +246,13 @@
 5. ✅ **打款前实名阻断**：P0-5 已完成 — pay 前校验 realNameStatus 并返回阻断姓名
 
 ### 🟠 P1 - 功能不完整
-6. **评审端歌词/Prompt 真实数据**：assess 页面读 `lyrics / styleDesc / creationDesc`
-7. **评审耗时 `durationSeconds`**：前端进入页面时记录 timestamp，submit 时带入
-8. **CSV 名称匹配**（§6.1 Step 3）：qishuiSongId 未找到时，用 songName 在 platform_songs 做 `exact / LIKE` 查询
-9. **CSV 原始 period 保留**：`revenue_rows.period` 存 `"2026/02/01 - 2026/02/28"` 而不是 `"2026-02"`
-10. **creator 重新提交预填**：`/upload?songId=x` 支持读旧数据
-11. **queue 字段名对齐**：`/api/review/queue` 返回 `studentName` 或前端读 `userName`
-12. **创作者头像上传**：`POST /api/profile/avatar`（复用 upload token）
+6. ✅ **评审端歌词/Prompt 真实数据**（P1-1）：assess 页面读 `lyrics / styleDesc / creationDesc`
+7. ✅ **评审耗时 `durationSeconds`**（P1-2）：assess 记录起始时间，submit 入库，stats.avgDuration 返回
+8. ✅ **CSV 名称匹配**（P1-3 / §6.1 Step 3）：qishuiSongId 未找到时按 songName contains 自动建映射
+9. ✅ **CSV 原始 period 保留**（P1-4）：`revenue_rows.period` 存起止日期原始字符串
+10. ✅ **creator 重新提交预填**（P1-5）：`/creator/upload?songId=x` 预填 + upload 支持 songId update-in-place
+11. ✅ **queue 字段名对齐**（P1-6）：`/api/review/queue` 返回 studentName
+12. ✅ **创作者头像上传**（P1-7）：`POST /api/profile/avatar` + upload token 直传
 
 ### 🟡 P2 - 遗漏或硬编码
 13. **批量下载三条件校验报告**：下载按钮对选中集合校验，报告文件标红缺失项

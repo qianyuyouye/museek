@@ -428,7 +428,13 @@ P1-3 (名称匹配) ─> 完整收益流 ─────┘        │
 - [x] P0-3 分成规则三档自动评估 — commit `65adc2d`（2026-04-17）
 - [x] P0-4 映射确认回溯生成结算 — commit `a84f376`（2026-04-17）
 - [x] P0-5 打款前实名校验 — commit `00637df`（2026-04-17）
-- [ ] P1-1 ~ P1-7
+- [x] P1-4 CSV period 原始字符串 — commit `5d5bfdb`（2026-04-17，配套 `scripts/clear-revenue.ts` 待部署执行）
+- [x] P1-3 CSV 按歌名匹配 — commit `ead3b5d`（2026-04-17）
+- [x] P1-1 评审页读真实 lyrics/Prompt/creationDesc — commit `aa18604`（2026-04-17）
+- [x] P1-2 评审耗时 durationSeconds — commit `ef59abf`（2026-04-17）
+- [x] P1-5 创作者重新提交预填（update-in-place + version++） — commit `d61bf4d`（2026-04-17）
+- [x] P1-6 queue 字段名 studentName 对齐 — commit `2959bfe`（2026-04-17）
+- [x] P1-7 创作者头像上传 — commit `8bc37e6`（2026-04-17）
 
 ---
 
