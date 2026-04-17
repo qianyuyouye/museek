@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle, textSectionTitle, cardCls, btnPrimary, labelCls } from '@/lib/ui-tokens'
+import AudioPlayer, { type AudioMark, type AudioPlayerHandle } from '@/components/review/AudioPlayer'
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -12,54 +13,15 @@ interface SongDetail {
   title: string
   userId: number
   cover: string
+  audioUrl?: string | null
   genre: string
   bpm: number
   aiTool: string
+  lyrics?: string | null
+  styleDesc?: string | null
+  creationDesc?: string | null
   status: string
   studentName?: string
-}
-
-// ── Waveform bars (static SVG-like) ─────────────────────────────
-function WaveformPlayer({ isPlaying = false }: { isPlaying?: boolean }) {
-  const bars = 40
-  const heights = useMemo(
-    () => Array.from({ length: bars }, () => 8 + Math.random() * 42),
-    [],
-  )
-  const delays = useMemo(
-    () =>
-      Array.from({ length: bars }, () => [
-        0.5 + Math.random() * 0.8,
-        Math.random() * 0.5,
-      ]),
-    [],
-  )
-
-  return (
-    <div className="flex items-end gap-[3px] h-[50px] py-2">
-      {heights.map((h, i) => (
-        <div
-          key={i}
-          className="w-1 rounded-sm bg-gradient-to-t from-[var(--accent)] to-[#818cf8]"
-          style={{
-            animation: isPlaying ? `waveAnim ${delays[i][0]}s ease-in-out ${delays[i][1]}s infinite` : 'none',
-            height: isPlaying ? h : 8 + (h - 8) * 0.3,
-            transition: 'height 0.3s ease',
-          }}
-        />
-      ))}
-      <span className="ml-2 text-xs text-[var(--text2)] whitespace-nowrap">
-        3:24 / 3:24
-      </span>
-      <style>{`
-        @keyframes waveAnim {
-          0% { height: 8px; }
-          50% { height: 24px; }
-          100% { height: 8px; }
-        }
-      `}</style>
-    </div>
-  )
 }
 
 // ── AI Analysis Panel ──────────────────────────────────────────
@@ -183,11 +145,10 @@ export default function ReviewAssessPage() {
 
   const [comment, setComment] = useState('')
   const [quickTags, setQuickTags] = useState<string[]>([])
+  const [marks, setMarks] = useState<AudioMark[]>([])
   const [recommendation, setRecommendation] = useState('strongly_recommend')
-  const [playSpeed, setPlaySpeed] = useState('1.0x')
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [abLoop, setAbLoop] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const playerRef = useRef<AudioPlayerHandle>(null)
 
   // ── Loading ───────────────────────────────────────────────
   if (loading) {
@@ -250,20 +211,25 @@ export default function ReviewAssessPage() {
       return
     }
 
+    const tagsPayload =
+      quickTags.length > 0 || marks.length > 0
+        ? { quick: quickTags, marks }
+        : undefined
+
     setSubmitting(true)
     const res = await apiCall('/api/review/submit', 'POST', {
       songId: song.id,
       technique: scores.technique,
       creativity: scores.creativity,
       commercial: scores.commercial,
-      tags: quickTags.length > 0 ? quickTags : undefined,
+      tags: tagsPayload,
       comment,
       recommendation,
     })
     setSubmitting(false)
 
     if (res.ok) {
-      // Clear localStorage
+      playerRef.current?.pause()
       try {
         localStorage.removeItem('currentReviewSongId')
         localStorage.removeItem('reviewSong')
@@ -325,39 +291,19 @@ export default function ReviewAssessPage() {
             </div>
 
             {/* Waveform player area */}
-            <div className="p-4 bg-[var(--bg4)] rounded-[10px] mb-3.5">
-              <div className="flex justify-between items-center mb-2">
-                <div className="flex gap-2">
-                  <button
-                    className={`border-none rounded-full w-9 h-9 text-white text-base cursor-pointer flex items-center justify-center transition-all duration-200 ${isPlaying ? 'bg-[var(--green2)] shadow-[0_0_8px_rgba(22,163,74,0.4)]' : 'bg-[var(--accent)]'}`}
-                    onClick={() => setIsPlaying((p) => !p)}
-                  >
-                    {isPlaying ? '⏸' : '▶'}
-                  </button>
-                  <button
-                    className={`border-none rounded-md px-3 text-xs cursor-pointer transition-all duration-200 ${abLoop ? 'bg-[var(--accent)] text-white shadow-[0_0_6px_rgba(99,102,241,0.3)]' : 'bg-[#f8faff] text-[var(--text2)]'}`}
-                    onClick={() => setAbLoop((p) => !p)}
-                  >
-                    A-B循环
-                  </button>
+            <div className="mb-3.5">
+              {song.audioUrl ? (
+                <AudioPlayer
+                  ref={playerRef}
+                  src={song.audioUrl}
+                  marks={marks}
+                  onMarksChange={setMarks}
+                />
+              ) : (
+                <div className="p-4 bg-[var(--bg4)] rounded-[10px] text-center text-sm text-[var(--text3)]">
+                  该作品暂无音频文件
                 </div>
-                <select
-                  className="border-none rounded-md px-2 py-1 text-xs cursor-pointer font-medium"
-                  style={{
-                    background: playSpeed !== '1.0x' ? 'var(--accent-glow)' : '#f8faff',
-                    color: playSpeed !== '1.0x' ? 'var(--accent2)' : 'var(--text2)',
-                  }}
-                  value={playSpeed}
-                  onChange={(e) => setPlaySpeed(e.target.value)}
-                >
-                  <option>0.5x</option>
-                  <option>0.75x</option>
-                  <option>1.0x</option>
-                  <option>1.25x</option>
-                  <option>1.5x</option>
-                </select>
-              </div>
-              <WaveformPlayer isPlaying={isPlaying} />
+              )}
             </div>
 
             {/* Metadata */}
