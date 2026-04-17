@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useApi, apiCall } from '@/lib/use-api'
+import { pageWrap, textPageTitle } from '@/lib/ui-tokens'
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -44,7 +45,6 @@ export default function NotificationsPage() {
   const notifications = data?.list ?? []
   const unreadCount = data?.unreadCount ?? 0
 
-  // Tab counts from API (always accurate regardless of current filter)
   const apiTypeCounts = data?.typeCounts
   const tabCounts: Record<string, number> = apiTypeCounts ?? {
     all: notifications.length,
@@ -53,16 +53,13 @@ export default function NotificationsPage() {
     system: notifications.filter((n) => n.type === 'system').length,
   }
 
-  // When a specific tab is active, the API already returns filtered data
   const filteredNotifications = notifications
 
-  // Mark single as read
   const markAsRead = async (id: number) => {
     await apiCall('/api/creator/notifications', 'PUT', { id })
     refetch()
   }
 
-  // Mark all as read
   const markAllAsRead = async () => {
     await apiCall('/api/creator/notifications', 'PUT', { all: true })
     refetch()
@@ -77,20 +74,21 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div>
+    <div className={pageWrap}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between">
         <div className="flex items-baseline gap-2">
-          <h1 className="text-xl font-bold text-[#1a1a2e]">消息中心</h1>
+          <h1 className={textPageTitle}>消息中心</h1>
           {unreadCount > 0 && (
-            <span className="text-xs text-[#ef4444] font-medium">
-              {unreadCount}条未读<span className="inline-block w-1.5 h-1.5 rounded-full bg-[#ef4444] ml-0.5 align-middle" />
+            <span className="text-xs text-[var(--red)] font-medium">
+              {unreadCount}条未读
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--red)] ml-0.5 align-middle" />
             </span>
           )}
         </div>
         {unreadCount > 0 && (
           <button
-            className="text-xs text-[#6366f1] hover:text-[#4f46e5] cursor-pointer bg-transparent border-0 transition-colors"
+            className="text-xs text-[var(--accent)] hover:text-[var(--accent2)] cursor-pointer bg-transparent border-0 transition-colors"
             onClick={markAllAsRead}
           >
             全部标为已读
@@ -99,30 +97,30 @@ export default function NotificationsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-6 mb-4 border-b border-[#e8edf5]">
+      <div className="flex items-center gap-6 border-b border-[var(--border)]">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             className={`pb-2.5 text-sm border-0 bg-transparent cursor-pointer transition-colors relative ${
               activeTab === tab.key
-                ? 'text-[#1a1a2e] font-semibold'
-                : 'text-[#94a3b8] hover:text-[#64748b]'
+                ? 'text-[var(--text)] font-semibold'
+                : 'text-[var(--text3)] hover:text-[var(--text2)]'
             }`}
             onClick={() => setActiveTab(tab.key)}
           >
             {tab.label}
-            <span className="ml-1 text-xs text-[#94a3b8]">{tabCounts[tab.key]}</span>
+            <span className="ml-1 text-xs text-[var(--text3)]">{tabCounts[tab.key]}</span>
             {activeTab === tab.key && (
-              <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#6366f1] rounded-t" />
+              <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--accent)] rounded-t" />
             )}
           </button>
         ))}
       </div>
 
       {/* Notification List */}
-      <div className="bg-white rounded-xl border border-[#e8edf5]">
+      <div className="bg-white rounded-xl border border-[var(--border)] shadow-[0_1px_4px_rgba(99,102,241,0.06)]">
         {filteredNotifications.length === 0 ? (
-          <div className="text-center py-20 text-[#94a3b8]">
+          <div className="text-center py-20 text-[var(--text3)]">
             <span className="text-4xl block mb-3">📭</span>
             <p className="text-sm">暂无消息</p>
           </div>
@@ -130,26 +128,29 @@ export default function NotificationsPage() {
           filteredNotifications.map((n) => (
             <div
               key={n.id}
-              className="flex items-start gap-3 px-5 py-4 border-b border-[#f1f5f9] last:border-b-0 cursor-pointer transition-colors hover:bg-[#f8fafc]"
-              style={!n.read ? { backgroundColor: 'rgba(108,92,231,0.05)' } : undefined}
+              className={`flex items-start gap-3 px-5 py-4 border-b border-[var(--border)] last:border-b-0 cursor-pointer transition-colors hover:bg-[var(--bg4)] ${
+                !n.read ? 'bg-[var(--accent-glow)]' : ''
+              }`}
               onClick={() => markAsRead(n.id)}
             >
               {/* Unread dot */}
               <div className="pt-1.5 w-3 shrink-0 flex justify-center">
-                {!n.read && (
-                  <span className="block w-2 h-2 rounded-full bg-[#6366f1]" />
-                )}
+                {!n.read && <span className="block w-2 h-2 rounded-full bg-[var(--accent)]" />}
               </div>
 
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <div className={`text-sm leading-relaxed ${!n.read ? 'font-bold text-[#1a1a2e]' : 'text-[#334155]'}`}>
+                <div
+                  className={`text-sm leading-relaxed ${
+                    !n.read ? 'font-bold text-[var(--text)]' : 'text-[var(--text2)]'
+                  }`}
+                >
                   {n.title}
                   {!n.read && (
-                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#ef4444] ml-1 align-middle" />
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--red)] ml-1 align-middle" />
                   )}
                 </div>
-                <div className="mt-1 text-xs text-[#94a3b8]">
+                <div className="mt-1 text-xs text-[var(--text3)]">
                   {n.time} | {TYPE_LABEL[n.type]}
                 </div>
               </div>
