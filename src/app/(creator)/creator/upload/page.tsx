@@ -4,20 +4,7 @@ import { useState, useMemo, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiCall } from '@/lib/use-api'
 import { extractAudioFeatures, type AudioFeatures } from '@/lib/audio-extract'
-
-// ── Style tokens ─────────────────────────────────────────────────
-
-const cardCls =
-  'bg-white border border-[#e8edf5] rounded-xl p-6 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
-const inputCls =
-  'w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] transition-colors'
-const labelCls = 'block text-[13px] text-[var(--text2)] mb-1.5 font-medium'
-const btnPrimary =
-  'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0 transition-all hover:-translate-y-[1px] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0'
-const btnGhost =
-  'bg-transparent text-[var(--text2)] border border-[var(--border)] px-5 py-2.5 rounded-lg text-sm font-medium cursor-pointer hover:bg-[var(--bg4)] transition-colors'
-const btnSuccess =
-  'bg-gradient-to-r from-[#16a34a] to-[#0694a2] text-white px-5 py-2.5 rounded-lg text-sm font-semibold cursor-pointer border-0 transition-all hover:-translate-y-[1px]'
+import { pageWrap, textPageTitle, cardCls, btnPrimary, btnGhost, btnSuccess, inputCls, labelCls } from '@/lib/ui-tokens'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -101,7 +88,7 @@ function WaveformPlayer() {
           key={i}
           className="w-1 rounded-sm"
           style={{
-            background: 'linear-gradient(to top, #6366f1, #818cf8)',
+            background: 'linear-gradient(to top, var(--accent), #818cf8)',
             animation: `waveAnim ${delays[i][0]}s ease-in-out ${delays[i][1]}s infinite`,
             height: h,
           }}
@@ -357,12 +344,12 @@ export default function CreatorUploadPage() {
   ]
 
   return (
-    <div>
+    <div className={pageWrap}>
       <Toast message={toast} />
 
       {/* Page header */}
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-[var(--text)]">自由上传</h1>
+      <div>
+        <h1 className={textPageTitle}>自由上传</h1>
         <p className="mt-1 text-sm text-[var(--text2)]">
           不属于任何作业的独立创作上传 · 三步完成提交
         </p>

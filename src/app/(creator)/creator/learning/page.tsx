@@ -1,11 +1,7 @@
 'use client'
 
 import { useApi } from '@/lib/use-api'
-
-// ── Style tokens ─────────────────────────────────────────────────
-
-const cardCls =
-  'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
+import { pageWrap, textPageTitle, cardCls } from '@/lib/ui-tokens'
 
 const LEARNING_PATH = [
   { stage: '入门', desc: 'AI音乐工具基础操作', progress: 100, color: 'var(--green2)' },
@@ -38,15 +34,15 @@ export default function CreatorLearning() {
   ]
 
   return (
-    <div>
+    <div className={pageWrap}>
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-[var(--text)]">我的学习</h1>
+      <div>
+        <h1 className={textPageTitle}>我的学习</h1>
         <p className="mt-1 text-sm text-[var(--text2)]">跟踪你的AI音乐学习进度</p>
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-3 gap-4">
         {STATS.map((s) => (
           <div
             key={s.label}

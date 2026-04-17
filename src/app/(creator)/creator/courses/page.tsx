@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useApi } from '@/lib/use-api'
+import { pageWrap, textPageTitle } from '@/lib/ui-tokens'
 
 // ── Constants ───────────────────────────────────────────────────
 
@@ -68,7 +69,7 @@ function WaveformSVG({ playing }: { playing: boolean }) {
             width={5}
             rx={2.5}
             height={h}
-            fill={playing ? '#6366f1' : '#c7d2fe'}
+            fill={playing ? 'var(--accent)' : '#c7d2fe'}
             opacity={playing ? 0.6 + Math.random() * 0.4 : 0.4}
           >
             {playing && (
@@ -101,12 +102,12 @@ function DetailModal({ item, onClose }: { item: CmsItem; onClose: () => void }) 
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-[640px] max-h-[85vh] overflow-y-auto"
+        className="bg-white rounded-xl shadow-2xl w-[640px] max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Cover */}
         <div
-          className="relative h-[200px] rounded-t-2xl flex items-center justify-center"
+          className="relative h-[200px] rounded-t-xl flex items-center justify-center"
           style={{ background: COVER_GRADIENTS[item.cover] || DEFAULT_GRADIENT }}
         >
           <span className="text-[80px] drop-shadow-lg">{item.cover}</span>
@@ -120,32 +121,32 @@ function DetailModal({ item, onClose }: { item: CmsItem; onClose: () => void }) 
 
         <div className="p-6">
           {/* Title */}
-          <h2 className="text-xl font-bold text-[#1a1a2e] mb-3">{item.title}</h2>
+          <h2 className="text-xl font-bold text-[var(--text)] mb-3">{item.title}</h2>
 
           {/* Meta */}
           <div className="flex items-center gap-3 mb-5 flex-wrap">
-            <span className="px-3 py-1 rounded-full text-xs font-medium bg-[#ede9fe] text-[#6366f1]">
+            <span className="px-3 py-1 rounded-full text-xs font-medium bg-[#ede9fe] text-[var(--accent)]">
               {item.category}
             </span>
-            <span className="px-3 py-1 rounded-full text-xs font-medium bg-[#fef3c7] text-[#d97706]">
+            <span className="px-3 py-1 rounded-full text-xs font-medium bg-[#fef3c7] text-[var(--orange)]">
               {isVideo ? '📹 视频课程' : '📖 图文科普'}
             </span>
-            <span className="text-xs text-[#94a3b8]">
+            <span className="text-xs text-[var(--text3)]">
               👁 {item.views.toLocaleString()} 次浏览
             </span>
           </div>
 
           {/* Video Player Area */}
           {isVideo && (
-            <div className="mb-5 bg-[#f8fafc] rounded-xl p-4 border border-[#e2e8f0]">
+            <div className="mb-5 bg-[var(--bg4)] rounded-xl p-4 border border-[var(--border)]">
               <div className="flex items-center gap-3 mb-3">
                 <button
-                  className="w-10 h-10 rounded-full bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white flex items-center justify-center cursor-pointer border-0 shadow-md hover:shadow-lg transition text-lg"
+                  className="w-10 h-10 rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] text-white flex items-center justify-center cursor-pointer border-0 shadow-md hover:shadow-lg transition text-lg"
                   onClick={() => setPlaying(!playing)}
                 >
                   {playing ? '⏸' : '▶'}
                 </button>
-                <span className="text-sm text-[#64748b]">
+                <span className="text-sm text-[var(--text2)]">
                   {playing ? '正在播放...' : '点击播放'}
                 </span>
               </div>
@@ -155,40 +156,40 @@ function DetailModal({ item, onClose }: { item: CmsItem; onClose: () => void }) 
 
           {/* Content Sections */}
           <div className="mb-5">
-            <h3 className="text-sm font-semibold text-[#334155] mb-3">
+            <h3 className="text-sm font-semibold text-[var(--text2)] mb-3">
               {isVideo ? '课程内容' : '文章大纲'}
             </h3>
             <div className="space-y-2">
               {sections.map((s, i) => (
                 <div key={i} className="flex items-start gap-2">
-                  <span className="w-5 h-5 rounded-full bg-[#ede9fe] text-[#6366f1] text-xs flex items-center justify-center shrink-0 mt-0.5 font-medium">
+                  <span className="w-5 h-5 rounded-full bg-[#ede9fe] text-[var(--accent)] text-xs flex items-center justify-center shrink-0 mt-0.5 font-medium">
                     {i + 1}
                   </span>
-                  <span className="text-sm text-[#475569]">{s}</span>
+                  <span className="text-sm text-[var(--text2)]">{s}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Duration / Level */}
-          <div className="flex items-center gap-4 pt-4 border-t border-[#f1f5f9]">
+          <div className="flex items-center gap-4 pt-4 border-t border-[var(--border)]">
             {isVideo && videoDetail && (
               <>
-                <span className="text-xs text-[#94a3b8]">⏱ 时长：{videoDetail.duration}</span>
-                <span className="text-xs text-[#94a3b8]">📊 难度：{videoDetail.level}</span>
+                <span className="text-xs text-[var(--text3)]">⏱ 时长：{videoDetail.duration}</span>
+                <span className="text-xs text-[var(--text3)]">📊 难度：{videoDetail.level}</span>
               </>
             )}
             {!isVideo && articleDetail && (
-              <span className="text-xs text-[#94a3b8]">⏱ 阅读时长：{articleDetail.readTime}</span>
+              <span className="text-xs text-[var(--text3)]">⏱ 阅读时长：{articleDetail.readTime}</span>
             )}
             {isVideo && !videoDetail && (
               <>
-                <span className="text-xs text-[#94a3b8]">⏱ 时长：30分钟</span>
-                <span className="text-xs text-[#94a3b8]">📊 难度：入门</span>
+                <span className="text-xs text-[var(--text3)]">⏱ 时长：30分钟</span>
+                <span className="text-xs text-[var(--text3)]">📊 难度：入门</span>
               </>
             )}
             {!isVideo && !articleDetail && (
-              <span className="text-xs text-[#94a3b8]">⏱ 阅读时长：10分钟</span>
+              <span className="text-xs text-[var(--text3)]">⏱ 阅读时长：10分钟</span>
             )}
           </div>
         </div>
@@ -202,7 +203,7 @@ function DetailModal({ item, onClose }: { item: CmsItem; onClose: () => void }) 
 function CourseCard({ item, onClick }: { item: CmsItem; onClick: () => void }) {
   return (
     <div
-      className="rounded-xl overflow-hidden bg-white border border-[#e8edf5] shadow-[0_2px_8px_rgba(0,0,0,0.06)] cursor-pointer transition-all hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(99,102,241,0.12)] group"
+      className="rounded-xl overflow-hidden bg-white border border-[var(--border)] shadow-[0_2px_8px_rgba(0,0,0,0.06)] cursor-pointer transition-all hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(99,102,241,0.12)] group"
       onClick={onClick}
     >
       {/* Cover */}
@@ -221,10 +222,10 @@ function CourseCard({ item, onClick }: { item: CmsItem; onClick: () => void }) {
 
       {/* Info */}
       <div className="p-3.5">
-        <h3 className="text-[13px] font-semibold text-[#1a1a2e] leading-snug mb-2 line-clamp-2">
+        <h3 className="text-[13px] font-semibold text-[var(--text)] leading-snug mb-2 line-clamp-2">
           {item.title}
         </h3>
-        <div className="flex items-center justify-between text-[11px] text-[#94a3b8]">
+        <div className="flex items-center justify-between text-[11px] text-[var(--text3)]">
           <span>{item.type === 'video' ? '📹 视频课程' : '📖 图文科普'}</span>
           <span>👁 {item.views.toLocaleString()}</span>
         </div>
@@ -253,27 +254,27 @@ export default function CreatorCoursesPage() {
   }
 
   return (
-    <div>
+    <div className={pageWrap}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-[#1a1a2e]">课程中心</h1>
-          <p className="text-xs text-[#94a3b8] mt-1">发现优质AI音乐课程与科普内容</p>
+          <h1 className={textPageTitle}>课程中心</h1>
+          <p className="text-xs text-[var(--text3)] mt-1">发现优质AI音乐课程与科普内容</p>
         </div>
-        <span className="text-xs text-[#94a3b8]">
+        <span className="text-xs text-[var(--text3)]">
           共 {filteredItems.length} 个内容
         </span>
       </div>
 
       {/* Category Tabs */}
-      <div className="flex items-center gap-2 mb-6">
+      <div className="flex items-center gap-2">
         {CATEGORIES.map((cat) => (
           <button
             key={cat}
             className={`px-4 py-[7px] rounded-full text-[13px] font-medium border-0 cursor-pointer transition-all ${
               activeCategory === cat
-                ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-[0_2px_8px_rgba(99,102,241,0.3)]'
-                : 'bg-[#f1f5f9] text-[#64748b] hover:bg-[#e2e8f0]'
+                ? 'bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] text-white shadow-[0_2px_8px_rgba(99,102,241,0.3)]'
+                : 'bg-[var(--bg4)] text-[var(--text2)] hover:bg-[var(--border)]'
             }`}
             onClick={() => setActiveCategory(cat)}
           >
@@ -295,7 +296,7 @@ export default function CreatorCoursesPage() {
 
       {/* Empty State */}
       {filteredItems.length === 0 && (
-        <div className="text-center py-20 text-[#94a3b8]">
+        <div className="text-center py-20 text-[var(--text3)]">
           <span className="text-4xl block mb-3">📭</span>
           <p className="text-sm">该分类暂无内容</p>
         </div>

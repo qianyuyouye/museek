@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useApi } from '@/lib/use-api'
 import { SONG_STATUS_MAP } from '@/lib/constants'
+import { pageWrap, textPageTitle, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -49,15 +50,6 @@ interface SongDetail extends Song {
   distributions: DistributionData[]
 }
 
-// ── Style helpers ───────────────────────────────────────────────
-
-const btnPrimary =
-  'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0'
-const btnGhost =
-  'bg-transparent text-[var(--text2)] border border-[var(--border)] px-4 py-2 rounded-lg text-sm font-medium cursor-pointer'
-const cardCls =
-  'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
-
 // ── Tab definitions ─────────────────────────────────────────────
 
 type TabKey = 'all' | 'pending_review' | 'needs_revision' | 'in_library' | 'published'
@@ -83,7 +75,7 @@ function WaveformPlayer() {
       <div className="flex items-center gap-3 mb-3">
         <button
           onClick={() => setPlaying(!playing)}
-          className="w-10 h-10 rounded-full bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white flex items-center justify-center text-lg border-0 cursor-pointer shadow-[0_2px_8px_rgba(99,102,241,0.3)]"
+          className="w-10 h-10 rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] text-white flex items-center justify-center text-lg border-0 cursor-pointer shadow-[0_2px_8px_rgba(99,102,241,0.3)]"
         >
           {playing ? '⏸' : '▶'}
         </button>
@@ -101,7 +93,7 @@ function WaveformPlayer() {
             width={6}
             height={h}
             rx={3}
-            fill={i < (playing ? 30 : 0) ? '#6366f1' : '#e8edf5'}
+            fill={i < (playing ? 30 : 0) ? 'var(--accent)' : 'var(--border)'}
           />
         ))}
       </svg>
@@ -130,9 +122,9 @@ function Badge({ status }: { status: string }) {
 // ── Score color helper ──────────────────────────────────────────
 
 function scoreColor(v: number): string {
-  if (v >= 80) return '#16a34a'
-  if (v >= 60) return '#d97706'
-  return '#e53e3e'
+  if (v >= 80) return 'var(--green2)'
+  if (v >= 60) return 'var(--orange)'
+  return 'var(--red)'
 }
 
 // ── Main Component ─────────────────────────────────────────────
@@ -178,11 +170,11 @@ export default function CreatorSongsPage() {
     const dists = detailData?.distributions ?? []
 
     return (
-      <div>
+      <div className={pageWrap}>
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-[var(--text)]">{song.title}</h1>
+            <h1 className={textPageTitle}>{song.title}</h1>
             <p className="mt-1 text-sm text-[var(--text2)]">
               版权编号：{song.copyrightCode}
             </p>
@@ -276,7 +268,7 @@ export default function CreatorSongsPage() {
                   <div className="text-xs text-[var(--text3)]">加权总分</div>
                   <div
                     className="text-4xl font-bold"
-                    style={{ color: review.totalScore >= 80 ? '#16a34a' : '#d97706' }}
+                    style={{ color: review.totalScore >= 80 ? 'var(--green2)' : 'var(--orange)' }}
                   >
                     {review.totalScore}
                   </div>
@@ -304,9 +296,9 @@ export default function CreatorSongsPage() {
                       style={{
                         color:
                           d.status === 'live'
-                            ? '#16a34a'
+                            ? 'var(--green2)'
                             : d.status === 'submitted'
-                              ? '#d97706'
+                              ? 'var(--orange)'
                               : 'var(--text3)',
                       }}
                     >
@@ -344,11 +336,11 @@ export default function CreatorSongsPage() {
   // ── List View ────────────────────────────────────────────────
 
   return (
-    <div>
+    <div className={pageWrap}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-[var(--text)]">我的作品库</h1>
+          <h1 className={textPageTitle}>我的作品库</h1>
           <p className="mt-1 text-sm text-[var(--text2)]">共 {mySongs.length} 首作品</p>
         </div>
         <Link href="/creator/upload">
@@ -357,7 +349,7 @@ export default function CreatorSongsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-5 bg-[#f0f4fb] rounded-lg p-1 w-fit">
+      <div className="flex gap-1 bg-[#f0f4fb] rounded-lg p-1 w-fit">
         {TAB_DEFS.map((t) => {
           const count = tabCounts[t.key]
           const active = tab === t.key

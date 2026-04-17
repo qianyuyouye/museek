@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { useApi, apiCall } from '@/lib/use-api'
+import { pageWrap, textPageTitle } from '@/lib/ui-tokens'
 
 // ── Constants ───────────────────────────────────────────────────
 
@@ -50,7 +51,7 @@ function Toast({ message }: { message: string }) {
   if (!message) return null
   return (
     <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-[fadeInDown_0.3s_ease]">
-      <div className="px-5 py-3 rounded-xl text-sm font-medium shadow-lg bg-[#ede9fe] text-[#6366f1] border border-[#c4b5fd]">
+      <div className="px-5 py-3 rounded-xl text-sm font-medium shadow-lg bg-[#ede9fe] text-[var(--accent)] border border-[#c4b5fd]">
         {message}
       </div>
     </div>
@@ -72,7 +73,7 @@ function MiniWaveform({ playing }: { playing: boolean }) {
             width={2.5}
             rx={1.25}
             height={h}
-            fill={playing ? '#6366f1' : '#c7d2fe'}
+            fill={playing ? 'var(--accent)' : '#c7d2fe'}
             opacity={playing ? 0.6 + Math.random() * 0.4 : 0.4}
           >
             {playing && (
@@ -110,7 +111,7 @@ function SongCard({
   const authorName = song.authorName ?? '未知作者'
 
   return (
-    <div className="rounded-xl overflow-hidden bg-white border border-[#e8edf5] shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(99,102,241,0.12)] group">
+    <div className="rounded-xl overflow-hidden bg-white border border-[var(--border)] shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(99,102,241,0.12)] group">
       {/* Cover */}
       <div
         className="relative h-[140px] flex items-center justify-center overflow-hidden"
@@ -133,10 +134,10 @@ function SongCard({
 
       {/* Info */}
       <div className="p-3.5">
-        <h3 className="text-[13px] font-semibold text-[#1a1a2e] leading-snug mb-1 truncate">
+        <h3 className="text-[13px] font-semibold text-[var(--text)] leading-snug mb-1 truncate">
           {song.title}
         </h3>
-        <p className="text-[11px] text-[#94a3b8] mb-3 truncate">
+        <p className="text-[11px] text-[var(--text3)] mb-3 truncate">
           {authorName} · {song.genre}
         </p>
 
@@ -145,7 +146,7 @@ function SongCard({
           className="flex items-center gap-2 mb-3 cursor-pointer"
           onClick={onTogglePlay}
         >
-          <button className="w-7 h-7 rounded-full bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white flex items-center justify-center cursor-pointer border-0 shadow-sm text-[11px] shrink-0">
+          <button className="w-7 h-7 rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] text-white flex items-center justify-center cursor-pointer border-0 shadow-sm text-[11px] shrink-0">
             {playing ? '⏸' : '▶'}
           </button>
           <div className="flex-1 min-w-0">
@@ -157,13 +158,13 @@ function SongCard({
         <div className="flex items-center justify-between">
           <button
             className="flex items-center gap-1 text-[12px] border-0 bg-transparent cursor-pointer transition-colors px-0"
-            style={{ color: liked ? '#ef4444' : '#94a3b8' }}
+            style={{ color: liked ? 'var(--red)' : 'var(--text3)' }}
             onClick={onToggleLike}
           >
             {liked ? '❤️' : '🤍'} {song.likeCount}
           </button>
           <button
-            className="flex items-center gap-1 text-[12px] text-[#94a3b8] border-0 bg-transparent cursor-pointer hover:text-[#6366f1] transition-colors px-0"
+            className="flex items-center gap-1 text-[12px] text-[var(--text3)] border-0 bg-transparent cursor-pointer hover:text-[var(--accent)] transition-colors px-0"
             onClick={onShare}
           >
             🔗 分享
@@ -252,29 +253,29 @@ export default function CreatorCommunityPage() {
   }
 
   return (
-    <div>
+    <div className={pageWrap}>
       <Toast message={toast} />
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-[#1a1a2e]">作品广场</h1>
-          <p className="text-xs text-[#94a3b8] mt-1">发现优秀的 AI 音乐作品</p>
+          <h1 className={textPageTitle}>作品广场</h1>
+          <p className="text-xs text-[var(--text3)] mt-1">发现优秀的 AI 音乐作品</p>
         </div>
-        <span className="text-xs text-[#94a3b8]">
+        <span className="text-xs text-[var(--text3)]">
           共 {filteredSongs.length} 首作品
         </span>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 mb-6">
+      <div className="flex items-center gap-2">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             className={`px-4 py-[7px] rounded-full text-[13px] font-medium border-0 cursor-pointer transition-all ${
               activeTab === tab.key
-                ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-[0_2px_8px_rgba(99,102,241,0.3)]'
-                : 'bg-[#f1f5f9] text-[#64748b] hover:bg-[#e2e8f0]'
+                ? 'bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] text-white shadow-[0_2px_8px_rgba(99,102,241,0.3)]'
+                : 'bg-[var(--bg4)] text-[var(--text2)] hover:bg-[var(--border)]'
             }`}
             onClick={() => setActiveTab(tab.key)}
           >
@@ -300,7 +301,7 @@ export default function CreatorCommunityPage() {
 
       {/* Empty State */}
       {filteredSongs.length === 0 && (
-        <div className="text-center py-20 text-[#94a3b8]">
+        <div className="text-center py-20 text-[var(--text3)]">
           <span className="text-4xl block mb-3">📭</span>
           <p className="text-sm">暂无作品</p>
         </div>

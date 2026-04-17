@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useApi } from '@/lib/use-api'
+import { pageWrap, textPageTitle, cardCls, btnPrimary } from '@/lib/ui-tokens'
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -43,14 +44,6 @@ interface CourseItem {
   coverUrl?: string | null
   createdAt: string
 }
-
-// ── Style helpers ───────────────────────────────────────────────
-
-const cardCls =
-  'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
-
-const btnPrimary =
-  'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0'
 
 // ── StatCard ───────────────────────────────────────────────────
 
@@ -153,16 +146,16 @@ export default function CreatorHome() {
   // ── Render ────────────────────────────────────────────────
 
   return (
-    <div>
+    <div className={pageWrap}>
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-[var(--text)]">首页</h1>
+      <div>
+        <h1 className={textPageTitle}>首页</h1>
         <p className="mt-1 text-sm text-[var(--text2)]">欢迎回来</p>
       </div>
 
       {/* 未完成作业提醒 */}
       {unsubmitted.length > 0 && (
-        <Link href="/creator/assignments" className="block no-underline mb-5">
+        <Link href="/creator/assignments" className="block no-underline">
           <div
             className={`${cardCls} cursor-pointer`}
             style={{
@@ -190,7 +183,7 @@ export default function CreatorHome() {
       )}
 
       {/* 数据概览卡片 */}
-      <div className="grid grid-cols-4 gap-4 mb-7">
+      <div className="grid grid-cols-4 gap-4">
         <StatCard
           icon="🎵"
           label="我的作品"
@@ -201,24 +194,24 @@ export default function CreatorHome() {
           icon="⭐"
           label="平均评分"
           value={avgScore}
-          color="#d97706"
+          color="var(--orange)"
         />
         <StatCard
           icon="💰"
           label="累计收益"
           value={`¥${totalEarnings.toFixed(0)}`}
-          color="#16a34a"
+          color="var(--green2)"
         />
         <StatCard
           icon="📚"
           label="学习进度"
           value={learningProgress}
-          color="#ec4899"
+          color="var(--pink)"
         />
       </div>
 
       {/* 热门课程推荐 */}
-      <div className={`${cardCls} mb-5`}>
+      <div className={cardCls}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-[16px] font-semibold">热门课程</h3>
           <Link
@@ -284,7 +277,7 @@ export default function CreatorHome() {
               >
                 <div className="flex items-center gap-2 min-w-0">
                   {!n.read && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#e53e3e] flex-shrink-0" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--red)] flex-shrink-0" />
                   )}
                   <span className="text-xs text-[var(--accent2)] flex-shrink-0">
                     [{n.type}]
@@ -338,7 +331,7 @@ export default function CreatorHome() {
                 href={item.href}
                 className="no-underline"
               >
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-[#f0f4fb] cursor-pointer transition-all hover:bg-[#e8edf5]">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-[#f0f4fb] cursor-pointer transition-all hover:bg-[var(--border)]">
                   <span className="text-xl">{item.icon}</span>
                   <div>
                     <div className="text-[13px] font-medium text-[var(--text)]">

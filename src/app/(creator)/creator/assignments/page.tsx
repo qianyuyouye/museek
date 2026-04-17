@@ -2,27 +2,14 @@
 
 import { useState, useCallback, useRef } from 'react'
 import { useApi, apiCall } from '@/lib/use-api'
-
-// ── Style helpers ───────────────────────────────────────────────
-
-const btnPrimary =
-  'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0'
-const btnGhost =
-  'bg-transparent text-[var(--text2)] border border-[var(--border)] px-4 py-2 rounded-lg text-sm font-medium cursor-pointer'
-const btnSuccess =
-  'bg-gradient-to-r from-[#16a34a] to-[#0694a2] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
-const cardCls =
-  'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
-const inputCls =
-  'w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]'
-const labelCls = 'block text-[13px] text-[var(--text2)] mb-1.5 font-medium'
+import { pageWrap, textPageTitle, cardCls, btnPrimary, btnGhost, btnSuccess, inputCls, labelCls } from '@/lib/ui-tokens'
 
 // ── Status Maps ────────────────────────────────────────────────
 
 const ASN_STATUS: Record<string, { label: string; color: string; bg: string }> = {
-  active: { label: '进行中', color: '#16a34a', bg: 'rgba(85,239,196,0.12)' },
-  closed: { label: '已截止', color: '#94a3b8', bg: 'rgba(107,114,128,0.12)' },
-  draft: { label: '草稿', color: '#d97706', bg: 'rgba(253,203,110,0.12)' },
+  active: { label: '进行中', color: 'var(--green2)', bg: 'rgba(85,239,196,0.12)' },
+  closed: { label: '已截止', color: 'var(--text3)', bg: 'rgba(107,114,128,0.12)' },
+  draft: { label: '草稿', color: 'var(--orange)', bg: 'rgba(253,203,110,0.12)' },
 }
 
 
@@ -185,7 +172,7 @@ export default function CreatorAssignmentsPage() {
   // ── Toast element ──────────────────────────────────────────
 
   const toastEl = toast ? (
-    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] bg-[#1e293b] text-white px-6 py-3 rounded-xl text-sm font-medium shadow-[0_8px_32px_rgba(0,0,0,0.2)] animate-[fadeIn_0.3s]">
+    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] bg-[var(--text)] text-white px-6 py-3 rounded-xl text-sm font-medium shadow-[0_8px_32px_rgba(0,0,0,0.2)] animate-[fadeIn_0.3s]">
       {toast}
     </div>
   ) : null
@@ -207,11 +194,11 @@ export default function CreatorAssignmentsPage() {
     if (!asn) return null
 
     return (
-      <div>
+      <div className={pageWrap}>
         {toastEl}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-[var(--text)]">{asn.title}</h1>
+            <h1 className={textPageTitle}>{asn.title}</h1>
             <p className="mt-1 text-sm text-[var(--text2)]">
               {asn.groupName} · 已提交
             </p>
@@ -249,11 +236,11 @@ export default function CreatorAssignmentsPage() {
     // Already submitted
     if (asn.submitted) {
       return (
-        <div>
+        <div className={pageWrap}>
           {toastEl}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-semibold text-[var(--text)]">{asn.title}</h1>
+              <h1 className={textPageTitle}>{asn.title}</h1>
               <p className="mt-1 text-sm text-[var(--text2)]">
                 {grp?.group.name} — 已提交
               </p>
@@ -279,12 +266,12 @@ export default function CreatorAssignmentsPage() {
 
     // Submission form
     return (
-      <div>
+      <div className={pageWrap}>
         {toastEl}
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-[var(--text)]">
+            <h1 className={textPageTitle}>
               提交作业 · {asn.title}
             </h1>
             <p className="mt-1 text-sm text-[var(--text2)]">
@@ -376,7 +363,7 @@ export default function CreatorAssignmentsPage() {
                             className={`px-3 py-1.5 rounded-lg text-sm border cursor-pointer transition-all ${
                               active
                                 ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
-                                : 'bg-white text-[var(--text2)] border-[#e8edf5] hover:border-[var(--accent)]'
+                                : 'bg-white text-[var(--text2)] border-[var(--border)] hover:border-[var(--accent)]'
                             }`}
                             onClick={() => {
                               setFormData((p) => ({
@@ -474,11 +461,11 @@ export default function CreatorAssignmentsPage() {
   // ── View: Assignment List ──────────────────────────────────
 
   return (
-    <div>
+    <div className={pageWrap}>
       {toastEl}
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-[var(--text)]">作业提交</h1>
+      <div>
+        <h1 className={textPageTitle}>作业提交</h1>
         <p className="mt-1 text-sm text-[var(--text2)]">
           {groups.map((g) => g.group.name).join(' · ')} — 共 {allAssignments.length} 个作业
         </p>
@@ -488,7 +475,7 @@ export default function CreatorAssignmentsPage() {
         if (grp.assignments.length === 0) return null
 
         return (
-          <div key={grp.group.id} className="mb-6">
+          <div key={grp.group.id}>
             <div className="flex items-center gap-2 mb-3">
               <span className="text-base">🏘️</span>
               <span className="text-[15px] font-semibold">{grp.group.name}</span>
@@ -517,7 +504,7 @@ export default function CreatorAssignmentsPage() {
                         {st.label}
                       </span>
                       {asn.submitted && (
-                        <span className="text-[10px] px-[7px] py-0.5 rounded-full bg-[rgba(85,239,196,0.12)] text-[#16a34a] font-medium">
+                        <span className="text-[10px] px-[7px] py-0.5 rounded-full bg-[rgba(85,239,196,0.12)] text-[var(--green2)] font-medium">
                           已提交
                         </span>
                       )}
