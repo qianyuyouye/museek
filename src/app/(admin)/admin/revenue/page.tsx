@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { PageHeader } from '@/components/admin/page-header'
 import { StatCard } from '@/components/admin/stat-card'
 import { DataTable, Column } from '@/components/admin/data-table'
@@ -188,7 +188,7 @@ export default function AdminRevenuePage() {
       </div>
 
       {/* ═══ 汽水音乐导入 ═══ */}
-      {tab === 'qishui' && <QishuiTab showToast={showToast} grandTotal={grandTotal} imports={imports} mappings={mappings} onDetail={setMatchDetail} refetchImports={refetchImports} />}
+      {tab === 'qishui' && <QishuiTab showToast={showToast} grandTotal={grandTotal} imports={imports} mappings={mappings} onDetail={setMatchDetail} refetchImports={refetchImports} refetchMappings={refetchMappings} />}
 
       {/* ═══ 匹配关系维护 ═══ */}
       {tab === 'mapping' && (
@@ -271,6 +271,7 @@ function QishuiTab({
   mappings,
   onDetail,
   refetchImports,
+  refetchMappings,
 }: {
   showToast: (msg: string) => void
   grandTotal: number
@@ -278,6 +279,7 @@ function QishuiTab({
   mappings: Mapping[]
   onDetail: (r: RevenueImport) => void
   refetchImports: () => void
+  refetchMappings: () => void
 }) {
   const importColumns: Column<Record<string, unknown>>[] = [
     { key: 'fileName', title: '文件名', render: v => <span style={{ fontSize: 12 }}>{v as string}</span> },
@@ -299,38 +301,10 @@ function QishuiTab({
       ),
     },
   ]
-  void refetchImports
 
   return (
-    <div>
-      {/* Upload area */}
-      <div className={cardCls}>
-        <h3 className="text-base font-semibold mb-1">导入汽水音乐收益报表</h3>
-        <p className="text-xs text-[var(--text3)] mb-4">
-          每月从汽水后台导出CSV → 系统按歌曲ID查映射表精确匹配 → 新歌曲按歌名匹配歌曲库待人工确认 → 确认后自动记入映射表
-        </p>
-        <div
-          style={{
-            border: '2px dashed var(--border)',
-            borderRadius: 10,
-            padding: '16px 20px',
-            cursor: 'pointer',
-            transition: 'all .2s',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-          }}
-          onClick={() => showToast('CSV 上传成功，正在解析...')}
-          onMouseOver={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
-          onMouseOut={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-        >
-          <span style={{ fontSize: 28 }}>📎</span>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 500 }}>点击上传汽水音乐 CSV</div>
-            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>歌曲名称 · 歌曲ID · 抖音收入 · 汽水收入 · 总收入</div>
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-col gap-4">
+      <QishuiUploader onDone={(msg) => { showToast(msg); refetchImports(); refetchMappings() }} />
 
       {/* Stat cards */}
       <div className="grid grid-cols-5 gap-3">
@@ -351,6 +325,77 @@ function QishuiTab({
         />
       </div>
     </div>
+  )
+}
+
+function QishuiUploader({ onDone }: { onDone: (msg: string) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+
+  async function handleFile(file: File) {
+    setUploading(true)
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('platform', 'qishui')
+    try {
+      const res = await fetch('/api/admin/revenue/imports', { method: 'POST', body: fd })
+      const json = await res.json()
+      if (json.code === 200) {
+        const d = json.data
+        onDone(`✅ 导入完成：${d.totalRows} 行 · 匹配 ${d.matchedRows} · 待确认 ${d.suspectRows} · 未匹配 ${d.unmatchedRows}${d.duplicateRows ? ` · 重复 ${d.duplicateRows}` : ''}`)
+      } else {
+        onDone(json.message || '上传失败')
+      }
+    } catch {
+      onDone('网络错误，上传失败')
+    } finally {
+      setUploading(false)
+      if (inputRef.current) inputRef.current.value = ''
+    }
+  }
+
+  return (
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".csv"
+        className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
+      />
+      <div className={cardCls}>
+        <h3 className="text-base font-semibold mb-1">导入汽水音乐收益报表</h3>
+        <p className="text-xs text-[var(--text3)] mb-4">
+          每月从汽水后台导出CSV → 系统按歌曲ID查映射表精确匹配 → 新歌曲按歌名匹配歌曲库待人工确认 → 确认后自动记入映射表
+        </p>
+        <div
+          style={{
+            border: '2px dashed var(--border)',
+            borderRadius: 10,
+            padding: '16px 20px',
+            cursor: uploading ? 'wait' : 'pointer',
+            transition: 'all .2s',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            opacity: uploading ? 0.6 : 1,
+          }}
+          onClick={() => !uploading && inputRef.current?.click()}
+          onMouseOver={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+          onMouseOut={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+        >
+          <span style={{ fontSize: 28 }}>📎</span>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 500 }}>
+              {uploading ? '解析中...' : '点击上传汽水音乐 CSV'}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+              列顺序：类型 · 起止日期 · 歌曲名称 · 歌曲ID · 抖音收入 · 汽水收入 · 总收入
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   )
 }
 
