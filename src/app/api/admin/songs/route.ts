@@ -69,6 +69,8 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     status: s.status,
     likeCount: s.likeCount,
     distributions: s.distributions,
+    audioUrl: s.audioUrl,
+    coverUrl: s.coverUrl,
     createdAt: s.createdAt,
   }))
 

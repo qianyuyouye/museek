@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { PageHeader } from '@/components/admin/page-header'
 import { DataTable, Column } from '@/components/admin/data-table'
 import { useApi, apiCall } from '@/lib/use-api'
+import { downloadCSV, today } from '@/lib/export'
 import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
 
 // ── Types ────────────────────────────────────────────────────────
@@ -555,7 +556,24 @@ export default function AdminAdminsPage() {
         >
           重置
         </button>
-        <button className={btnGhost} onClick={() => showToast('已导出管理员列表.xlsx')}>
+        <button
+          className={btnGhost}
+          onClick={() => {
+            if (admins.length === 0) { showToast('暂无数据可导出'); return }
+            const rows = admins.map((a) => ({
+              账号: a.account,
+              姓名: a.name,
+              角色: a.role?.name ?? '',
+              状态: a.status ? '启用' : '停用',
+              允许多端登录: a.multiLogin ? '是' : '否',
+              最后登录时间: a.lastLoginAt ?? '',
+              最后登录IP: a.lastLoginIp ?? '',
+              创建时间: a.createdAt ?? '',
+            }))
+            downloadCSV(rows, `管理员列表_${today()}.csv`)
+            showToast(`✅ 已导出 ${admins.length} 条管理员记录`)
+          }}
+        >
           导出
         </button>
       </div>

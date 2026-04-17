@@ -192,8 +192,8 @@ export default function AdminAccountsPage() {
               className={`${btnGhost} ${btnSmall}`}
               onClick={async (e) => {
                 e.stopPropagation()
-                const res = await apiCall(`/api/admin/accounts/${r.id}/reset-password`, 'POST', {})
-                if (res.ok) { showToast(`已重置 ${r.name} 的密码为 Abc12345`); refetch() }
+                const res = await apiCall<{ password: string }>(`/api/admin/accounts/${r.id}/reset-password`, 'POST', {})
+                if (res.ok) { showToast(`✅ 已重置 ${r.name} 的密码为 ${res.data?.password ?? '（已生成）'}`); refetch() }
                 else showToast(res.message ?? '重置失败')
               }}
             >
@@ -289,8 +289,8 @@ export default function AdminAccountsPage() {
               className={`${btnGhost} ${btnSmall}`}
               onClick={async (e) => {
                 e.stopPropagation()
-                const res = await apiCall(`/api/admin/accounts/${r.id}/reset-password`, 'POST', {})
-                if (res.ok) { showToast(`已重置 ${r.name} 的密码为 Abc12345`); refetch() }
+                const res = await apiCall<{ password: string }>(`/api/admin/accounts/${r.id}/reset-password`, 'POST', {})
+                if (res.ok) { showToast(`✅ 已重置 ${r.name} 的密码为 ${res.data?.password ?? '（已生成）'}`); refetch() }
                 else showToast(res.message ?? '重置失败')
               }}
             >

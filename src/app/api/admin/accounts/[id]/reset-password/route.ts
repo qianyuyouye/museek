@@ -3,6 +3,13 @@ import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler } from '@/lib/api-utils'
 import { hashPassword } from '@/lib/password'
 
+function generatePassword(): string {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+  let pw = ''
+  for (let i = 0; i < 10; i++) pw += chars[Math.floor(Math.random() * chars.length)]
+  return pw
+}
+
 export const POST = safeHandler(async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -17,10 +24,12 @@ export const POST = safeHandler(async function POST(
   const user = await prisma.user.findUnique({ where: { id: userId } })
   if (!user) return err('用户不存在', 404)
 
-  const body = await request.json()
-  const { password } = body
+  const body = await request.json().catch(() => ({}))
+  let password = (body as { password?: string }).password
 
-  if (!password) return err('缺少必填字段：password')
+  if (!password) {
+    password = generatePassword()
+  }
   if (password.length < 8) return err('密码长度不能少于 8 位')
 
   const passwordHash = await hashPassword(password)
@@ -29,5 +38,5 @@ export const POST = safeHandler(async function POST(
     data: { passwordHash },
   })
 
-  return ok()
+  return ok({ password })
 })

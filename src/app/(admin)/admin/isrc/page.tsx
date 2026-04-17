@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/admin/page-header'
 import { StatCard } from '@/components/admin/stat-card'
 import { DataTable, Column } from '@/components/admin/data-table'
 import { useApi, apiCall } from '@/lib/use-api'
+import { downloadCSV, today } from '@/lib/export'
 import { pageWrap, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'
 
 // ── Types ───────────────────────────────────────────────────────
@@ -223,15 +224,48 @@ export default function AdminIsrcPage() {
             <div className="flex items-center gap-2">
               <button
                 className={btnGhost}
-                onClick={() =>
-                  showToast(`已批量提交 ${pendingSongs.length} 首歌曲的 ISRC 申报`)
-                }
+                onClick={async () => {
+                  if (pendingSongs.length === 0) { showToast('没有待申报歌曲'); return }
+                  const input = window.prompt(
+                    `将为 ${pendingSongs.length} 首歌批量录入 ISRC。\n每行格式：歌曲ID,ISRC（如 12,CNA0124000001），空行跳过：`,
+                    pendingSongs.map((s) => `${s.id},`).join('\n'),
+                  )
+                  if (!input) return
+                  const lines = input.split('\n').map((l) => l.trim()).filter(Boolean)
+                  let ok = 0, fail = 0
+                  for (const line of lines) {
+                    const [idStr, rawCode] = line.split(',').map((s) => s.trim())
+                    const id = parseInt(idStr, 10)
+                    const cleaned = (rawCode ?? '').replace(/-/g, '').trim().toUpperCase()
+                    if (isNaN(id) || !/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/.test(cleaned)) {
+                      fail++
+                      continue
+                    }
+                    const res = await apiCall(`/api/admin/songs/${id}/isrc`, 'POST', { isrc: cleaned })
+                    if (res.ok) ok++; else fail++
+                  }
+                  showToast(`✅ 批量录入完成：成功 ${ok} · 失败 ${fail}`)
+                  refetch()
+                }}
               >
-                批量提交申报
+                批量录入 ISRC
               </button>
               <button
                 className={btnPrimary}
-                onClick={() => showToast('已导出申报清单.xlsx')}
+                onClick={() => {
+                  if (pendingSongs.length === 0) { showToast('没有待申报歌曲'); return }
+                  const rows = pendingSongs.map((s) => ({
+                    歌曲ID: s.id,
+                    歌曲名: s.title,
+                    平台编号: s.copyrightCode,
+                    表演者: s.creatorName ?? '',
+                    流派: s.genre,
+                    状态: s.status,
+                    'ISRC编码（待申报后填写）': '',
+                  }))
+                  downloadCSV(rows, `ISRC申报清单_${today()}.csv`)
+                  showToast(`✅ 已导出 ${rows.length} 首歌曲的申报清单`)
+                }}
               >
                 📥 导出申报清单
               </button>

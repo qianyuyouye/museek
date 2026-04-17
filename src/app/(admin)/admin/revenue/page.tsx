@@ -7,6 +7,7 @@ import { DataTable, Column } from '@/components/admin/data-table'
 import { AdminTab } from '@/components/admin/admin-tab'
 import { AdminModal } from '@/components/admin/admin-modal'
 import { useApi, apiCall } from '@/lib/use-api'
+import { downloadCSV, today } from '@/lib/export'
 import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
 
 // ── Types ───────────────────────────────────────────────────────
@@ -532,7 +533,22 @@ function MappingTab({
           </button>
         ))}
         <div style={{ flex: 1 }} />
-        <button className={`${btnGhost} ${btnSmall}`} onClick={() => showToast('已导出映射关系表')}>📥 导出</button>
+        <button
+          className={`${btnGhost} ${btnSmall}`}
+          onClick={() => {
+            if (filteredData.length === 0) { showToast('当前筛选无记录'); return }
+            const rows = filteredData.map((m) => ({
+              歌曲ID: m.qishuiId,
+              歌曲名: m.songName,
+              绑定创作者: m.creatorName ?? '',
+              匹配来源: m.source === 'auto' ? '自动' : '人工',
+              状态: m.status,
+              确认时间: m.confirmedAt ?? '',
+            }))
+            downloadCSV(rows, `映射关系_${today()}.csv`)
+            showToast(`✅ 已导出 ${rows.length} 条映射记录`)
+          }}
+        >📥 导出</button>
       </div>
 
       {/* Table */}

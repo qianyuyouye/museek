@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useRef, useEffect } from 'react'
+import JSZip from 'jszip'
 import { PageHeader } from '@/components/admin/page-header'
 import { useApi } from '@/lib/use-api'
 import { SONG_STATUS_MAP } from '@/lib/constants'
@@ -20,6 +21,8 @@ interface SongItem {
   status: string
   source: string
   creatorName?: string
+  audioUrl?: string | null
+  coverUrl?: string | null
 }
 
 // ── Button / style helpers ──────────────────────────────────────
@@ -51,15 +54,6 @@ function downloadCSV(data: Record<string, unknown>[], filename: string) {
   URL.revokeObjectURL(url)
 }
 
-function downloadJSON(data: unknown, filename: string) {
-  const json = JSON.stringify(data, null, 2)
-  const blob = new Blob([json], { type: 'application/json;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url; a.download = filename; a.click()
-  URL.revokeObjectURL(url)
-}
-
 // ── Main component ──────────────────────────────────────────────
 export default function BatchDownloadPage() {
   // Filters
@@ -76,7 +70,75 @@ export default function BatchDownloadPage() {
   const [toast, setToast] = useState('')
   function showToast(msg: string) {
     setToast(msg)
-    setTimeout(() => setToast(''), 3000)
+    setTimeout(() => setToast(''), 4000)
+  }
+
+  // ZIP packing state
+  const [zipping, setZipping] = useState(false)
+  const [zipProgress, setZipProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 })
+
+  async function packAndDownload(selected: SongItem[]) {
+    setZipping(true)
+    setZipProgress({ current: 0, total: selected.length })
+    const zip = new JSZip()
+    const safe = (s: string) => s.replace(/[\\/:*?"<>|]/g, '_').trim()
+    const errors: string[] = []
+
+    // 元数据 JSON 一并打包
+    zip.file('metadata.json', JSON.stringify(
+      selected.map((s) => ({
+        id: s.id, title: s.title, creator: s.creatorName ?? `用户${s.userId}`,
+        genre: s.genre, bpm: s.bpm, aiTool: s.aiTool, score: s.score,
+        copyrightCode: s.copyrightCode, isrc: s.isrc, status: s.status,
+      })),
+      null, 2,
+    ))
+
+    for (let i = 0; i < selected.length; i++) {
+      const s = selected[i]
+      setZipProgress({ current: i + 1, total: selected.length })
+      if (!s.audioUrl) { errors.push(`${s.title}: 无音频地址`); continue }
+      try {
+        const res = await fetch(s.audioUrl)
+        if (!res.ok) { errors.push(`${s.title}: HTTP ${res.status}`); continue }
+        const blob = await res.blob()
+        const ext = (s.audioUrl.match(/\.(mp3|wav|flac|m4a|ogg)$/i)?.[1] ?? 'mp3').toLowerCase()
+        const filename = `${safe(s.copyrightCode || String(s.id))}_${safe(s.title)}.${ext}`
+        zip.file(filename, blob)
+        if (s.coverUrl) {
+          try {
+            const cr = await fetch(s.coverUrl)
+            if (cr.ok) {
+              const cblob = await cr.blob()
+              const cext = (s.coverUrl.match(/\.(jpg|jpeg|png|webp)$/i)?.[1] ?? 'jpg').toLowerCase()
+              zip.file(`covers/${safe(s.copyrightCode || String(s.id))}.${cext}`, cblob)
+            }
+          } catch { /* 封面失败不影响音频 */ }
+        }
+      } catch (e) {
+        errors.push(`${s.title}: ${e instanceof Error ? e.message : '下载失败'}`)
+      }
+    }
+
+    if (errors.length > 0) {
+      zip.file('errors.txt', errors.join('\n'))
+    }
+
+    try {
+      const blob = await zip.generateAsync({ type: 'blob' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `批量下载_${new Date().toISOString().slice(0, 10)}.zip`
+      a.click()
+      URL.revokeObjectURL(url)
+      showToast(`✅ 打包完成 · 成功 ${selected.length - errors.length} · 失败 ${errors.length}`)
+    } catch {
+      showToast('打包失败，文件可能过大')
+    } finally {
+      setZipping(false)
+      setZipProgress({ current: 0, total: 0 })
+    }
   }
 
   // API data
@@ -292,30 +354,17 @@ export default function BatchDownloadPage() {
 
           <button
             className={`${btnPrimary} ${btnSmall}`}
-            onClick={() => {
+            disabled={zipping}
+            onClick={async () => {
               if (selectedIds.size === 0) {
                 showToast('请先选择歌曲')
                 return
               }
               const selected = allSongs.filter((s) => selectedIds.has(s.id))
-              const metadata = selected.map((s) => ({
-                id: s.id,
-                title: s.title,
-                creator: s.creatorName ?? `用户${s.userId}`,
-                genre: s.genre,
-                bpm: s.bpm,
-                aiTool: s.aiTool,
-                score: s.score,
-                copyrightCode: s.copyrightCode,
-                isrc: s.isrc,
-                status: s.status,
-                source: s.source,
-              }))
-              downloadJSON(metadata, `批量下载_歌曲元数据_${new Date().toISOString().slice(0, 10)}.json`)
-              showToast(`已导出 ${selected.length} 首歌曲的元数据 JSON`)
+              await packAndDownload(selected)
             }}
           >
-            ⬇️ 批量下载{selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}
+            {zipping ? `📦 打包中 ${zipProgress.current}/${zipProgress.total}` : `📦 批量打包${selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}`}
           </button>
         </div>
       </div>
