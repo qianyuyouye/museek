@@ -1,13 +1,16 @@
 # ── Stage 1: 安装依赖 ──
 FROM node:20-alpine AS deps
-RUN apk add --no-cache openssl
+RUN sed -i 's#https\?://dl-cdn.alpinelinux.org#https://mirrors.aliyun.com#g' /etc/apk/repositories \
+    && apk add --no-cache openssl
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm config set registry https://registry.npmmirror.com \
+    && npm ci
 
 # ── Stage 2: 构建 ──
 FROM node:20-alpine AS builder
-RUN apk add --no-cache openssl
+RUN sed -i 's#https\?://dl-cdn.alpinelinux.org#https://mirrors.aliyun.com#g' /etc/apk/repositories \
+    && apk add --no-cache openssl
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -16,7 +19,8 @@ RUN npm run build
 
 # ── Stage 3: 运行 ──
 FROM node:20-alpine AS runner
-RUN apk add --no-cache openssl
+RUN sed -i 's#https\?://dl-cdn.alpinelinux.org#https://mirrors.aliyun.com#g' /etc/apk/repositories \
+    && apk add --no-cache openssl
 WORKDIR /app
 
 ENV NODE_ENV=production
