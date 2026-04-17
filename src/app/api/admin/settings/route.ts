@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
 
@@ -45,8 +46,8 @@ export const PUT = safeHandler(async function PUT(request: NextRequest) {
     settings.map(({ key, value }) =>
       prisma.systemSetting.upsert({
         where: { key },
-        update: { value: value as any },
-        create: { key, value: value as any },
+        update: { value: value as Prisma.InputJsonValue },
+        create: { key, value: value as Prisma.InputJsonValue },
       }),
     ),
   )
