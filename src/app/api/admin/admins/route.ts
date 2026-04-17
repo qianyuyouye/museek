@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, parsePagination, safeHandler} from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 import { hashPassword } from '@/lib/password'
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
@@ -83,5 +84,11 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     },
   })
 
+  await logAdminAction(request, {
+    action: 'create_admin',
+    targetType: 'admin_user',
+    targetId: admin.id,
+    detail: { account: admin.account, name: admin.name, roleId: admin.roleId },
+  })
   return ok(admin)
 })

@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler } from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 import { hashPassword } from '@/lib/password'
 
 function generatePassword(): string {
@@ -38,5 +39,11 @@ export const POST = safeHandler(async function POST(
     data: { passwordHash },
   })
 
+  await logAdminAction(request, {
+    action: 'reset_password',
+    targetType: 'user',
+    targetId: userId,
+    detail: { name: user.name, phone: user.phone },
+  })
   return ok({ password })
 })

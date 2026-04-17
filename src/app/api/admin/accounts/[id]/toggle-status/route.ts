@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 
 export const POST = safeHandler(async function POST(
   request: NextRequest,
@@ -22,5 +23,11 @@ export const POST = safeHandler(async function POST(
     data: { status: newStatus },
   })
 
+  await logAdminAction(request, {
+    action: newStatus === 'disabled' ? 'disable_user' : 'enable_user',
+    targetType: 'user',
+    targetId: userId,
+    detail: { name: user.name, phone: user.phone },
+  })
   return ok({ id: userId, status: newStatus })
 })

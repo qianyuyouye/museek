@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler } from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 import { backfillSettlements } from '@/lib/revenue-backfill'
 
 export const PUT = safeHandler(async function PUT(
@@ -33,6 +34,12 @@ export const PUT = safeHandler(async function PUT(
         },
       })
       const backfill = await backfillSettlements(prisma, mappingId)
+      await logAdminAction(request, {
+        action: 'confirm_mapping',
+        targetType: 'song_mapping',
+        targetId: mappingId,
+        detail: { qishuiSongId: existing.qishuiSongId, backfill },
+      })
       return ok({ ...updated, backfill })
     }
 
@@ -40,6 +47,12 @@ export const PUT = safeHandler(async function PUT(
       const updated = await prisma.songMapping.update({
         where: { id: mappingId },
         data: { status: 'irrelevant' },
+      })
+      await logAdminAction(request, {
+        action: 'reject_mapping',
+        targetType: 'song_mapping',
+        targetId: mappingId,
+        detail: { qishuiSongId: existing.qishuiSongId },
       })
       return ok(updated)
     }
@@ -59,6 +72,17 @@ export const PUT = safeHandler(async function PUT(
       if (updated.status === 'confirmed' && updated.creatorId) {
         backfill = await backfillSettlements(prisma, mappingId)
       }
+      await logAdminAction(request, {
+        action: 'bind_mapping',
+        targetType: 'song_mapping',
+        targetId: mappingId,
+        detail: {
+          qishuiSongId: existing.qishuiSongId,
+          creatorId,
+          platformSongId: platformSongId ?? null,
+          backfill: backfill ?? null,
+        },
+      })
       return ok(backfill ? { ...updated, backfill } : updated)
     }
 

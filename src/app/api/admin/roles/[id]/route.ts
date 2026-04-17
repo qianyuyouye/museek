@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -46,6 +47,12 @@ export const PUT = safeHandler(async function PUT(request: NextRequest, { params
     },
   })
 
+  await logAdminAction(request, {
+    action: 'update_role',
+    targetType: 'admin_role',
+    targetId: roleId,
+    detail: { name: role.name, changes: Object.keys(body).filter(k => body[k as keyof typeof body] !== undefined) },
+  })
   return ok(role)
 })
 
@@ -68,5 +75,11 @@ export const DELETE = safeHandler(async function DELETE(request: NextRequest, { 
 
   await prisma.adminRole.delete({ where: { id: roleId } })
 
+  await logAdminAction(request, {
+    action: 'delete_role',
+    targetType: 'admin_role',
+    targetId: roleId,
+    detail: { name: role.name },
+  })
   return ok()
 })

@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 import { decryptIdCard } from '@/lib/encrypt'
 
 /** 手机号脱敏：中间4位替换为* */
@@ -97,6 +98,12 @@ export const PUT = safeHandler(async function PUT(request: NextRequest, context:
     data,
   })
 
+  await logAdminAction(request, {
+    action: 'update_student',
+    targetType: 'user',
+    targetId: userId,
+    detail: { name: existing.name, phone: existing.phone, changes: Object.keys(data) },
+  })
   return ok({
     id: updated.id,
     name: updated.name,

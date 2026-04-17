@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -82,6 +83,15 @@ export const PUT = safeHandler(async function PUT(request: NextRequest, { params
       data,
     })
 
+    const isRegenCode = inviteCode !== undefined && inviteCode !== existing.inviteCode
+    await logAdminAction(request, {
+      action: isRegenCode ? 'regen_invite_code' : 'update_group',
+      targetType: 'group',
+      targetId: group.id,
+      detail: isRegenCode
+        ? { name: group.name, oldCode: existing.inviteCode, newCode: group.inviteCode }
+        : { name: group.name, changes: Object.keys(data) },
+    })
     return ok(group)
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
@@ -108,5 +118,11 @@ export const DELETE = safeHandler(async function DELETE(request: NextRequest, { 
     prisma.group.delete({ where: { id: groupId } }),
   ])
 
+  await logAdminAction(request, {
+    action: 'delete_group',
+    targetType: 'group',
+    targetId: groupId,
+    detail: { name: existing.name },
+  })
   return ok()
 })

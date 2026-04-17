@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 
 export const GET = safeHandler(async function GET(
   request: NextRequest,
@@ -119,5 +120,11 @@ export const POST = safeHandler(async function POST(
     data,
   })
 
+  await logAdminAction(request, {
+    action: `distribution_${action}`,
+    targetType: 'distribution',
+    targetId: distId,
+    detail: { platform: distribution.platform, from: transition.from, to: transition.to },
+  })
   return ok(updated)
 })

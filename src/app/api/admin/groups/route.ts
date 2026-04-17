@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, parsePagination, safeHandler} from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 
 function generateInviteCode(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -75,6 +76,12 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
       },
     })
 
+    await logAdminAction(request, {
+      action: 'create_group',
+      targetType: 'group',
+      targetId: group.id,
+      detail: { name: group.name, inviteCode: group.inviteCode },
+    })
     return ok(group)
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {

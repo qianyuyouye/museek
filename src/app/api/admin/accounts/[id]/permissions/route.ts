@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 
 export const PUT = safeHandler(async function PUT(
   request: NextRequest,
@@ -49,6 +50,12 @@ export const PUT = safeHandler(async function PUT(
     })
   })
 
+  await logAdminAction(request, {
+    action: 'update_user_permissions',
+    targetType: 'user',
+    targetId: userId,
+    detail: { name: user.name, phone: user.phone, type: result!.type, adminLevel: result!.adminLevel, groupIds: groupIds ?? null },
+  })
   return ok({
     id: result!.id,
     type: result!.type,

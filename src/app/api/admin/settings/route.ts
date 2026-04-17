@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 import { DEFAULT_REVENUE_RULES } from '@/lib/commission'
 
 const PRESET_KEYS: Record<string, unknown> = {
@@ -53,5 +54,10 @@ export const PUT = safeHandler(async function PUT(request: NextRequest) {
     ),
   )
 
+  await logAdminAction(request, {
+    action: 'update_system_setting',
+    targetType: 'system_setting',
+    detail: { keys: settings.map(s => s.key) },
+  })
   return ok(null)
 })

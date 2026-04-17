@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, parsePagination, safeHandler} from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 import { MappingStatus } from '@prisma/client'
 
 const VALID_STATUSES: Set<string> = new Set(Object.values(MappingStatus))
@@ -62,5 +63,11 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     },
   })
 
+  await logAdminAction(request, {
+    action: 'upsert_song_mapping',
+    targetType: 'song_mapping',
+    targetId: mapping.id,
+    detail: { qishuiSongId, platformSongId: platformSongId ?? null, creatorId: creatorId ?? null, matchType },
+  })
   return ok(mapping)
 })

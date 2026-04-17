@@ -151,7 +151,7 @@
 | .15.5 平台分发结算 | 同上 | 🟡 | Settlement `plays` 字段前端期望但无数据源 |
 | .16 内容管理 CMS | `admin/content` | ✅ | |
 | .17 系统设置 5 子模块 | `admin/settings` | ✅ | 本次 B2/B3 全量可编辑 |
-| .18 操作日志 | `admin/logs` | ✅ | 但**大多数操作未调用 `logAction` 写日志** |
+| .18 操作日志 | `admin/logs` | ✅ | P2-2 已补：31 个 admin 写路由全部追加 logAdminAction |
 
 ---
 
@@ -219,7 +219,7 @@
 | 文件上传 token | ✅ | `upload/token` + `upload/local/[...path]` 真实可用 |
 | OSS 生产上传 | 🔴 | 代码有 `OSS_BUCKET` 分支但**未使用 SDK signatureUrl()**，生产 403 |
 | AI 分析 | 🟡 | `AI_API_KEY` 未配置走 fallback |
-| `logAction` 操作日志 | 🟠 | 工具已实现但**大多数写/改/删操作未调用** |
+| `logAction` 操作日志 | ✅ | P2-2：扩展 `logAdminAction(request, opts)` 便捷包装，覆盖 31 个 admin 写路由 |
 
 ---
 
@@ -257,7 +257,7 @@
 ### 🟡 P2 - 遗漏或硬编码
 13. **批量下载三条件校验报告**：下载按钮对选中集合校验，报告文件标红缺失项
 14. **OSS 生产签名 URL**：用阿里云 SDK `ali-oss`
-15. **operation_logs 写入覆盖**：删除/禁用/结算/发行/角色变更 均调 `logAction`
+15. ✅ **operation_logs 写入覆盖**（P2-2）：删除/禁用/结算/发行/角色变更 均调 `logAdminAction`
 16. ✅ **学习进度表 LearningRecord**（P2-1）：schema + /api/learning CRUD + achievements + creator 两页接入
 17. **CMS sections/duration 字段**：schema 扩展或 content 表加 JSON 字段
 18. **创作者手机号改（验证码流程）**

@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, safeHandler} from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 
 export const POST = safeHandler(async function POST(request: NextRequest) {
   const auth = requireAdmin(request)
@@ -62,5 +63,10 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     return { autoConfirmed, exceptions: expiredResult.count }
   })
 
+  await logAdminAction(request, {
+    action: 'sync_distributions',
+    targetType: 'distribution',
+    detail: { autoConfirmed: result.autoConfirmed, exceptions: result.exceptions },
+  })
   return ok(result)
 })

@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler } from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -69,5 +70,11 @@ export const PUT = safeHandler(async function PUT(request: NextRequest, { params
     },
   })
 
+  await logAdminAction(request, {
+    action: 'update_admin',
+    targetType: 'admin_user',
+    targetId: adminId,
+    detail: { account: existing.account, changes: Object.keys(body).filter(k => body[k as keyof typeof body] !== undefined) },
+  })
   return ok(admin)
 })

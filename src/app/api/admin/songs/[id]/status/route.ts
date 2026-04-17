@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 import { SongStatus } from '@prisma/client'
 
 /** 每个 action 允许的来源状态 → 目标状态 */
@@ -70,5 +71,16 @@ export const POST = safeHandler(async function POST(
     data: { status: transition.to },
   })
 
+  await logAdminAction(request, {
+    action: `song_${action}`,
+    targetType: 'platform_song',
+    targetId: songId,
+    detail: {
+      title: song.title,
+      copyrightCode: song.copyrightCode,
+      from: song.status,
+      to: transition.to,
+    },
+  })
   return ok(updated)
 })

@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -33,6 +34,12 @@ export const POST = safeHandler(async function POST(request: NextRequest, contex
     data: { realNameStatus },
   })
 
+  await logAdminAction(request, {
+    action: action === 'approve' ? 'approve_realname' : 'reject_realname',
+    targetType: 'user',
+    targetId: userId,
+    detail: { name: user.name, phone: user.phone, realName: user.realName },
+  })
   return ok({
     id: updated.id,
     realNameStatus: updated.realNameStatus,

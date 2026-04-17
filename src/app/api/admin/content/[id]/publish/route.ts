@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 
 export const POST = safeHandler(async function POST(
   request: NextRequest,
@@ -30,5 +31,11 @@ export const POST = safeHandler(async function POST(
     data: { status },
   })
 
+  await logAdminAction(request, {
+    action: action === 'publish' ? 'publish_content' : 'unpublish_content',
+    targetType: 'cms_content',
+    targetId: contentId,
+    detail: { title: existing.title },
+  })
   return ok(updated)
 })

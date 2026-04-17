@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, parsePagination, safeHandler} from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 import { SettleStatus } from '@prisma/client'
 
 const VALID_STATUSES: Set<string> = new Set(Object.values(SettleStatus))
@@ -112,5 +113,10 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     data,
   })
 
+  await logAdminAction(request, {
+    action: `settlement_${action}`,
+    targetType: 'settlement',
+    detail: { ids, from, to, updated: result.count },
+  })
   return ok({ updated: result.count })
 })

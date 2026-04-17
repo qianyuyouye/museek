@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 
 export const GET = safeHandler(async function GET(
   request: NextRequest,
@@ -76,5 +77,11 @@ export const PUT = safeHandler(async function PUT(
     orderBy: { displayOrder: 'asc' },
   })
 
+  await logAdminAction(request, {
+    action: 'update_form_fields',
+    targetType: 'assignment',
+    targetId: assignmentId,
+    detail: { groupId: assignment.groupId, fieldsCount: updated.length },
+  })
   return ok(updated)
 })

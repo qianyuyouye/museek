@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { Prisma, RevenuePlatform } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, parsePagination, safeHandler } from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 import { parseCSV } from '@/lib/csv'
 import { loadRevenueRules, resolveCommissionRatio } from '@/lib/commission'
 
@@ -110,6 +111,12 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
         status: 'completed',
         importedBy: auth.userId,
       },
+    })
+    await logAdminAction(request, {
+      action: 'create_revenue_import',
+      targetType: 'revenue_import',
+      targetId: record.id,
+      detail: { fileName, platform, period: period ?? null, mode: 'json' },
     })
     return ok({ ...record, totalRevenue: parseFloat(record.totalRevenue.toString()) })
   }
@@ -310,6 +317,22 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     }
   }
 
+  await logAdminAction(request, {
+    action: 'import_revenue_csv',
+    targetType: 'revenue_import',
+    targetId: final.id,
+    detail: {
+      fileName: final.fileName,
+      platform: final.platform,
+      period: final.period,
+      totalRows: final.totalRows,
+      matchedRows: final.matchedRows,
+      suspectRows: final.suspectRows,
+      unmatchedRows: final.unmatchedRows,
+      duplicateRows: final.duplicateRows,
+      totalRevenue: parseFloat(final.totalRevenue.toString()),
+    },
+  })
   return ok({
     id: final.id,
     fileName: final.fileName,

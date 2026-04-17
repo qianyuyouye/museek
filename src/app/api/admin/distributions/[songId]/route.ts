@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 import { DistributionStatus } from '@prisma/client'
 
 const PLATFORMS = new Set(['QQ音乐', '网易云音乐', 'Spotify', 'Apple Music', '酷狗音乐'])
@@ -65,5 +66,11 @@ export const POST = safeHandler(async function POST(
     },
   })
 
+  await logAdminAction(request, {
+    action: 'upsert_distribution',
+    targetType: 'distribution',
+    targetId: distribution.id,
+    detail: { songId: id, songTitle: song.title, platform, status },
+  })
   return ok(distribution)
 })

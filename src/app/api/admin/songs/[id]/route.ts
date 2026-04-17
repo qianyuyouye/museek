@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 
 export const GET = safeHandler(async function GET(
   request: NextRequest,
@@ -65,5 +66,11 @@ export const PUT = safeHandler(async function PUT(
     },
   })
 
+  await logAdminAction(request, {
+    action: 'update_song',
+    targetType: 'platform_song',
+    targetId: songId,
+    detail: { title: updated.title, copyrightCode: updated.copyrightCode, changes: Object.keys(body).filter(k => body[k as keyof typeof body] !== undefined) },
+  })
   return ok(updated)
 })

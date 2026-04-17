@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, parsePagination, safeHandler} from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -70,5 +71,11 @@ export const DELETE = safeHandler(async function DELETE(request: NextRequest, { 
     where: { userId_groupId: { userId, groupId } },
   })
 
+  await logAdminAction(request, {
+    action: 'remove_group_member',
+    targetType: 'user_group',
+    targetId: `${userId}-${groupId}`,
+    detail: { userId, groupId },
+  })
   return ok()
 })

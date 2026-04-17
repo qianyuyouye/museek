@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 
 export const POST = safeHandler(async function POST(
   request: NextRequest,
@@ -26,5 +27,11 @@ export const POST = safeHandler(async function POST(
     data: { isrc: isrc.trim() },
   })
 
+  await logAdminAction(request, {
+    action: 'assign_isrc',
+    targetType: 'platform_song',
+    targetId: songId,
+    detail: { title: song.title, copyrightCode: song.copyrightCode, isrc: isrc.trim(), prevIsrc: song.isrc || null },
+  })
   return ok(updated)
 })

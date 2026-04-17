@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 
 export const GET = safeHandler(async function GET(
   request: NextRequest,
@@ -62,6 +63,12 @@ export const PUT = safeHandler(async function PUT(
     data,
   })
 
+  await logAdminAction(request, {
+    action: 'update_assignment',
+    targetType: 'assignment',
+    targetId: assignmentId,
+    detail: { title: existing.title, changes: Object.keys(data) },
+  })
   return ok(assignment)
 })
 
@@ -85,5 +92,11 @@ export const DELETE = safeHandler(async function DELETE(
     where: { id: assignmentId },
   })
 
+  await logAdminAction(request, {
+    action: 'delete_assignment',
+    targetType: 'assignment',
+    targetId: assignmentId,
+    detail: { title: existing.title },
+  })
   return ok()
 })

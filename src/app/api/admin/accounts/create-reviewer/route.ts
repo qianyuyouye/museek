@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 import { hashPassword } from '@/lib/password'
 
 export const POST = safeHandler(async function POST(request: NextRequest) {
@@ -43,6 +44,12 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     },
   })
 
+  await logAdminAction(request, {
+    action: 'create_reviewer',
+    targetType: 'user',
+    targetId: user.id,
+    detail: { name: user.name, phone: user.phone, groupId: groupId ?? null },
+  })
   return ok({
     id: user.id,
     name: user.name,

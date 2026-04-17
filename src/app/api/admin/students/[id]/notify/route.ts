@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler } from '@/lib/api-utils'
+import { logAdminAction } from '@/lib/log-action'
 
 const PRESET_TITLES: Record<string, string> = {
   realname_resubmit: '您的实名认证已被驳回，请登录后重新提交',
@@ -31,5 +32,11 @@ export const POST = safeHandler(async function POST(
     data: { userId, type: 'system', title },
   })
 
+  await logAdminAction(request, {
+    action: 'notify_student',
+    targetType: 'user',
+    targetId: userId,
+    detail: { name: user.name, phone: user.phone, preset: preset ?? null, title },
+  })
   return ok({ id: notification.id, title: notification.title })
 })
