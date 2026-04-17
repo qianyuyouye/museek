@@ -34,6 +34,11 @@ const TAB_LABELS: { key: TabKey; label: string }[] = [
 
 // ── Helpers ──────────────────────────────────────────────────────
 
+interface SongDist {
+  platform: string
+  status: string
+}
+
 interface SongItem {
   id: number
   userId: number
@@ -47,6 +52,23 @@ interface SongItem {
   creatorName?: string
   agencyContract?: boolean
   realNameStatus?: string
+  distributions?: SongDist[]
+}
+
+const CHANNEL_META: { key: string; icon: string }[] = [
+  { key: 'QQ音乐', icon: '🎵' },
+  { key: '网易云音乐', icon: '☁️' },
+  { key: 'Apple Music', icon: '🍎' },
+  { key: 'Spotify', icon: '🟢' },
+  { key: '酷狗音乐', icon: '🎶' },
+]
+
+const DIST_STATUS_LABEL: Record<string, { label: string; color: string }> = {
+  live: { label: '已上架', color: 'var(--green2)' },
+  submitted: { label: '审核中', color: 'var(--orange)' },
+  pending: { label: '待提交', color: 'var(--text3)' },
+  failed: { label: '异常', color: 'var(--red)' },
+  none: { label: '未分发', color: 'var(--text3)' },
 }
 
 function sourceLabel(source: string): string {
@@ -382,42 +404,35 @@ export default function AdminSongsPage() {
         title={`发行渠道 · ${channelModal?.title ?? ''}`}
         width={480}
       >
-        {channelModal && (
-          <div className="flex flex-col gap-3">
-            <div className="grid grid-cols-2 gap-2.5">
-              {[
-                { name: 'QQ音乐', icon: '🎵', status: '已上架' },
-                { name: '网易云音乐', icon: '☁️', status: '已上架' },
-                { name: 'Apple Music', icon: '🍎', status: '审核中' },
-                { name: 'Spotify', icon: '🟢', status: '已上架' },
-              ].map((ch) => (
-                <div
-                  key={ch.name}
-                  className="rounded-lg flex justify-between items-center text-[13px]"
-                  style={{
-                    padding: '12px 14px',
-                    background: '#f0f4fb',
-                  }}
-                >
-                  <span>
-                    {ch.icon} {ch.name}
-                  </span>
-                  <span
-                    className="text-[11px] font-medium"
-                    style={{
-                      color: ch.status === '已上架' ? 'var(--green2)' : 'var(--orange)',
-                    }}
-                  >
-                    {ch.status}
-                  </span>
-                </div>
-              ))}
+        {channelModal && (() => {
+          const distMap: Record<string, string> = {}
+          ;(channelModal.distributions ?? []).forEach((d) => { distMap[d.platform] = d.status })
+          return (
+            <div className="flex flex-col gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
+                {CHANNEL_META.map((ch) => {
+                  const st = distMap[ch.key] ?? 'none'
+                  const meta = DIST_STATUS_LABEL[st] ?? DIST_STATUS_LABEL.none
+                  return (
+                    <div
+                      key={ch.key}
+                      className="rounded-lg flex justify-between items-center text-[13px]"
+                      style={{ padding: '12px 14px', background: '#f0f4fb' }}
+                    >
+                      <span>{ch.icon} {ch.key}</span>
+                      <span className="text-[11px] font-medium" style={{ color: meta.color }}>
+                        {meta.label}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="text-xs text-[var(--text3)] text-center pt-2">
+                ISRC：{channelModal.isrc ?? '未分配'} · 版权编号：{channelModal.copyrightCode}
+              </div>
             </div>
-            <div className="text-xs text-[var(--text3)] text-center pt-2">
-              ISRC：{channelModal.isrc} · 版权编号：{channelModal.copyrightCode}
-            </div>
-          </div>
-        )}
+          )
+        })()}
       </AdminModal>
     </div>
   )

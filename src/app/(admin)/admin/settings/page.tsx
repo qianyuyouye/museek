@@ -188,7 +188,17 @@ function ScoresTab({ onSave, initialData }: { showToast: (msg: string) => void; 
       </div>
 
       <div className="mt-4">
-        <button className={btnPrimary} onClick={() => onSave({ weights, threshold: { minScore: thresholdMinScore, recommendLevel: thresholdRecommendLevel } })}>
+        <button
+          className={btnPrimary}
+          onClick={() => {
+            const total = weights.reduce((sum, w) => sum + w.value, 0)
+            if (total !== 100) {
+              alert(`三个维度权重合计为 ${total}%，必须正好等于 100% 才能保存`)
+              return
+            }
+            onSave({ weights, threshold: { minScore: thresholdMinScore, recommendLevel: thresholdRecommendLevel } })
+          }}
+        >
           保存配置
         </button>
       </div>

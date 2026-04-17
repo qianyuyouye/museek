@@ -196,7 +196,22 @@ export default function AdminGroupsPage() {
             <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
               <button
                 className={btnGhost}
-                onClick={() => showToast('组信息已更新')}
+                onClick={async () => {
+                  const newName = window.prompt('修改组名', g.name)
+                  if (!newName || newName.trim() === g.name) return
+                  const newDesc = window.prompt('修改组描述（留空保持不变）', g.description ?? '') ?? undefined
+                  const res = await apiCall(`/api/admin/groups/${g.id}`, 'PUT', {
+                    name: newName.trim(),
+                    ...(newDesc !== undefined ? { description: newDesc } : {}),
+                  })
+                  if (res.ok) {
+                    showToast('✅ 组信息已更新')
+                    refetchDetail()
+                    refetch()
+                  } else {
+                    showToast(res.message || '更新失败')
+                  }
+                }}
               >
                 ✏️ 编辑
               </button>
@@ -260,15 +275,19 @@ export default function AdminGroupsPage() {
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button
                 className={`${btnGhost} ${btnSmall}`}
-                onClick={() => showToast('✅ 已重新生成邀请码')}
+                onClick={async () => {
+                  if (!confirm('重新生成后原邀请码/链接将立即失效，确定继续？')) return
+                  const newCode = Math.random().toString(36).substring(2, 10).toUpperCase()
+                  const res = await apiCall(`/api/admin/groups/${g.id}`, 'PUT', { inviteCode: newCode })
+                  if (res.ok) {
+                    showToast('✅ 已重新生成邀请码和链接')
+                    refetchDetail()
+                  } else {
+                    showToast(res.message || '生成失败')
+                  }
+                }}
               >
                 🔄 重新生成邀请码
-              </button>
-              <button
-                className={`${btnGhost} ${btnSmall}`}
-                onClick={() => showToast('✅ 已重新生成链接')}
-              >
-                🔄 重新生成链接
               </button>
             </div>
           </div>
@@ -280,7 +299,10 @@ export default function AdminGroupsPage() {
             <h3 className="text-base font-semibold">👥 组成员（{members.length}人）</h3>
             <button
               className={btnGhost}
-              onClick={() => showToast('已复制邀请链接，可发送给新成员')}
+              onClick={() => {
+                navigator.clipboard?.writeText(g.inviteLink)
+                showToast('✅ 邀请链接已复制，可转发给新成员')
+              }}
             >
               + 邀请成员
             </button>
@@ -524,6 +546,34 @@ function InviteCodePanel({
   onClose: () => void
   showToast: (msg: string) => void
 }) {
+  const [code, setCode] = useState(group.inviteCode)
+  const [status, setStatus] = useState<'active' | 'paused'>(group.status)
+  const link = `https://aimusic.com/join/${code}`
+
+  async function regenerate() {
+    if (!confirm('重新生成后原邀请码将立即失效，确定继续？')) return
+    const newCode = Math.random().toString(36).substring(2, 10).toUpperCase()
+    const res = await apiCall(`/api/admin/groups/${group.id}`, 'PUT', { inviteCode: newCode })
+    if (res.ok) {
+      setCode(newCode)
+      showToast('✅ 已重新生成邀请码')
+    } else {
+      showToast(res.message || '生成失败')
+    }
+  }
+
+  async function toggleStatus() {
+    const newStatus: 'active' | 'paused' = status === 'active' ? 'paused' : 'active'
+    const res = await apiCall(`/api/admin/groups/${group.id}`, 'PUT', { status: newStatus })
+    if (res.ok) {
+      setStatus(newStatus)
+      showToast(newStatus === 'paused' ? '已停用邀请码' : '已启用邀请码')
+      onClose()
+    } else {
+      showToast(res.message || '操作失败')
+    }
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Large code display */}
@@ -545,7 +595,7 @@ function InviteCodePanel({
             color: 'var(--accent2)',
           }}
         >
-          {group.inviteCode}
+          {code}
         </div>
       </div>
 
@@ -553,11 +603,11 @@ function InviteCodePanel({
       <div>
         <label className={labelCls}>注册链接</label>
         <div style={{ display: 'flex', gap: 8 }}>
-          <input className={inputCls} readOnly value={group.inviteLink} />
+          <input className={inputCls} readOnly value={link} />
           <button
             className={btnGhost}
             onClick={() => {
-              navigator.clipboard?.writeText(group.inviteLink)
+              navigator.clipboard?.writeText(link)
               showToast('✅ 已复制')
             }}
           >
@@ -571,19 +621,16 @@ function InviteCodePanel({
         <button
           className={btnGhost}
           style={{ flex: 1, justifyContent: 'center', display: 'flex' }}
-          onClick={() => showToast('✅ 已重新生成邀请码')}
+          onClick={regenerate}
         >
           🔄 重新生成
         </button>
         <button
-          className={group.status === 'active' ? btnDanger : btnSuccess}
+          className={status === 'active' ? btnDanger : btnSuccess}
           style={{ flex: 1, justifyContent: 'center', display: 'flex' }}
-          onClick={() => {
-            onClose()
-            showToast(group.status === 'active' ? '已停用邀请码' : '已启用邀请码')
-          }}
+          onClick={toggleStatus}
         >
-          {group.status === 'active' ? '⏸️ 停用邀请码' : '▶️ 启用邀请码'}
+          {status === 'active' ? '⏸️ 停用邀请码' : '▶️ 启用邀请码'}
         </button>
       </div>
     </div>

@@ -29,7 +29,10 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
   const [songs, total, statusCountsRaw] = await Promise.all([
     prisma.platformSong.findMany({
       where,
-      include: { user: { select: { name: true, agencyContract: true, realNameStatus: true } } },
+      include: {
+        user: { select: { name: true, agencyContract: true, realNameStatus: true } },
+        distributions: { select: { platform: true, status: true } },
+      },
       orderBy: { createdAt: 'desc' },
       skip,
       take: pageSize,
@@ -65,6 +68,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     isrc: s.isrc,
     status: s.status,
     likeCount: s.likeCount,
+    distributions: s.distributions,
     createdAt: s.createdAt,
   }))
 

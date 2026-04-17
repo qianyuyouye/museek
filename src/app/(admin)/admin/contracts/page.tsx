@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { PageHeader } from '@/components/admin/page-header'
 import { DataTable, Column } from '@/components/admin/data-table'
+import { AdminModal } from '@/components/admin/admin-modal'
 import { useApi } from '@/lib/use-api'
 import { pageWrap, btnPrimary } from '@/lib/ui-tokens'
 
@@ -44,6 +45,7 @@ export default function AdminContractsPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('agency')
   const [page, setPage] = useState(1)
   const [toast, setToast] = useState('')
+  const [detail, setDetail] = useState<Student | null>(null)
 
   const { data: studentsData, loading } = useApi<{ list: Student[]; total: number }>(
     '/api/admin/students?pageSize=500'
@@ -111,7 +113,7 @@ export default function AdminContractsPage() {
           className="bg-transparent border-0 p-0 cursor-pointer text-sm text-[var(--accent)]"
           onClick={(e) => {
             e.stopPropagation()
-            showToast(`正在查看 ${(row as Student).name} 的协议详情`)
+            setDetail(row as Student)
           }}
         >
           查看详情
@@ -266,6 +268,41 @@ export default function AdminContractsPage() {
         />
         <div className="px-4 pb-4">{renderPagination()}</div>
       </div>
+
+      {/* 协议详情 Modal */}
+      <AdminModal
+        open={!!detail}
+        onClose={() => setDetail(null)}
+        title={detail ? `协议详情 · ${detail.name}` : ''}
+        width={480}
+      >
+        {detail && (
+          <div className="flex flex-col gap-3 text-sm">
+            {[
+              { k: '学生姓名', v: detail.name },
+              { k: '手机号', v: detail.phone },
+              { k: '签署时间', v: detail.agencySignedAt ?? '未签署' },
+              { k: '协议类型', v: TABS.find((t) => t.key === activeTab)?.label ?? '—' },
+              { k: '协议版本', v: 'v1.0' },
+              { k: '分成比例', v: '学生 70% · 平台 30%' },
+              { k: '作品数', v: String(detail.songCount ?? 0) },
+              { k: '协议状态', v: detail.agencyContract ? '✅ 已签署' : '未签署' },
+            ].map((row) => (
+              <div
+                key={row.k}
+                className="flex justify-between items-center px-3 py-2 rounded-md"
+                style={{ background: '#f0f4fb' }}
+              >
+                <span className="text-[var(--text3)]">{row.k}</span>
+                <span className="font-medium">{row.v}</span>
+              </div>
+            ))}
+            <div className="text-xs text-[var(--text3)] mt-2 leading-relaxed">
+              💡 完整协议原文和盖章版本请联系法务部获取存档 PDF。
+            </div>
+          </div>
+        )}
+      </AdminModal>
     </div>
   )
 }
