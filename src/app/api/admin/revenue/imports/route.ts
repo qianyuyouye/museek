@@ -75,12 +75,12 @@ function parseQishuiCsv(text: string): { rows: ParsedRow[]; errors: string[] } {
     }
     const qishuiSongId = idMatch[1]
 
-    const dateMatch = dateRange.match(/(\d{4})[\/-](\d{1,2})/)
-    if (!dateMatch) {
+    if (!dateRange || !/\d{4}[\/-]\d{1,2}/.test(dateRange)) {
       errors.push(`第 ${i + 1} 行: 日期格式无法识别 "${dateRange}"`)
       continue
     }
-    const period = `${dateMatch[1]}-${dateMatch[2].padStart(2, '0')}`
+    // 保留 CSV 原始起止日期（如 "2026/02/01 - 2026/02/28"），避免丢失天级粒度
+    const period = dateRange
 
     const d = parseFloat(douyin) || 0
     const q = parseFloat(qishui) || 0
