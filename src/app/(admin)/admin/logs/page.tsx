@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/admin/page-header'
 import { SearchBar } from '@/components/admin/search-bar'
 import { DataTable, Column } from '@/components/admin/data-table'
 import { useApi } from '@/lib/use-api'
+import { pageWrap, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'
 
 interface LogItem {
   id: number
@@ -16,21 +17,13 @@ interface LogItem {
   ip: string
 }
 
-const btnPrimary =
-  'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0'
-const btnGhost =
-  'bg-transparent text-[var(--text2)] border border-[var(--border)] px-4 py-2 rounded-lg text-sm font-medium cursor-pointer'
-
 const selectCls =
-  'px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] appearance-none cursor-pointer'
-
-const cardCls =
-  'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
+  'px-3.5 py-2.5 bg-white border-[1.5px] border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] appearance-none cursor-pointer'
 
 const ACTION_TYPES = ['全部', '歌曲评审', '发行确认', '收益结算', '用户管理']
 
 const dateCls =
-  'px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer'
+  'px-3.5 py-2.5 bg-white border-[1.5px] border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer'
 
 export default function AdminLogsPage() {
   const [keyword, setKeyword] = useState('')
@@ -60,11 +53,11 @@ export default function AdminLogsPage() {
   ]
 
   return (
-    <div>
+    <div className={pageWrap}>
       <PageHeader title="操作日志" subtitle={loading ? '加载中...' : '系统操作审计追踪'} />
 
       {/* 筛选栏 */}
-      <div className="flex items-center gap-3 mb-5">
+      <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           <span className="text-sm text-[var(--text2)] whitespace-nowrap">操作类型</span>
           <select

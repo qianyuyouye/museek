@@ -7,6 +7,7 @@ import { DataTable, Column } from '@/components/admin/data-table'
 import { AdminTab } from '@/components/admin/admin-tab'
 import { AdminModal } from '@/components/admin/admin-modal'
 import { useApi, apiCall } from '@/lib/use-api'
+import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -79,21 +80,11 @@ interface OtherImport {
 
 // ── Style helpers ───────────────────────────────────────────────
 
-const btnPrimary =
-  'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0'
-const btnGhost =
-  'bg-transparent text-[var(--text2)] border border-[var(--border)] px-4 py-2 rounded-lg text-sm font-medium cursor-pointer'
 const btnDanger =
-  'bg-gradient-to-r from-[#e53e3e] to-[#c53030] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
+  'bg-gradient-to-r from-[var(--red)] to-[#c53030] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
 const btnSuccess =
-  'bg-gradient-to-r from-[#16a34a] to-[#0694a2] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
+  'bg-gradient-to-r from-[var(--green2)] to-[var(--green)] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
 const btnSmall = 'text-[11px] px-2.5 py-1'
-
-const inputCls =
-  'w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]'
-const labelCls = 'block text-[13px] text-[var(--text2)] mb-1.5 font-medium'
-const cardCls =
-  'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
 
 // ── Status maps ─────────────────────────────────────────────────
 
@@ -182,7 +173,7 @@ export default function AdminRevenuePage() {
   ]
 
   return (
-    <div>
+    <div className={pageWrap}>
       {/* Toast */}
       {toast && (
         <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
@@ -192,7 +183,7 @@ export default function AdminRevenuePage() {
 
       <PageHeader title="收益管理" subtitle="汽水音乐导入 · 歌曲ID映射 · 多维统计" />
 
-      <div className="mb-5">
+      <div>
         <AdminTab tabs={tabItems} active={tab} onChange={setTab} />
       </div>
 
@@ -313,9 +304,9 @@ function QishuiTab({
   return (
     <div>
       {/* Upload area */}
-      <div className={cardCls} style={{ marginBottom: 20 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>导入汽水音乐收益报表</h3>
-        <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 16 }}>
+      <div className={cardCls}>
+        <h3 className="text-base font-semibold mb-1">导入汽水音乐收益报表</h3>
+        <p className="text-xs text-[var(--text3)] mb-4">
           每月从汽水后台导出CSV → 系统按歌曲ID查映射表精确匹配 → 新歌曲按歌名匹配歌曲库待人工确认 → 确认后自动记入映射表
         </p>
         <div
@@ -342,7 +333,7 @@ function QishuiTab({
       </div>
 
       {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 14, marginBottom: 20 }}>
+      <div className="grid grid-cols-5 gap-3">
         <StatCard icon="📥" label="导入批次" val={imports.length} color="#6c5ce7" iconBg="rgba(108,92,231,0.1)" />
         <StatCard icon="🔗" label="映射表记录" val={mappings.length} color="#16a34a" iconBg="rgba(22,163,74,0.1)" />
         <StatCard icon="✅" label="已确认" val={mappings.filter(m => m.status === 'confirmed').length} color="#0d9488" iconBg="rgba(13,148,136,0.1)" />
@@ -352,7 +343,7 @@ function QishuiTab({
 
       {/* Import history */}
       <div className={cardCls}>
-        <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>导入历史</h3>
+        <h3 className="text-base font-semibold mb-4">导入历史</h3>
         <DataTable
           columns={importColumns}
           data={imports as unknown as Record<string, unknown>[]}
@@ -455,11 +446,11 @@ function MappingTab({
   return (
     <div>
       {/* Info banner */}
-      <div className={cardCls} style={{ padding: 16, marginBottom: 20, background: 'linear-gradient(135deg,rgba(108,92,231,.06),rgba(0,206,201,.04))' }}>
+      <div className={cardCls} style={{ background: 'linear-gradient(135deg,rgba(108,92,231,.06),rgba(0,206,201,.04))' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 32 }}>🔗</span>
           <div>
-            <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>歌曲ID映射关系表</h3>
+            <h3 className="text-base font-semibold mb-1">歌曲ID映射关系表</h3>
             <p style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.6 }}>
               每首歌曲在汽水音乐有唯一的歌曲ID。首次导入时系统用歌曲名称自动匹配创作者，匹配结果需人工确认后写入本表。
               <br />后续导入同一歌曲ID自动命中映射表，<strong style={{ color: 'var(--green2)' }}>无需再次确认</strong>。
@@ -469,14 +460,14 @@ function MappingTab({
       </div>
 
       {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 20 }}>
+      <div className="grid grid-cols-3 gap-3">
         <StatCard icon="✅" label="已确认映射" val={mappings.filter(m => m.status === 'confirmed').length} sub="导入时自动命中" color="#0d9488" iconBg="rgba(13,148,136,0.1)" />
         <StatCard icon="⚠️" label="待确认" val={mappings.filter(m => m.status === 'pending').length} sub="需人工审核" color="#f59e0b" iconBg="rgba(245,158,11,0.1)" />
         <StatCard icon="❓" label="未绑定" val={mappings.filter(m => m.status === 'unbound').length} sub="暂无对应创作者" color="#94a3b8" iconBg="rgba(148,163,184,0.1)" />
       </div>
 
       {/* Quick filters */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
+      <div className="flex gap-2 items-center">
         {filters.map(f => (
           <button
             key={f.k}
@@ -577,12 +568,12 @@ function StatsTab({
   return (
     <div>
       {/* Hint */}
-      <div style={{ padding: 12, background: 'rgba(253,203,110,.06)', borderRadius: 8, marginBottom: 16, fontSize: 12, color: 'var(--orange)' }}>
+      <div style={{ padding: 12, background: 'rgba(253,203,110,.06)', borderRadius: 8, fontSize: 12, color: 'var(--orange)' }}>
         📌 统计仅包含映射关系<strong>已确认</strong>的歌曲收益数据，「待确认」和「未绑定」的收益不计入统计，确保数据准确。
       </div>
 
       {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 20 }}>
+      <div className="grid grid-cols-4 gap-3">
         <StatCard icon="💰" label="已确认总收益" val={`¥${grandTotal.toFixed(2)}`} color="#0d9488" iconBg="rgba(13,148,136,0.1)" />
         <StatCard icon="📱" label="抖音收入" val={`¥${grandDouyin.toFixed(2)}`} sub={`${grandTotal > 0 ? Math.round(grandDouyin / grandTotal * 100) : 0}%`} color="#6c5ce7" iconBg="rgba(108,92,231,0.1)" />
         <StatCard icon="🎵" label="汽水收入" val={`¥${grandQishui.toFixed(2)}`} sub={`${grandTotal > 0 ? Math.round(grandQishui / grandTotal * 100) : 0}%`} color="#ec4899" iconBg="rgba(236,72,153,0.1)" />
@@ -590,7 +581,7 @@ function StatsTab({
       </div>
 
       {/* Sub tabs */}
-      <div className="mb-4">
+      <div>
         <AdminTab tabs={subTabs} active={statsTab} onChange={setStatsTab} />
       </div>
 
@@ -693,8 +684,8 @@ function StatsTab({
                   <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div style={{ width: 14, height: 14, borderRadius: 3, background: item.color, flexShrink: 0 }} />
                     <div>
-                      <div style={{ fontSize: 13, color: '#64748b' }}>{item.name}收入</div>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: '#1e293b' }}>
+                      <div style={{ fontSize: 13, color: 'var(--text2)' }}>{item.name}收入</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
                         ¥{item.val.toFixed(2)}
                         <span style={{ fontSize: 12, fontWeight: 500, color: item.color, marginLeft: 6 }}>{pct}%</span>
                       </div>
@@ -744,7 +735,7 @@ function SettleTab({ showToast, settlements, refetch }: { showToast: (msg: strin
 
   return (
     <div className={cardCls}>
-      <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>结算明细 · 2026-Q1</h3>
+      <h3 className="text-base font-semibold mb-4">结算明细 · 2026-Q1</h3>
       <DataTable
         columns={settleColumns}
         data={settlements as unknown as Record<string, unknown>[]}
@@ -779,7 +770,7 @@ function OtherPlatformTab({ showToast }: { showToast: (msg: string) => void }) {
   return (
     <div>
       {/* Upload section */}
-      <div className={cardCls} style={{ marginBottom: 20 }}>
+      <div className={cardCls}>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <select className={inputCls} style={{ width: 200, flex: 'none' }}>
             <option>QQ音乐</option>
@@ -857,9 +848,9 @@ function PlatformSettleTab({ showToast }: { showToast: (msg: string) => void }) 
 
   return (
     <div className={cardCls}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 600 }}>平台分发结算（非汽水平台）</h3>
-        <div style={{ fontSize: 12, color: 'var(--text3)' }}>来源：其他平台导入后生成的 settlements 记录</div>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-base font-semibold">平台分发结算（非汽水平台）</h3>
+        <div className="text-xs text-[var(--text3)]">来源：其他平台导入后生成的 settlements 记录</div>
       </div>
       <DataTable
         columns={psColumns}
@@ -1028,7 +1019,7 @@ function LinkCreatorForm({ mapping, onSubmit }: { mapping: Mapping; onSubmit: (c
         💡 确认绑定后，该歌曲ID的所有历史和未来收益将自动归属到选定的创作者。映射关系写入映射表后，后续导入无需再次确认。
       </div>
       <button
-        className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0 w-full flex justify-center"
+        className={`${btnPrimary} w-full flex justify-center`}
         onClick={() => { if (selectedCreatorId) onSubmit(Number(selectedCreatorId)) }}
       >
         确认绑定

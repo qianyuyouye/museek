@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { PageHeader } from '@/components/admin/page-header'
 import { useApi } from '@/lib/use-api'
+import { pageWrap } from '@/lib/ui-tokens'
 
 interface DashboardData {
   stats: {
@@ -171,9 +172,9 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div>
+      <div className={pageWrap}>
         <PageHeader title="运营看板" subtitle="数据总览" />
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300, color: '#94a3b8', fontSize: 14 }}>
+        <div className="flex justify-center items-center text-sm" style={{ height: 300, color: 'var(--text3)' }}>
           加载中...
         </div>
       </div>
@@ -181,16 +182,13 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div>
+    <div className={pageWrap}>
       <PageHeader title="运营看板" subtitle="数据总览" />
 
       {/* Purple gradient banner */}
       <div
+        className="rounded-xl overflow-hidden relative"
         style={{
-          borderRadius: 14,
-          marginBottom: 16,
-          overflow: 'hidden',
-          position: 'relative',
           minHeight: 100,
           background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 40%, #4338ca 70%, #6366f1 100%)',
           boxShadow: '0 8px 32px rgba(99,102,241,.28)',
@@ -226,19 +224,17 @@ export default function AdminDashboard() {
         </div>
 
         {/* Content */}
-        <div style={{ position: 'relative', padding: '24px 30px' }}>
+        <div className="relative" style={{ padding: '24px 30px' }}>
           <h2
+            className="text-lg font-bold text-white"
             style={{
-              fontSize: 19,
-              fontWeight: 700,
-              color: '#fff',
               marginBottom: 5,
               lineHeight: 1.35,
             }}
           >
             运营数据全透视，寻找下一个增长奇点
           </h2>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,.68)' }}>
+          <p className="text-[13px]" style={{ color: 'rgba(255,255,255,.68)' }}>
             实时掌握平台关键指标，驱动业务持续增长
           </p>
         </div>
@@ -246,27 +242,19 @@ export default function AdminDashboard() {
 
       {/* 5 stat cards */}
       <div
+        className="grid gap-3"
         style={{
-          display: 'grid',
           gridTemplateColumns: 'repeat(6, 1fr)',
-          gap: 12,
-          marginBottom: 16,
         }}
       >
         {DASHBOARD_STATS.map((s, i) => (
           <div
             key={i}
             onClick={() => s.pg && router.push(s.pg)}
+            className="bg-white border border-[var(--border)] rounded-xl cursor-pointer transition-all flex items-center"
             style={{
-              background: '#fff',
-              border: '1px solid #e8edf5',
-              borderRadius: 12,
               padding: '18px 16px',
-              cursor: 'pointer',
-              transition: 'all .2s',
               boxShadow: '0 1px 4px rgba(99,102,241,.05)',
-              display: 'flex',
-              alignItems: 'center',
               gap: 14,
             }}
             onMouseOver={e => {
@@ -297,46 +285,35 @@ export default function AdminDashboard() {
 
             {/* Text content */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>{s.label}</div>
-              <div style={{ fontSize: 24, fontWeight: 700, color: '#1e293b', lineHeight: 1, marginBottom: 3 }}>
+              <div className="text-[11px] text-[var(--text3)]" style={{ marginBottom: 3 }}>{s.label}</div>
+              <div className="text-2xl font-bold text-[var(--text)]" style={{ lineHeight: 1, marginBottom: 3 }}>
                 {s.val}
               </div>
-              <div style={{ fontSize: 11, color: s.subc, fontWeight: 500 }}>{s.sub}</div>
+              <div className="text-[11px] font-medium" style={{ color: s.subc }}>{s.sub}</div>
             </div>
           </div>
         ))}
       </div>
 
       {/* Two-column grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 14 }}>
+      <div className="grid gap-3.5" style={{ gridTemplateColumns: '3fr 2fr' }}>
 
         {/* Revenue trend line chart */}
         <div
+          className="bg-white border border-[var(--border)] rounded-xl"
           style={{
-            background: '#fff',
-            border: '1px solid #e8edf5',
-            borderRadius: 12,
             padding: '18px 16px 10px',
             boxShadow: '0 1px 4px rgba(99,102,241,.05)',
           }}
         >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 12,
-            }}
-          >
-            <span style={{ fontSize: 13.5, fontWeight: 600, color: '#1e293b' }}>收益趋势</span>
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-[13.5px] font-semibold text-[var(--text)]">收益趋势</span>
             <span
+              className="text-[11px] text-[var(--text3)] border border-[var(--border)]"
               style={{
-                fontSize: 11,
-                color: '#94a3b8',
                 background: '#f4f7fe',
                 padding: '2px 10px',
                 borderRadius: 20,
-                border: '1px solid #e8edf5',
               }}
             >
               收益趋势
@@ -445,61 +422,41 @@ export default function AdminDashboard() {
 
         {/* Conversion rates */}
         <div
+          className="bg-white border border-[var(--border)] rounded-xl"
           style={{
-            background: '#fff',
-            border: '1px solid #e8edf5',
-            borderRadius: 12,
             padding: '18px 16px',
             boxShadow: '0 1px 4px rgba(99,102,241,.05)',
           }}
         >
-          <span
-            style={{
-              fontSize: 13.5,
-              fontWeight: 600,
-              color: '#1e293b',
-              display: 'block',
-              marginBottom: 16,
-            }}
-          >
+          <span className="text-[13.5px] font-semibold text-[var(--text)] block mb-4">
             关键转化率
           </span>
 
           {rates.map(r => (
             <div key={r.n} style={{ marginBottom: 18 }}>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  marginBottom: 6,
-                }}
-              >
+              <div className="flex items-center gap-2 mb-1.5">
                 <span
+                  className="flex items-center justify-center shrink-0"
                   style={{
                     width: 18,
                     height: 18,
                     borderRadius: '50%',
                     background: r.c + '18',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
                   }}
                 >
                   <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
                     <path d="M3 8l4 4 6-7" stroke={r.c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </span>
-                <span style={{ flex: 1, fontSize: 12, color: '#475569' }}>{r.label}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: r.c }}>{r.v + '%'}</span>
+                <span className="flex-1 text-xs text-[var(--text2)]">{r.label}</span>
+                <span className="text-[13px] font-bold" style={{ color: r.c }}>{r.v + '%'}</span>
               </div>
               <div
+                className="overflow-hidden"
                 style={{
                   height: 8,
                   background: '#f4f7fe',
                   borderRadius: 4,
-                  overflow: 'hidden',
                 }}
               >
                 <div

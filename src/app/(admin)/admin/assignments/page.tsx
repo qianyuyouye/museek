@@ -6,6 +6,7 @@ import { StatCard } from '@/components/admin/stat-card'
 import { DataTable, Column } from '@/components/admin/data-table'
 import { AdminModal } from '@/components/admin/admin-modal'
 import { useApi, apiCall } from '@/lib/use-api'
+import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -50,24 +51,14 @@ interface Group {
 
 // ── Button / input helpers ──────────────────────────────────────
 
-const btnPrimary =
-  'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0'
-const btnGhost =
-  'bg-transparent text-[var(--text2)] border border-[var(--border)] px-4 py-2 rounded-lg text-sm font-medium cursor-pointer'
 const btnSmall = 'text-[11px] px-2.5 py-1'
-
-const inputCls =
-  'w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]'
-const labelCls = 'block text-[13px] text-[var(--text2)] mb-1.5 font-medium'
-const cardCls =
-  'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
 
 // ── Helpers ─────────────────────────────────────────────────────
 
 const SUBMISSION_STATUS_MAP: Record<string, { label: string; color: string }> = {
-  pending_review: { label: '待评审', color: '#d97706' },
-  reviewed: { label: '已评审', color: '#16a34a' },
-  needs_revision: { label: '需修改', color: '#e53e3e' },
+  pending_review: { label: '待评审', color: 'var(--orange)' },
+  reviewed: { label: '已评审', color: 'var(--green2)' },
+  needs_revision: { label: '需修改', color: 'var(--red)' },
 }
 
 const TYPE_LABEL_MAP: Record<string, string> = {
@@ -187,7 +178,7 @@ export default function AdminAssignmentsPage() {
           if (!song?.score) return <span style={{ color: 'var(--text3)' }}>—</span>
           const score = song.score
           return (
-            <span style={{ fontWeight: 600, color: score >= 80 ? '#16a34a' : '#f59e0b' }}>
+            <span style={{ fontWeight: 600, color: score >= 80 ? 'var(--green2)' : 'var(--orange)' }}>
               {score}
             </span>
           )
@@ -214,7 +205,7 @@ export default function AdminAssignmentsPage() {
     ]
 
     return (
-      <div>
+      <div className={pageWrap}>
         {toastEl}
 
         <PageHeader
@@ -227,7 +218,7 @@ export default function AdminAssignmentsPage() {
         />
 
         {/* Stat cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 24 }}>
+        <div className="grid grid-cols-3 gap-4">
           <StatCard
             icon="👥"
             label="总成员"
@@ -254,8 +245,8 @@ export default function AdminAssignmentsPage() {
         </div>
 
         {/* Submission table */}
-        <div className={cardCls} style={{ marginBottom: 20 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>📋 提交列表</h3>
+        <div className={cardCls}>
+          <h3 className="text-base font-semibold mb-4">📋 提交列表</h3>
           {subsLoading ? (
             <div style={{ padding: 20, textAlign: 'center', color: 'var(--text3)' }}>加载中...</div>
           ) : (
@@ -272,46 +263,46 @@ export default function AdminAssignmentsPage() {
             if (!sub) return null
             const song = sub.platformSong
             const statusMap: Record<string, { label: string; color: string }> = {
-              pending_review: { label: '待评分', color: '#d97706' },
-              needs_revision: { label: '需修改', color: '#e53e3e' },
-              reviewed: { label: '已评分', color: '#6366f1' },
-              archived: { label: '已归档', color: '#64748b' },
-              ready_to_publish: { label: '待发行', color: '#0694a2' },
-              published: { label: '已发行', color: '#16a34a' },
+              pending_review: { label: '待评分', color: 'var(--orange)' },
+              needs_revision: { label: '需修改', color: 'var(--red)' },
+              reviewed: { label: '已评分', color: 'var(--accent)' },
+              archived: { label: '已归档', color: 'var(--text2)' },
+              ready_to_publish: { label: '待发行', color: 'var(--green)' },
+              published: { label: '已发行', color: 'var(--green2)' },
             }
             const st = song ? statusMap[song.status] : null
             return (
-              <div style={{ margin: '12px 0', padding: 16, background: '#f8faff', borderRadius: 10, border: '1px solid #e8edf5' }}>
-                <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: '#1e293b' }}>
+              <div style={{ margin: '12px 0', padding: 16, background: '#f8faff', borderRadius: 10, border: '1px solid var(--border)' }}>
+                <h4 className="text-sm font-semibold mb-3 text-[var(--text)]">
                   📄 提交详情 — {sub.user.realName || sub.user.name}
                 </h4>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px', fontSize: 13 }}>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <span style={{ color: '#64748b', minWidth: 70 }}>歌曲名：</span>
-                    <span style={{ color: '#1e293b', fontWeight: 500 }}>{song?.title ?? '—'}</span>
+                    <span style={{ color: 'var(--text2)', minWidth: 70 }}>歌曲名：</span>
+                    <span style={{ color: 'var(--text)', fontWeight: 500 }}>{song?.title ?? '—'}</span>
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <span style={{ color: '#64748b', minWidth: 70 }}>创作工具：</span>
-                    <span style={{ color: '#1e293b' }}>{song?.aiTools ?? '—'}</span>
+                    <span style={{ color: 'var(--text2)', minWidth: 70 }}>创作工具：</span>
+                    <span style={{ color: 'var(--text)' }}>{song?.aiTools ?? '—'}</span>
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <span style={{ color: '#64748b', minWidth: 70 }}>提交时间：</span>
-                    <span style={{ color: '#1e293b' }}>{sub.submittedAt}</span>
+                    <span style={{ color: 'var(--text2)', minWidth: 70 }}>提交时间：</span>
+                    <span style={{ color: 'var(--text)' }}>{sub.submittedAt}</span>
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <span style={{ color: '#64748b', minWidth: 70 }}>评分：</span>
-                    <span style={{ color: song?.score != null ? (song.score >= 80 ? '#16a34a' : '#f59e0b') : '#94a3b8', fontWeight: 600 }}>
+                    <span style={{ color: 'var(--text2)', minWidth: 70 }}>评分：</span>
+                    <span style={{ color: song?.score != null ? (song.score >= 80 ? 'var(--green2)' : 'var(--orange)') : 'var(--text3)', fontWeight: 600 }}>
                       {song?.score ?? '—'}
                     </span>
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <span style={{ color: '#64748b', minWidth: 70 }}>状态：</span>
+                    <span style={{ color: 'var(--text2)', minWidth: 70 }}>状态：</span>
                     {st ? (
                       <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 10, background: st.color + '18', color: st.color }}>
                         {st.label}
                       </span>
                     ) : (
-                      <span style={{ color: '#94a3b8' }}>—</span>
+                      <span style={{ color: 'var(--text3)' }}>—</span>
                     )}
                   </div>
                 </div>
@@ -322,7 +313,7 @@ export default function AdminAssignmentsPage() {
 
         {/* Assignment info card */}
         <div className={cardCls}>
-          <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>📝 作业信息</h3>
+          <h3 className="text-base font-semibold mb-4">📝 作业信息</h3>
           {(
             [
               ['作业标题', assignment.title],
@@ -398,7 +389,7 @@ export default function AdminAssignmentsPage() {
               padding: '2px 8px',
               borderRadius: 10,
               background: 'rgba(22,163,74,0.1)',
-              color: '#16a34a',
+              color: 'var(--green2)',
             }}
           >
             进行中
@@ -410,7 +401,7 @@ export default function AdminAssignmentsPage() {
               padding: '2px 8px',
               borderRadius: 10,
               background: 'rgba(100,116,139,0.1)',
-              color: '#64748b',
+              color: 'var(--text2)',
             }}
           >
             已截止
@@ -446,7 +437,7 @@ export default function AdminAssignmentsPage() {
   ]
 
   return (
-    <div>
+    <div className={pageWrap}>
       {toastEl}
 
       <PageHeader
@@ -460,7 +451,7 @@ export default function AdminAssignmentsPage() {
       />
 
       {/* Filter bar */}
-      <div style={{ marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
+      <div className="flex gap-3 items-center">
         <label style={{ fontSize: 13, color: 'var(--text2)' }}>用户组筛选：</label>
         <select
           className={inputCls}
@@ -567,7 +558,7 @@ function CreateAssignmentForm({ groups, onSubmit }: { groups: Group[]; onSubmit:
         <input className={inputCls} type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
       </div>
       <button
-        className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0 w-full flex justify-center"
+        className={`${btnPrimary} w-full flex justify-center`}
         onClick={() => onSubmit({ groupId: Number(groupId), title, description: description || undefined, deadline })}
       >
         创建作业
@@ -680,7 +671,7 @@ function FieldConfigPanel({
                   position: 'absolute',
                   inset: 0,
                   borderRadius: 10,
-                  background: field.required ? '#6366f1' : '#ccc',
+                  background: field.required ? 'var(--accent)' : '#ccc',
                   transition: 'background 0.2s',
                 }}
               />

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { PageHeader } from '@/components/admin/page-header'
 import { DataTable, Column } from '@/components/admin/data-table'
 import { useApi } from '@/lib/use-api'
+import { pageWrap, cardCls } from '@/lib/ui-tokens'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -16,9 +17,6 @@ interface Teacher {
   avgScore?: number
   recommendRate?: number
 }
-
-const cardCls =
-  'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
 
 const columns: Column<Teacher>[] = [
   {
@@ -55,7 +53,7 @@ const columns: Column<Teacher>[] = [
     title: '平均评分',
     render: (v) => {
       const score = (v as number) ?? 0
-      const color = score >= 80 ? '#16a34a' : '#f59e0b'
+      const color = score >= 80 ? 'var(--green2)' : 'var(--orange)'
       return <span style={{ color, fontWeight: 500 }}>{score}分</span>
     },
   },
@@ -77,14 +75,14 @@ export default function AdminTeachersPage() {
   }
 
   return (
-    <div>
+    <div className={pageWrap}>
       <PageHeader
         title="老师绩效"
         subtitle="评审工作量统计"
         actions={
           <Link
             href="/admin/accounts"
-            className="inline-flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-[#6366f1] to-[#4f46e5] shadow-[0_2px_8px_rgba(99,102,241,0.25)] no-underline"
+            className="inline-flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] shadow-[0_2px_8px_rgba(99,102,241,0.25)] no-underline"
           >
             👥 管理老师账号 →
           </Link>
@@ -93,7 +91,7 @@ export default function AdminTeachersPage() {
 
       <div className={cardCls}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-[15px] font-semibold">老师绩效</h3>
+          <h3 className="text-base font-semibold">老师绩效</h3>
         </div>
         <DataTable
           columns={columns as unknown as Column<Record<string, unknown>>[]}

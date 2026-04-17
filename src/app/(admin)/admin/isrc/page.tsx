@@ -5,16 +5,7 @@ import { PageHeader } from '@/components/admin/page-header'
 import { StatCard } from '@/components/admin/stat-card'
 import { DataTable, Column } from '@/components/admin/data-table'
 import { useApi, apiCall } from '@/lib/use-api'
-
-// ── Button helpers ───────────────────────────────────────────────
-
-const btnPrimary =
-  'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0'
-const btnGhost =
-  'bg-transparent text-[var(--text2)] border border-[var(--border)] px-4 py-2 rounded-lg text-sm font-medium cursor-pointer'
-
-const cardCls =
-  'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
+import { pageWrap, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -178,7 +169,7 @@ export default function AdminIsrcPage() {
   }
 
   return (
-    <div>
+    <div className={pageWrap}>
       {/* Toast */}
       {toast && (
         <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
@@ -192,36 +183,36 @@ export default function AdminIsrcPage() {
       />
 
       {/* StatCards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 24 }}>
+      <div className="grid grid-cols-3 gap-4">
         <StatCard
           icon="📋"
           label="待申报"
           val={pendingSongs.length}
-          color="#6366f1"
+          color="var(--accent)"
           iconBg="rgba(99,102,241,0.1)"
         />
         <StatCard
           icon="🕐"
           label="申报中"
           val={2}
-          color="#f59e0b"
+          color="var(--orange)"
           iconBg="rgba(245,158,11,0.1)"
         />
         <StatCard
           icon="✅"
           label="已获取ISRC"
           val={isrcCount}
-          color="#16a34a"
+          color="var(--green2)"
           iconBg="rgba(22,163,74,0.1)"
         />
       </div>
 
       {/* Main content: table + upload side by side */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20 }}>
+      <div className="grid grid-cols-[1fr_300px] gap-5">
         {/* Left: 待申报歌曲 */}
         <div className={cardCls}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[15px] font-semibold">待申报歌曲</h3>
+            <h3 className="text-base font-semibold">待申报歌曲</h3>
             <div className="flex items-center gap-2">
               <button
                 className={btnGhost}
@@ -251,7 +242,7 @@ export default function AdminIsrcPage() {
 
         {/* Right: 批量回填 ISRC */}
         <div className={cardCls} style={{ height: 'fit-content' }}>
-          <h3 className="text-[15px] font-semibold mb-1">批量回填ISRC</h3>
+          <h3 className="text-base font-semibold mb-1">批量回填ISRC</h3>
           <p className="text-xs text-[var(--text3)] mb-4">
             从ISRC申报平台获取编码后，上传回填文件批量录入。
           </p>
@@ -268,17 +259,13 @@ export default function AdminIsrcPage() {
               showToast('已上传 ISRC 回填文件，正在处理...')
             }}
             onClick={() => showToast('已上传 ISRC 回填文件，正在处理...')}
-            className="cursor-pointer"
+            className="cursor-pointer text-center rounded-xl py-10 px-5 transition-all"
             style={{
               border: `2px dashed ${dragOver ? 'var(--accent)' : '#e0e4ed'}`,
-              borderRadius: 12,
-              padding: '40px 20px',
-              textAlign: 'center',
               background: dragOver ? 'rgba(99,102,241,0.04)' : '#fafbfd',
-              transition: 'all 0.2s',
             }}
           >
-            <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.5 }}>📄</div>
+            <div className="text-[40px] mb-3 opacity-50">📄</div>
             <div className="text-sm text-[var(--text2)] mb-1">
               点击或将文件拖拽到这里上传
             </div>

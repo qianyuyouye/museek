@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { PageHeader } from '@/components/admin/page-header'
 import { DataTable, Column } from '@/components/admin/data-table'
 import { useApi, apiCall } from '@/lib/use-api'
+import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -28,18 +29,7 @@ interface AdminRole {
 
 // ── Button helpers ───────────────────────────────────────────────
 
-const btnPrimary =
-  'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0'
-const btnGhost =
-  'bg-transparent text-[var(--text2)] border border-[var(--border)] px-4 py-2 rounded-lg text-sm font-medium cursor-pointer'
 const btnSmall = 'text-[11px] px-2.5 py-1'
-
-const inputCls =
-  'w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]'
-const labelCls = 'block text-[13px] text-[var(--text2)] mb-1.5 font-medium'
-
-const cardCls =
-  'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
 
 // ── Toggle Switch ────────────────────────────────────────────────
 
@@ -234,7 +224,7 @@ export default function AdminAdminsPage() {
 
   if (view === 'add' || view === 'edit') {
     return (
-      <div>
+      <div className={pageWrap}>
         {toast && (
           <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
             {toast}
@@ -511,7 +501,7 @@ export default function AdminAdminsPage() {
   ]
 
   return (
-    <div>
+    <div className={pageWrap}>
       {/* Toast */}
       {toast && (
         <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
@@ -531,8 +521,7 @@ export default function AdminAdminsPage() {
 
       {/* 搜索栏 */}
       <div
-        className={cardCls}
-        style={{ marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}
+        className={`${cardCls} flex gap-3 items-center flex-wrap`}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 13, color: 'var(--text3)', whiteSpace: 'nowrap' }}>账号</span>

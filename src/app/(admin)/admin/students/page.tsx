@@ -8,6 +8,7 @@ import { SearchBar } from '@/components/admin/search-bar'
 import { StatusBadge } from '@/components/admin/status-badge'
 import { SONG_STATUS_MAP } from '@/lib/constants'
 import { useApi, apiCall } from '@/lib/use-api'
+import { pageWrap, cardCls, btnGhost, inputCls } from '@/lib/ui-tokens'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -42,19 +43,11 @@ interface Song {
 
 // ── Button helpers ───────────────────────────────────────────────
 
-const btnGhost =
-  'bg-transparent text-[var(--text2)] border border-[var(--border)] px-4 py-2 rounded-lg text-sm font-medium cursor-pointer'
 const btnDanger =
-  'bg-gradient-to-r from-[#e53e3e] to-[#c53030] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
+  'bg-gradient-to-r from-[var(--red)] to-[#c53030] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
 const btnSuccess =
-  'bg-gradient-to-r from-[#16a34a] to-[#0694a2] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
+  'bg-gradient-to-r from-[var(--green2)] to-[var(--green)] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
 const btnSmall = 'text-[11px] px-2.5 py-1'
-
-const cardCls =
-  'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
-
-const inputCls =
-  'w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]'
 
 // ── Main component ───────────────────────────────────────────────
 
@@ -142,7 +135,7 @@ export default function AdminStudentsPage() {
     ]
 
     return (
-      <div>
+      <div className={pageWrap}>
         {/* Toast */}
         {toast && (
           <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
@@ -160,10 +153,10 @@ export default function AdminStudentsPage() {
         />
 
         {/* 2-column grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div className="grid grid-cols-2 gap-5">
           {/* Left: 基本信息 */}
           <div className={cardCls}>
-            <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>基本信息</h3>
+            <h3 className="text-base font-semibold mb-4">基本信息</h3>
 
             {basicInfo.map(([k, v]) => (
               <div
@@ -350,7 +343,7 @@ export default function AdminStudentsPage() {
 
           {/* Right: 作品列表 */}
           <div className={cardCls}>
-            <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>
+            <h3 className="text-base font-semibold mb-4">
               作品列表（{userSongs.length}首）
             </h3>
             {userSongs.length === 0 ? (
@@ -486,7 +479,7 @@ export default function AdminStudentsPage() {
   ]
 
   return (
-    <div>
+    <div className={pageWrap}>
       {/* Toast */}
       {toast && (
         <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
@@ -500,7 +493,7 @@ export default function AdminStudentsPage() {
       />
 
       {/* Search bar row */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+      <div className="flex gap-3">
         <div style={{ flex: 1 }}>
           <SearchBar
             value={searchText}

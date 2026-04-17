@@ -8,18 +8,10 @@ import { AdminTab } from '@/components/admin/admin-tab'
 import { DataTable, Column } from '@/components/admin/data-table'
 import { AdminModal } from '@/components/admin/admin-modal'
 import { useApi, apiCall } from '@/lib/use-api'
+import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
 
 // ── Button / input helpers ───────────────────────────────────────
-const btnPrimary =
-  'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0'
-const btnGhost =
-  'bg-transparent text-[var(--text2)] border border-[var(--border)] px-4 py-2 rounded-lg text-sm font-medium cursor-pointer'
 const btnSmall = 'text-[11px] px-2.5 py-1'
-const inputCls =
-  'w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]'
-const labelCls = 'block text-[13px] text-[var(--text2)] mb-1.5 font-medium'
-const cardCls =
-  'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
 
 // ── Types ────────────────────────────────────────────────────────
 interface ReviewerAccount {
@@ -325,7 +317,7 @@ export default function AdminAccountsPage() {
   ]
 
   return (
-    <div>
+    <div className={pageWrap}>
       {/* Toast */}
       {toast && (
         <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
@@ -354,7 +346,7 @@ export default function AdminAccountsPage() {
       />
 
       {/* Tabs */}
-      <div className="mb-5">
+      <div>
         <AdminTab tabs={tabs} active={tab} onChange={setTab} />
       </div>
 
@@ -477,7 +469,7 @@ function CreateReviewerForm({ groups, onSubmit }: { groups: UserGroup[]; onSubmi
         💡 创建后评审用户即可使用手机号/邮箱 + 密码登录评审端。
       </div>
       <button
-        className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0 w-full flex justify-center"
+        className={`${btnPrimary} w-full flex justify-center`}
         onClick={() => onSubmit({ name, phone, email, groupId: groupId ? Number(groupId) : null, password })}
       >
         创建评审账号
@@ -589,7 +581,7 @@ function PermissionForm({
                   borderRadius: 20,
                   fontSize: 12,
                   fontWeight: 500,
-                  border: active ? '1.5px solid var(--accent)' : '1.5px solid #e8edf5',
+                  border: active ? '1.5px solid var(--accent)' : '1.5px solid var(--border)',
                   background: active ? 'rgba(99,102,241,.1)' : '#fff',
                   color: active ? 'var(--accent)' : 'var(--text2)',
                   cursor: 'pointer',
@@ -604,7 +596,7 @@ function PermissionForm({
       </div>
 
       <button
-        className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0 w-full flex justify-center"
+        className={`${btnPrimary} w-full flex justify-center`}
         onClick={() => onSubmit({ roleAttr, adminLevel: resolveAdminLevel(), groupIds: Array.from(selectedGroups) })}
       >
         确认变更

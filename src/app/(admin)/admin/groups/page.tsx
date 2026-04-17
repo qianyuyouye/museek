@@ -7,6 +7,7 @@ import { StatCard } from '@/components/admin/stat-card'
 import { DataTable, Column } from '@/components/admin/data-table'
 import { AdminModal } from '@/components/admin/admin-modal'
 import { useApi, apiCall } from '@/lib/use-api'
+import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -37,22 +38,11 @@ interface GroupMember {
 
 // ── Button helpers ───────────────────────────────────────────────
 
-const btnPrimary =
-  'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0'
-const btnGhost =
-  'bg-transparent text-[var(--text2)] border border-[var(--border)] px-4 py-2 rounded-lg text-sm font-medium cursor-pointer'
 const btnDanger =
-  'bg-gradient-to-r from-[#e53e3e] to-[#c53030] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
+  'bg-gradient-to-r from-[var(--red)] to-[#c53030] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
 const btnSuccess =
-  'bg-gradient-to-r from-[#16a34a] to-[#0694a2] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
+  'bg-gradient-to-r from-[var(--green2)] to-[var(--green)] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
 const btnSmall = 'text-[11px] px-2.5 py-1'
-
-const inputCls =
-  'w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]'
-const labelCls = 'block text-[13px] text-[var(--text2)] mb-1.5 font-medium'
-
-const cardCls =
-  'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
 
 // ── Main component ───────────────────────────────────────────────
 
@@ -156,7 +146,7 @@ export default function AdminGroupsPage() {
     ]
 
     return (
-      <div>
+      <div className={pageWrap}>
         {/* Toast */}
         {toast && (
           <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
@@ -174,10 +164,10 @@ export default function AdminGroupsPage() {
         />
 
         {/* 2-column info grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+        <div className="grid grid-cols-2 gap-5">
           {/* 组信息 */}
           <div className={cardCls}>
-            <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>📋 组信息</h3>
+            <h3 className="text-base font-semibold mb-4">📋 组信息</h3>
             {(
               [
                 ['组名', g.name],
@@ -231,7 +221,7 @@ export default function AdminGroupsPage() {
 
           {/* 专属邀请 */}
           <div className={cardCls}>
-            <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>🔗 专属邀请</h3>
+            <h3 className="text-base font-semibold mb-4">🔗 专属邀请</h3>
             <div style={{ marginBottom: 12 }}>
               <label className={labelCls}>邀请码</label>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -286,8 +276,8 @@ export default function AdminGroupsPage() {
 
         {/* 组成员 */}
         <div className={cardCls}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 600 }}>👥 组成员（{members.length}人）</h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-base font-semibold">👥 组成员（{members.length}人）</h3>
             <button
               className={btnGhost}
               onClick={() => showToast('已复制邀请链接，可发送给新成员')}
@@ -383,7 +373,7 @@ export default function AdminGroupsPage() {
   ]
 
   return (
-    <div>
+    <div className={pageWrap}>
       {/* Toast */}
       {toast && (
         <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
@@ -402,7 +392,7 @@ export default function AdminGroupsPage() {
       />
 
       {/* StatCards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 24 }}>
+      <div className="grid grid-cols-3 gap-4">
         <StatCard
           icon="🏘️"
           label="总用户组"
@@ -481,10 +471,6 @@ function CreateGroupForm({ onSubmit }: { onSubmit: (data: { name: string; descri
   const [description, setDescription] = useState('')
   const [inviteCode, setInviteCode] = useState('')
 
-  const inputCls =
-    'w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]'
-  const labelCls = 'block text-[13px] text-[var(--text2)] mb-1.5 font-medium'
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div>
@@ -520,7 +506,7 @@ function CreateGroupForm({ onSubmit }: { onSubmit: (data: { name: string; descri
         系统暂不开放公开注册，所有用户必须通过邀请码注册。
       </div>
       <button
-        className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0 w-full flex justify-center"
+        className={`${btnPrimary} w-full flex justify-center`}
         onClick={() => onSubmit({ name, description: description || undefined, inviteCode: inviteCode || undefined })}
       >
         创建用户组
@@ -538,16 +524,6 @@ function InviteCodePanel({
   onClose: () => void
   showToast: (msg: string) => void
 }) {
-  const inputCls =
-    'w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]'
-  const labelCls = 'block text-[13px] text-[var(--text2)] mb-1.5 font-medium'
-  const btnGhost =
-    'bg-transparent text-[var(--text2)] border border-[var(--border)] px-4 py-2 rounded-lg text-sm font-medium cursor-pointer'
-  const btnDanger =
-    'bg-gradient-to-r from-[#e53e3e] to-[#c53030] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
-  const btnSuccess =
-    'bg-gradient-to-r from-[#16a34a] to-[#0694a2] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Large code display */}

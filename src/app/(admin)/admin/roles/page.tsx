@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/admin/page-header'
 import { DataTable, Column } from '@/components/admin/data-table'
 import { PermissionTree } from '@/components/admin/permission-tree'
 import { useApi, apiCall } from '@/lib/use-api'
+import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -19,22 +20,11 @@ interface Role {
   adminCount?: number
 }
 
-// ── Button / input helpers ────────────────────────────────────────
+// ── Button helpers ────────────────────────────────────────────────
 
-const btnPrimary =
-  'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0'
-const btnGhost =
-  'bg-transparent text-[var(--text2)] border border-[var(--border)] px-4 py-2 rounded-lg text-sm font-medium cursor-pointer'
 const btnDanger =
-  'bg-gradient-to-r from-[#e53e3e] to-[#c53030] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
+  'bg-gradient-to-r from-[var(--red)] to-[#c53030] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
 const btnSmall = 'text-[11px] px-2.5 py-1'
-
-const inputCls =
-  'w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]'
-const labelCls = 'block text-[13px] text-[var(--text2)] mb-1.5 font-medium'
-
-const cardCls =
-  'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
 
 // ── Helpers ───────────────────────────────────────────────────────
 
@@ -129,7 +119,7 @@ export default function AdminRolesPage() {
 
   if (view === 'edit') {
     return (
-      <div>
+      <div className={pageWrap}>
         {toast && (
           <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
             {toast}
@@ -148,9 +138,9 @@ export default function AdminRolesPage() {
 
         <div className={cardCls} style={{ maxWidth: 680 }}>
           {/* 名称 */}
-          <div style={{ marginBottom: 16 }}>
+          <div className="mb-4">
             <label className={labelCls}>* 名称</label>
-            <div style={{ position: 'relative' }}>
+            <div className="relative">
               <input
                 className={inputCls}
                 placeholder="请输入名称"
@@ -158,23 +148,14 @@ export default function AdminRolesPage() {
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               />
-              <span
-                style={{
-                  position: 'absolute',
-                  right: 10,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  fontSize: 12,
-                  color: 'var(--text3)',
-                }}
-              >
+              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[var(--text3)]">
                 {form.name.length}/8
               </span>
             </div>
           </div>
 
           {/* 描述 */}
-          <div style={{ marginBottom: 20 }}>
+          <div className="mb-5">
             <label className={labelCls}>描述</label>
             <textarea
               className={inputCls}
@@ -186,18 +167,11 @@ export default function AdminRolesPage() {
           </div>
 
           {/* 权限 */}
-          <div style={{ marginBottom: 24 }}>
-            <label className={labelCls} style={{ marginBottom: 10, display: 'block' }}>
+          <div className="mb-6">
+            <label className={`${labelCls} block mb-2.5`}>
               权限
             </label>
-            <div
-              style={{
-                border: '1px solid var(--border)',
-                borderRadius: 8,
-                padding: '16px 20px',
-                background: 'var(--bg)',
-              }}
-            >
+            <div className="border border-[var(--border)] rounded-lg py-4 px-5 bg-[var(--bg)]">
               <PermissionTree
                 value={form.permissions}
                 onChange={(p) => setForm((f) => ({ ...f, permissions: p }))}
@@ -206,7 +180,7 @@ export default function AdminRolesPage() {
           </div>
 
           {/* Actions */}
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div className="flex gap-3">
             <button className={btnPrimary} onClick={handleSave}>
               保存
             </button>
@@ -229,7 +203,7 @@ export default function AdminRolesPage() {
     {
       key: 'id',
       title: 'ID',
-      render: (v) => <span style={{ color: 'var(--text3)', fontSize: 12 }}>{v as number}</span>,
+      render: (v) => <span className="text-xs text-[var(--text3)]">{v as number}</span>,
     },
     {
       key: 'name',
@@ -251,7 +225,7 @@ export default function AdminRolesPage() {
       key: 'permissions',
       title: '权限数',
       render: (v) => (
-        <span style={{ fontSize: 12, color: 'var(--accent2)' }}>
+        <span className="text-xs text-[var(--accent2)]">
           {countPerms(v as Record<string, boolean>)} 项
         </span>
       ),
@@ -259,12 +233,12 @@ export default function AdminRolesPage() {
     {
       key: 'description',
       title: '说明',
-      render: (v) => <span style={{ fontSize: 12, color: 'var(--text3)' }}>{(v as string) || '—'}</span>,
+      render: (v) => <span className="text-xs text-[var(--text3)]">{(v as string) || '—'}</span>,
     },
     {
       key: 'createdAt',
       title: '创建时间',
-      render: (v) => <span style={{ fontSize: 12, color: 'var(--text3)' }}>{v as string}</span>,
+      render: (v) => <span className="text-xs text-[var(--text3)]">{v as string}</span>,
     },
     {
       key: 'id',
@@ -272,7 +246,7 @@ export default function AdminRolesPage() {
       render: (_v, row) => {
         const r = row as Role
         return (
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div className="flex gap-1.5">
             <button
               className={`${btnGhost} ${btnSmall}`}
               onClick={(e) => {
@@ -300,7 +274,7 @@ export default function AdminRolesPage() {
   ]
 
   return (
-    <div>
+    <div className={pageWrap}>
       {toast && (
         <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
           {toast}

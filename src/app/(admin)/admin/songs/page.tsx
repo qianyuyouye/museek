@@ -8,24 +8,15 @@ import { StatusBadge } from '@/components/admin/status-badge'
 import { AdminModal } from '@/components/admin/admin-modal'
 import { useApi, apiCall } from '@/lib/use-api'
 import { SONG_STATUS_MAP } from '@/lib/constants'
+import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
 
 // ── Button helpers ───────────────────────────────────────────────
 
-const btnGhost =
-  'bg-transparent text-[var(--text2)] border border-[var(--border)] px-4 py-2 rounded-lg text-sm font-medium cursor-pointer'
 const btnSmall = 'text-[11px] px-2.5 py-1'
-const btnPrimary =
-  'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0'
 const btnSuccess =
-  'bg-gradient-to-r from-[#16a34a] to-[#0694a2] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
+  'bg-gradient-to-r from-[var(--green2)] to-[var(--green)] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
 const btnDanger =
-  'bg-gradient-to-r from-[#e53e3e] to-[#c53030] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
-
-const inputCls =
-  'w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]'
-const labelCls = 'block text-[13px] text-[var(--text2)] mb-1.5 font-medium'
-const cardCls =
-  'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
+  'bg-gradient-to-r from-[var(--red)] to-[#c53030] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
 
 // ── Tab config ───────────────────────────────────────────────────
 
@@ -186,7 +177,7 @@ export default function AdminSongsPage() {
       render: (v) => {
         const score = v as number | null
         if (score === null || score === undefined) return <span style={{ color: 'var(--text3)' }}>-</span>
-        const color = score >= 80 ? '#16a34a' : '#d97706'
+        const color = score >= 80 ? 'var(--green2)' : 'var(--orange)'
         return <span style={{ fontWeight: 600, color }}>{score}</span>
       },
     },
@@ -204,7 +195,7 @@ export default function AdminSongsPage() {
         const isrc = v as string | null
         if (isrc) {
           return (
-            <span style={{ color: '#16a34a', fontFamily: 'monospace', fontSize: 12 }}>
+            <span style={{ color: 'var(--green2)', fontFamily: 'monospace', fontSize: 12 }}>
               {isrc}
             </span>
           )
@@ -318,13 +309,13 @@ export default function AdminSongsPage() {
   // ── Render ─────────────────────────────────────────────────────
 
   return (
-    <div>
+    <div className={pageWrap}>
       {/* Toast */}
       {toast && (
         <div
           className={`fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white text-sm font-medium shadow-lg border ${
             toastType === 'error'
-              ? 'border-[var(--red,#e53e3e)] text-[var(--red,#e53e3e)]'
+              ? 'border-[var(--red)] text-[var(--red)]'
               : 'border-[var(--green)] text-[var(--green)]'
           }`}
         >
@@ -338,7 +329,7 @@ export default function AdminSongsPage() {
       />
 
       {/* Tabs */}
-      <div style={{ marginBottom: 20 }}>
+      <div>
         <AdminTab tabs={tabs} active={activeTab} onChange={(k) => setActiveTab(k as TabKey)} />
       </div>
 
@@ -358,7 +349,7 @@ export default function AdminSongsPage() {
         title={`绑定 ISRC · ${isrcModal?.title ?? ''}`}
         width={420}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="flex flex-col gap-4">
           <div>
             <label className={labelCls}>ISRC 编码</label>
             <input
@@ -370,14 +361,8 @@ export default function AdminSongsPage() {
             />
           </div>
           <div
-            style={{
-              padding: 12,
-              background: 'rgba(108,92,231,.08)',
-              borderRadius: 8,
-              fontSize: 12,
-              color: 'var(--accent2)',
-              lineHeight: 1.6,
-            }}
+            className="p-3 rounded-lg text-xs leading-relaxed text-[var(--accent2)]"
+            style={{ background: 'rgba(108,92,231,.08)' }}
           >
             💡 ISRC（国际标准录音制品编码）是歌曲发行的必要条件。绑定后将用于数字音乐分发与版税追踪。
           </div>
@@ -398,8 +383,8 @@ export default function AdminSongsPage() {
         width={480}
       >
         {channelModal && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-2 gap-2.5">
               {[
                 { name: 'QQ音乐', icon: '🎵', status: '已上架' },
                 { name: '网易云音乐', icon: '☁️', status: '已上架' },
@@ -408,24 +393,19 @@ export default function AdminSongsPage() {
               ].map((ch) => (
                 <div
                   key={ch.name}
+                  className="rounded-lg flex justify-between items-center text-[13px]"
                   style={{
                     padding: '12px 14px',
                     background: '#f0f4fb',
-                    borderRadius: 8,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    fontSize: 13,
                   }}
                 >
                   <span>
                     {ch.icon} {ch.name}
                   </span>
                   <span
+                    className="text-[11px] font-medium"
                     style={{
-                      fontSize: 11,
-                      color: ch.status === '已上架' ? '#16a34a' : '#d97706',
-                      fontWeight: 500,
+                      color: ch.status === '已上架' ? 'var(--green2)' : 'var(--orange)',
                     }}
                   >
                     {ch.status}
@@ -433,14 +413,7 @@ export default function AdminSongsPage() {
                 </div>
               ))}
             </div>
-            <div
-              style={{
-                fontSize: 12,
-                color: 'var(--text3)',
-                textAlign: 'center',
-                paddingTop: 8,
-              }}
-            >
+            <div className="text-xs text-[var(--text3)] text-center pt-2">
               ISRC：{channelModal.isrc} · 版权编号：{channelModal.copyrightCode}
             </div>
           </div>

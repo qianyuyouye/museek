@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { PageHeader } from '@/components/admin/page-header'
 import { AdminModal } from '@/components/admin/admin-modal'
 import { useApi, apiCall } from '@/lib/use-api'
+import { pageWrap, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -21,15 +22,7 @@ interface CmsItem {
 
 // ── Helpers ──────────────────────────────────────────────────────
 
-const btnPrimary =
-  'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-[18px] py-[9px] rounded-[9px] text-[13px] font-semibold shadow-[0_2px_8px_rgba(99,102,241,0.3)] cursor-pointer border-0 transition-all hover:-translate-y-[1px]'
-const btnGhost =
-  'bg-transparent text-[var(--text2)] border border-[var(--border)] px-[18px] py-[9px] rounded-[9px] text-[13px] font-medium cursor-pointer'
-const inputCls =
-  'w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]'
-const labelCls = 'block text-[13px] text-[var(--text2)] mb-1.5 font-medium'
-const selectCls =
-  'w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] appearance-none cursor-pointer'
+const selectCls = `${inputCls} appearance-none cursor-pointer`
 
 const CATEGORIES = ['音乐教程', '乐理知识', '创作技巧', 'AI音乐', '行业动态']
 
@@ -147,7 +140,7 @@ export default function AdminContentPage() {
   }
 
   return (
-    <div>
+    <div className={pageWrap}>
       {/* Toast */}
       {toast && (
         <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
@@ -166,7 +159,7 @@ export default function AdminContentPage() {
       />
 
       {/* Card wrapper */}
-      <div className="bg-white border border-[#e8edf5] rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(99,102,241,0.05)]">
+      <div className="bg-white border border-[var(--border)] rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(99,102,241,0.05)]">
         {/* Tab bar */}
         <div className="flex items-center px-5 border-b border-[#f0f4fb] bg-white">
           {tabs.map((t) => (
@@ -180,18 +173,17 @@ export default function AdminContentPage() {
               style={{
                 padding: '14px 4px',
                 marginRight: 26,
-                borderBottom: tab === t.key ? '2px solid #6366f1' : '2px solid transparent',
+                borderBottom: tab === t.key ? '2px solid var(--accent)' : '2px solid transparent',
                 fontSize: 13.5,
-                color: tab === t.key ? '#1e293b' : '#94a3b8',
+                color: tab === t.key ? 'var(--text)' : 'var(--text3)',
                 fontWeight: tab === t.key ? 600 : 400,
               }}
             >
               {t.label}
               <span
-                className="ml-1"
+                className="ml-1 text-xs"
                 style={{
-                  fontSize: 12,
-                  color: tab === t.key ? '#6366f1' : '#c8d0dc',
+                  color: tab === t.key ? 'var(--accent)' : '#c8d0dc',
                 }}
               >
                 {t.count}
@@ -207,7 +199,7 @@ export default function AdminContentPage() {
               {['标题', '栏目', '类型', '浏览量', '状态', '操作'].map((h) => (
                 <th
                   key={h}
-                  className="px-4 py-2.5 text-left text-xs font-medium text-[#64748b] border-b border-[#edf0f9]"
+                  className="px-4 py-2.5 text-left text-xs font-medium text-[var(--text2)] border-b border-[#edf0f9]"
                 >
                   {h}
                 </th>
@@ -224,27 +216,27 @@ export default function AdminContentPage() {
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-2">
                     <span className="text-base">{row.cover || '📄'}</span>
-                    <span className="font-medium text-[#1e293b]">{row.title}</span>
+                    <span className="font-medium text-[var(--text)]">{row.title}</span>
                   </div>
                 </td>
                 {/* 栏目 */}
-                <td className="px-4 py-3.5 text-[#475569]">{row.category}</td>
+                <td className="px-4 py-3.5 text-[var(--text2)]">{row.category}</td>
                 {/* 类型 */}
-                <td className="px-4 py-3.5 text-[#475569]">
+                <td className="px-4 py-3.5 text-[var(--text2)]">
                   {row.type === 'video' ? '视频' : '图文'}
                 </td>
                 {/* 浏览量 */}
-                <td className="px-4 py-3.5 text-[#475569]">
+                <td className="px-4 py-3.5 text-[var(--text2)]">
                   {(row.views ?? 0).toLocaleString()}
                 </td>
                 {/* 状态 */}
                 <td className="px-4 py-3.5">
                   {row.status === 'published' ? (
-                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[11.5px] font-medium text-[#0694a2] bg-[#e0f7fa]">
+                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[11.5px] font-medium text-[var(--green)] bg-[#e0f7fa]">
                       已发布
                     </span>
                   ) : (
-                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[11.5px] font-medium text-[#d97706] bg-[#fef9ec]">
+                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[11.5px] font-medium text-[var(--orange)] bg-[#fef9ec]">
                       草稿
                     </span>
                   )}
@@ -253,14 +245,14 @@ export default function AdminContentPage() {
                 <td className="px-4 py-3.5">
                   <div className="flex gap-1">
                     <button
-                      className="px-3 py-1 border-0 rounded-md bg-transparent text-[#6366f1] text-xs font-medium cursor-pointer transition-colors hover:bg-[#eef2ff]"
+                      className="px-3 py-1 border-0 rounded-md bg-transparent text-[var(--accent)] text-xs font-medium cursor-pointer transition-colors hover:bg-[#eef2ff]"
                       onClick={() => openEditModal(row)}
                     >
                       编辑
                     </button>
                     <button
                       className={`px-3 py-1 border-0 rounded-md bg-transparent text-xs font-medium cursor-pointer transition-colors hover:bg-[#f4f7fe] ${
-                        row.status === 'published' ? 'text-[#64748b]' : 'text-[#16a34a]'
+                        row.status === 'published' ? 'text-[var(--text2)]' : 'text-[var(--green2)]'
                       }`}
                       onClick={() => toggleStatus(row.id)}
                     >
@@ -275,7 +267,7 @@ export default function AdminContentPage() {
 
         {/* Pagination */}
         <div className="px-5 py-3 flex justify-between items-center border-t border-[#f0f4fb] bg-[#fafbff]">
-          <span className="text-xs text-[#94a3b8]">
+          <span className="text-xs text-[var(--text3)]">
             第 {total === 0 ? 0 : (page - 1) * PER_PAGE + 1}–{Math.min(page * PER_PAGE, total)} 条/总共 {total} 条
           </span>
           <div className="flex items-center gap-[3px]">
@@ -283,10 +275,10 @@ export default function AdminContentPage() {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="w-7 h-7 border border-[#e8edf5] rounded-md bg-white flex items-center justify-center text-[13px]"
+              className="w-7 h-7 border border-[var(--border)] rounded-md bg-white flex items-center justify-center text-[13px]"
               style={{
                 cursor: page === 1 ? 'default' : 'pointer',
-                color: page === 1 ? '#d1dae8' : '#475569',
+                color: page === 1 ? '#d1dae8' : 'var(--text2)',
               }}
             >
               ‹
@@ -301,9 +293,9 @@ export default function AdminContentPage() {
                   className="w-7 h-7 rounded-md text-[12.5px] cursor-pointer"
                   style={{
                     border: '1px solid',
-                    borderColor: page === n ? '#6366f1' : '#e8edf5',
-                    background: page === n ? '#6366f1' : '#fff',
-                    color: page === n ? '#fff' : '#475569',
+                    borderColor: page === n ? 'var(--accent)' : 'var(--border)',
+                    background: page === n ? 'var(--accent)' : '#fff',
+                    color: page === n ? '#fff' : 'var(--text2)',
                     fontWeight: page === n ? 600 : 400,
                   }}
                 >
@@ -312,12 +304,12 @@ export default function AdminContentPage() {
               )
             })}
             {totalPages > 5 && (
-              <span className="text-[#94a3b8] text-xs px-0.5">···</span>
+              <span className="text-[var(--text3)] text-xs px-0.5">···</span>
             )}
             {totalPages > 5 && (
               <button
                 onClick={() => setPage(totalPages)}
-                className="w-7 h-7 border border-[#e8edf5] rounded-md bg-white text-[#475569] text-xs cursor-pointer"
+                className="w-7 h-7 border border-[var(--border)] rounded-md bg-white text-[var(--text2)] text-xs cursor-pointer"
               >
                 {totalPages}
               </button>
@@ -326,16 +318,16 @@ export default function AdminContentPage() {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="w-7 h-7 border border-[#e8edf5] rounded-md bg-white flex items-center justify-center text-[13px]"
+              className="w-7 h-7 border border-[var(--border)] rounded-md bg-white flex items-center justify-center text-[13px]"
               style={{
                 cursor: page === totalPages ? 'default' : 'pointer',
-                color: page === totalPages ? '#d1dae8' : '#475569',
+                color: page === totalPages ? '#d1dae8' : 'var(--text2)',
               }}
             >
               ›
             </button>
             {/* Per page label */}
-            <span className="ml-2 text-[11.5px] text-[#94a3b8] bg-[#f4f7fe] px-2.5 py-[3px] rounded-md border border-[#e8edf5]">
+            <span className="ml-2 text-[11.5px] text-[var(--text3)] bg-[#f4f7fe] px-2.5 py-[3px] rounded-md border border-[var(--border)]">
               8 条/页
             </span>
           </div>
@@ -351,7 +343,7 @@ export default function AdminContentPage() {
       >
         <div className="flex flex-col gap-4">
           <div>
-            <label className={labelCls}>标题 <span className="text-[#e53e3e]">*</span></label>
+            <label className={labelCls}>标题 <span className="text-[var(--red)]">*</span></label>
             <input
               className={inputCls}
               value={formTitle}

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { PageHeader } from '@/components/admin/page-header'
 import { useApi } from '@/lib/use-api'
+import { pageWrap } from '@/lib/ui-tokens'
 
 const PLATFORMS = ['QQ音乐', '网易云音乐', 'Spotify', 'Apple Music', '酷狗音乐']
 
@@ -22,14 +23,14 @@ const STATUS_CONFIG: Record<
   string,
   { label: string; color: string; bg: string; icon: string }
 > = {
-  live: { label: '已上架', color: '#16a34a', bg: '#f0fdf4', icon: '✅' },
-  submitted: { label: '已提交', color: '#d97706', bg: '#fef9ec', icon: '⏳' },
+  live: { label: '已上架', color: 'var(--green2)', bg: '#f0fdf4', icon: '✅' },
+  submitted: { label: '已提交', color: 'var(--orange)', bg: '#fef9ec', icon: '⏳' },
   pending: { label: '待提交', color: '#3b82f6', bg: '#eff6ff', icon: '📋' },
-  none: { label: '未安排', color: '#94a3b8', bg: 'transparent', icon: '—' },
+  none: { label: '未安排', color: 'var(--text3)', bg: 'transparent', icon: '—' },
 }
 
 const cardCls =
-  'bg-white border border-[#e8edf5] rounded-xl shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
+  'bg-white border border-[var(--border)] rounded-xl shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
 
 export default function AdminDistributionsPage() {
   const [toast, setToast] = useState('')
@@ -60,7 +61,7 @@ export default function AdminDistributionsPage() {
   }
 
   return (
-    <div>
+    <div className={pageWrap}>
       {/* Toast */}
       {toast && (
         <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
@@ -74,14 +75,14 @@ export default function AdminDistributionsPage() {
       <div className={cardCls}>
         <table className="w-full border-collapse">
           <thead>
-            <tr className="border-b border-[#e8edf5]">
-              <th className="text-left text-[13px] font-semibold text-[var(--text2)] px-5 py-3.5 w-[180px]">
+            <tr className="border-b border-[var(--border)]">
+              <th className="text-left text-sm font-semibold text-[var(--text2)] px-5 py-3.5 w-[180px]">
                 歌曲
               </th>
               {PLATFORMS.map((p) => (
                 <th
                   key={p}
-                  className="text-left text-[13px] font-semibold text-[var(--text2)] px-5 py-3.5"
+                  className="text-left text-sm font-semibold text-[var(--text2)] px-5 py-3.5"
                 >
                   {p}
                 </th>
@@ -95,7 +96,7 @@ export default function AdminDistributionsPage() {
                 className="border-b border-[#f0f4fb] last:border-b-0 hover:bg-[#fafaff] transition-colors"
               >
                 <td className="px-5 py-3.5">
-                  <span className="text-[13px] font-medium text-[var(--text)]">
+                  <span className="text-sm font-medium text-[var(--text)]">
                     {item.songTitle}
                   </span>
                 </td>
@@ -109,7 +110,7 @@ export default function AdminDistributionsPage() {
                       onClick={() => handleCellClick(item, platform)}
                     >
                       <span
-                        className="text-[12px] inline-block"
+                        className="text-xs inline-block"
                         style={{ color: cfg.color }}
                       >
                         {cfg.label}
@@ -124,11 +125,11 @@ export default function AdminDistributionsPage() {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-6 mt-4 px-2">
+      <div className="flex items-center gap-6 px-2">
         {(['live', 'submitted', 'pending', 'none'] as const).map((key) => {
           const cfg = STATUS_CONFIG[key]
           return (
-            <div key={key} className="flex items-center gap-1.5 text-[12px] text-[var(--text3)]">
+            <div key={key} className="flex items-center gap-1.5 text-xs text-[var(--text3)]">
               <span>{cfg.icon}</span>
               <span>{cfg.label}</span>
             </div>

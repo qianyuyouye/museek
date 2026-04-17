@@ -6,19 +6,14 @@ import { AdminTab } from '@/components/admin/admin-tab'
 import { DataTable, Column } from '@/components/admin/data-table'
 import { AdminModal } from '@/components/admin/admin-modal'
 import { useApi, apiCall } from '@/lib/use-api'
+import { pageWrap, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'
 
 // ── Style helpers ────────────────────────────────────────────────
-const btnPrimary =
-  'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0'
-const btnGhost =
-  'bg-transparent text-[var(--text2)] border border-[var(--border)] px-4 py-2 rounded-lg text-sm font-medium cursor-pointer'
 const btnDanger =
-  'bg-gradient-to-r from-[#e53e3e] to-[#c53030] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
+  'bg-gradient-to-r from-[var(--red)] to-[#c53030] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
 const btnSuccess =
-  'bg-gradient-to-r from-[#16a34a] to-[#0694a2] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
+  'bg-gradient-to-r from-[var(--green2)] to-[var(--green)] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
 const btnSmall = 'text-[11px] px-2.5 py-1'
-const cardCls =
-  'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -40,11 +35,11 @@ interface PublishTrack {
 // ── Helpers ──────────────────────────────────────────────────────
 
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: '待提交', color: '#64748b', bg: '#f1f5f9' },
-  submitted: { label: '待确认上架', color: '#d97706', bg: '#fef9ec' },
-  live: { label: '已上架', color: '#0694a2', bg: '#e0f7fa' },
-  data_confirmed: { label: '数据已确认', color: '#16a34a', bg: '#f0fdf4' },
-  exception: { label: '异常', color: '#e53e3e', bg: '#fff0f0' },
+  pending: { label: '待提交', color: 'var(--text2)', bg: '#f1f5f9' },
+  submitted: { label: '待确认上架', color: 'var(--orange)', bg: '#fef9ec' },
+  live: { label: '已上架', color: 'var(--green)', bg: '#e0f7fa' },
+  data_confirmed: { label: '数据已确认', color: 'var(--green2)', bg: '#f0fdf4' },
+  exception: { label: '异常', color: 'var(--red)', bg: '#fff0f0' },
 }
 
 function daysSince(dateStr: string | null): number | null {
@@ -168,7 +163,7 @@ export default function PublishConfirmPage() {
         const days = daysSince(t.submittedAt)
         if (days === null) return <span style={{ color: 'var(--text3)' }}>-</span>
         return (
-          <span style={{ color: days > 30 ? '#e53e3e' : 'var(--text)', fontWeight: days > 30 ? 600 : 400 }}>
+          <span style={{ color: days > 30 ? 'var(--red)' : 'var(--text)', fontWeight: days > 30 ? 600 : 400 }}>
             {days}{'\u5929'}{days > 30 ? ' \u26A0\uFE0F' : ''}
           </span>
         )
@@ -184,7 +179,7 @@ export default function PublishConfirmPage() {
       title: '\u672C\u671F\u6709\u6570\u636E?',
       render: (v) =>
         (v as boolean) ? (
-          <span style={{ color: '#16a34a', fontWeight: 600 }}>{'\u2713 \u662F'}</span>
+          <span style={{ color: 'var(--green2)', fontWeight: 600 }}>{'\u2713 \u662F'}</span>
         ) : (
           <span style={{ color: 'var(--text3)' }}>{'\u672A\u8FD4\u56DE'}</span>
         ),
@@ -196,13 +191,12 @@ export default function PublishConfirmPage() {
         const s = STATUS_MAP[v as string]
         return s ? (
           <span
+            className="text-xs font-medium"
             style={{
-              fontSize: 12,
               padding: '2px 10px',
               borderRadius: 10,
               background: s.bg,
               color: s.color,
-              fontWeight: 500,
             }}
           >
             {s.label}
@@ -338,7 +332,7 @@ export default function PublishConfirmPage() {
   // ── Render ─────────────────────────────────────────────────────
 
   return (
-    <div>
+    <div className={pageWrap}>
       {/* Toast */}
       {toast && (
         <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
@@ -357,38 +351,38 @@ export default function PublishConfirmPage() {
       />
 
       {/* Strategy cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 24 }}>
+      <div className="grid grid-cols-3 gap-4">
         <div className={cardCls}>
           <div className="flex items-center gap-2 mb-2">
             <span style={{ fontSize: 20 }}>{'\u2705'}</span>
-            <span style={{ fontWeight: 600, fontSize: 14 }}>{'\u81EA\u52A8\u786E\u8BA4'}</span>
+            <span className="font-semibold text-sm">{'\u81EA\u52A8\u786E\u8BA4'}</span>
           </div>
-          <p style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.6, margin: 0 }}>
+          <p className="text-xs text-[var(--text3)] leading-relaxed m-0">
             {'\u5BF9\u8D26\u5BFC\u5165\u65F6\u5E73\u53F0\u6709\u6570\u636E\u81EA\u52A8\u7F6E\u4E3A\u201C\u5DF2\u53D1\u884C\u201D'}
           </p>
         </div>
         <div className={cardCls}>
           <div className="flex items-center gap-2 mb-2">
             <span style={{ fontSize: 20 }}>{'\uD83D\uDC4B'}</span>
-            <span style={{ fontWeight: 600, fontSize: 14 }}>{'\u4EBA\u5DE5\u786E\u8BA4'}</span>
+            <span className="font-semibold text-sm">{'\u4EBA\u5DE5\u786E\u8BA4'}</span>
           </div>
-          <p style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.6, margin: 0 }}>
+          <p className="text-xs text-[var(--text3)] leading-relaxed m-0">
             {'\u5E73\u53F0\u5DF2\u4E0A\u67B6\u4F46\u5C1A\u65E0\u6570\u636E\u53EF\u63D0\u524D\u624B\u52A8\u786E\u8BA4'}
           </p>
         </div>
         <div className={cardCls}>
           <div className="flex items-center gap-2 mb-2">
             <span style={{ fontSize: 20 }}>{'\u26A0\uFE0F'}</span>
-            <span style={{ fontWeight: 600, fontSize: 14 }}>{'\u5F02\u5E38\u5904\u7406'}</span>
+            <span className="font-semibold text-sm">{'\u5F02\u5E38\u5904\u7406'}</span>
           </div>
-          <p style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.6, margin: 0 }}>
+          <p className="text-xs text-[var(--text3)] leading-relaxed m-0">
             {'\u63D0\u4EA4\u8D8530\u5929\u65E0\u6570\u636E\u8FDB\u5165\u5F02\u5E38\u961F\u5217'}
           </p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="mb-4">
+      <div>
         <AdminTab
           tabs={tabs}
           active={activeTab}

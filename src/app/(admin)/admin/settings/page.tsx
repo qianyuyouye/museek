@@ -5,19 +5,7 @@ import { PageHeader } from '@/components/admin/page-header'
 import { AdminTab } from '@/components/admin/admin-tab'
 import { DataTable, Column } from '@/components/admin/data-table'
 import { useApi, apiCall } from '@/lib/use-api'
-
-// ── Style helpers ────────────────────────────────────────────────
-
-const btnPrimary =
-  'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0'
-
-const inputCls =
-  'w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]'
-
-const labelCls = 'block text-[13px] text-[var(--text2)] mb-1.5 font-medium'
-
-const cardCls =
-  'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
+import { pageWrap, cardCls, btnPrimary, inputCls, labelCls } from '@/lib/ui-tokens'
 
 // ── Tab definitions ──────────────────────────────────────────────
 
@@ -106,7 +94,7 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <div>
+    <div className={pageWrap}>
       {/* Toast */}
       {toast && (
         <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
@@ -116,7 +104,7 @@ export default function AdminSettingsPage() {
 
       <PageHeader title="系统设置" subtitle={loading ? '加载中...' : '配置平台运营参数'} />
 
-      <div className="mb-5">
+      <div>
         <AdminTab tabs={TABS} active={tab} onChange={setTab} />
       </div>
 
@@ -154,13 +142,13 @@ function ScoresTab({ onSave, initialData }: { showToast: (msg: string) => void; 
 
   return (
     <div>
-      <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>评分维度权重</h3>
+      <h3 className="text-[15px] font-semibold mb-4">评分维度权重</h3>
       {weights.map((d, i) => (
         <div
           key={d.label}
-          style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}
+          className="flex items-center gap-3 mb-3"
         >
-          <span style={{ width: 130, fontSize: 13 }}>{d.label}</span>
+          <span className="w-32 text-sm">{d.label}</span>
           <input
             type="range"
             min="0"
@@ -173,22 +161,18 @@ function ScoresTab({ onSave, initialData }: { showToast: (msg: string) => void; 
             }}
             style={{ flex: 1, accentColor: 'var(--accent)' }}
           />
-          <span style={{ width: 50, textAlign: 'right', fontWeight: 600, fontSize: 14 }}>
+          <span className="w-12 text-right font-semibold text-sm">
             {d.value}%
           </span>
         </div>
       ))}
 
       <div
-        style={{
-          marginTop: 20,
-          padding: 16,
-          background: '#f0f4fb',
-          borderRadius: 8,
-        }}
+        className="mt-5 p-4 rounded-lg"
+        style={{ background: '#f0f4fb' }}
       >
-        <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 10 }}>自动入库阈值</h4>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <h4 className="text-sm font-semibold mb-2.5">自动入库阈值</h4>
+        <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={labelCls}>最低分数</label>
             <input className={inputCls} type="number" value={thresholdMinScore} onChange={(e) => setThresholdMinScore(Number(e.target.value))} />
@@ -203,7 +187,7 @@ function ScoresTab({ onSave, initialData }: { showToast: (msg: string) => void; 
         </div>
       </div>
 
-      <div style={{ marginTop: 16 }}>
+      <div className="mt-4">
         <button className={btnPrimary} onClick={() => onSave({ weights, threshold: { minScore: thresholdMinScore, recommendLevel: thresholdRecommendLevel } })}>
           保存配置
         </button>
@@ -254,13 +238,13 @@ function CommissionTab({ showToast, initialData }: { showToast: (msg: string) =>
 
   return (
     <div>
-      <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>分成比例规则</h3>
+      <h3 className="text-[15px] font-semibold mb-4">分成比例规则</h3>
       <DataTable
         columns={columns as unknown as Column<Record<string, unknown>>[]}
         data={rules as unknown as Record<string, unknown>[]}
         rowKey={(r) => (r as unknown as CommissionRule).name}
       />
-      <div style={{ marginTop: 16 }}>
+      <div className="mt-4">
         <button className={btnPrimary} onClick={() => showToast('已添加新规则')}>
           + 添加规则
         </button>
@@ -311,38 +295,24 @@ function TemplatesTab({ showToast, onSave, initialData }: { showToast: (msg: str
 
   return (
     <div>
-      <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>快捷评语模板</h3>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+      <h3 className="text-[15px] font-semibold mb-4">快捷评语模板</h3>
+      <div className="flex flex-wrap gap-2">
         {templates.map((t) => (
           <div
             key={t}
-            style={{
-              padding: '6px 14px',
-              borderRadius: 20,
-              border: '1px solid var(--border)',
-              fontSize: 13,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
+            className="px-3.5 py-1.5 rounded-full border border-[var(--border)] text-sm flex items-center gap-2"
           >
             {t}
             <button
               onClick={() => handleDelete(t)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--red)',
-                cursor: 'pointer',
-                fontSize: 14,
-              }}
+              className="bg-transparent border-0 text-[var(--red)] cursor-pointer text-sm"
             >
               ×
             </button>
           </div>
         ))}
       </div>
-      <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
+      <div className="mt-4 flex gap-2">
         <input
           className={inputCls}
           style={{ flex: 1 }}
@@ -403,7 +373,7 @@ function PlatformsTab({ initialData }: { initialData: SettingsData | null }) {
 
   return (
     <div>
-      <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>合作流媒体平台</h3>
+      <h3 className="text-[15px] font-semibold mb-4">合作流媒体平台</h3>
       <DataTable
         columns={columns as unknown as Column<Record<string, unknown>>[]}
         data={platformData as unknown as Record<string, unknown>[]}
@@ -430,16 +400,16 @@ function OptionsTab({ initialData }: { initialData: SettingsData | null }) {
 
   return (
     <div>
-      <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>AI工具选项</h3>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+      <h3 className="text-[15px] font-semibold mb-4">AI工具选项</h3>
+      <div className="flex flex-wrap gap-2 mb-5">
         {aiToolsList.map((t) => (
           <span key={t} style={tagStyle}>
             {t}
           </span>
         ))}
       </div>
-      <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>流派选项</h3>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+      <h3 className="text-[15px] font-semibold mb-4">流派选项</h3>
+      <div className="flex flex-wrap gap-2">
         {genresList.map((t) => (
           <span key={t} style={tagStyle}>
             {t}

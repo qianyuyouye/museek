@@ -4,6 +4,7 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import { PageHeader } from '@/components/admin/page-header'
 import { useApi } from '@/lib/use-api'
 import { SONG_STATUS_MAP } from '@/lib/constants'
+import { pageWrap, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'
 
 interface SongItem {
   id: number
@@ -22,19 +23,12 @@ interface SongItem {
 }
 
 // ── Button / style helpers ──────────────────────────────────────
-const btnPrimary =
-  'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0'
-const btnGhost =
-  'bg-transparent text-[var(--text2)] border border-[var(--border)] px-4 py-2 rounded-lg text-sm font-medium cursor-pointer'
 const btnSmall = 'text-[11px] px-2.5 py-1'
 
 const selectCls =
-  'px-3 py-2 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer'
+  'px-3 py-2 bg-white border-[1.5px] border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer'
 const inputCls =
-  'px-3 py-2 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]'
-
-const cardCls =
-  'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
+  'px-3 py-2 bg-white border-[1.5px] border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]'
 
 // ── Status filter mapping ───────────────────────────────────────
 const STATUS_FILTERS = [
@@ -171,7 +165,7 @@ export default function BatchDownloadPage() {
   }, [someSelected])
 
   return (
-    <div>
+    <div className={pageWrap}>
       {/* Toast */}
       {toast && (
         <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
@@ -185,7 +179,7 @@ export default function BatchDownloadPage() {
       />
 
       {/* Filters row */}
-      <div className={`${cardCls} mb-4`}>
+      <div className={cardCls}>
         <div className="flex flex-wrap items-center gap-3">
           {/* 状态 */}
           <select
@@ -244,7 +238,7 @@ export default function BatchDownloadPage() {
       </div>
 
       {/* Action bar */}
-      <div className={`${cardCls} mb-4`}>
+      <div className={cardCls}>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-2 text-sm text-[var(--text2)] cursor-pointer select-none">
             <input
@@ -252,7 +246,7 @@ export default function BatchDownloadPage() {
               type="checkbox"
               checked={allSelected}
               onChange={toggleAll}
-              className="w-4 h-4 accent-[#6366f1] cursor-pointer"
+              className="w-4 h-4 accent-[var(--accent)] cursor-pointer"
             />
             {selectedIds.size > 0
               ? `已选 ${selectedIds.size} 首`
@@ -338,7 +332,7 @@ export default function BatchDownloadPage() {
                     ref={headerCheckRef}
                     checked={allSelected}
                     onChange={toggleAll}
-                    className="w-4 h-4 accent-[#6366f1] cursor-pointer"
+                    className="w-4 h-4 accent-[var(--accent)] cursor-pointer"
                   />
                 </th>
                 {['封面', '歌曲名', '创作者', '风格', 'BPM', 'AI工具', '评分', '版权编号', 'ISRC', '状态', '操作'].map(
@@ -396,18 +390,18 @@ function SongRow({
   onDownload: () => void
 }) {
   const creator = song.creatorName ?? `用户${song.userId}`
-  const statusInfo = SONG_STATUS_MAP[song.status] ?? { label: song.status, color: '#64748b', bg: '#f1f5f9' }
+  const statusInfo = SONG_STATUS_MAP[song.status] ?? { label: song.status, color: 'var(--text2)', bg: '#f1f5f9' }
 
   const scoreEl = (() => {
     if (song.score === null) return <span className="text-[var(--text3)]">-</span>
-    const color = song.score >= 80 ? '#16a34a' : '#d97706'
+    const color = song.score >= 80 ? 'var(--green2)' : 'var(--orange)'
     return <span style={{ color, fontWeight: 600 }}>{song.score}</span>
   })()
 
   const isrcEl = song.isrc ? (
-    <span className="text-[#16a34a] font-mono text-xs">{song.isrc}</span>
+    <span className="text-[var(--green2)] font-mono text-xs">{song.isrc}</span>
   ) : (
-    <span className="text-[#e53e3e] text-xs">⚠️ 无</span>
+    <span className="text-[var(--red)] text-xs">⚠️ 无</span>
   )
 
   return (
@@ -419,7 +413,7 @@ function SongRow({
           type="checkbox"
           checked={selected}
           onChange={onToggle}
-          className="w-4 h-4 accent-[#6366f1] cursor-pointer"
+          className="w-4 h-4 accent-[var(--accent)] cursor-pointer"
         />
       </td>
       <td className="px-3 py-3 text-sm border-b border-[var(--border)] whitespace-nowrap">
