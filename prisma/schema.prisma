@@ -37,7 +37,7 @@ model User {
   id              Int             @id @default(autoincrement())
   name            String?         @db.VarChar(100)
   realName        String?         @map("real_name") @db.VarChar(50)
-  idCard          String?         @map("id_card") @db.VarChar(18)
+  idCard          String?         @map("id_card") @db.VarChar(128)
   phone           String          @unique @db.VarChar(20)
   email           String?         @db.VarChar(200)
   passwordHash    String?         @map("password_hash") @db.VarChar(255)

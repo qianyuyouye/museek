@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
+import { decryptIdCard } from '@/lib/encrypt'
 
 /** 手机号脱敏：中间4位替换为* */
 function maskPhone(phone: string): string {
@@ -8,6 +9,17 @@ function maskPhone(phone: string): string {
     return phone.slice(0, 3) + '****' + phone.slice(7)
   }
   return phone
+}
+
+/** 尝试解密身份证；老数据若为 18 位明文直接返回，其他异常返回原值 */
+function revealIdCard(stored: string | null): string | null {
+  if (!stored) return null
+  if (/^\d{17}[\dXx]$/.test(stored)) return stored
+  try {
+    return decryptIdCard(stored)
+  } catch {
+    return stored
+  }
 }
 
 type RouteContext = { params: Promise<{ id: string }> }
@@ -42,7 +54,7 @@ export const GET = safeHandler(async function GET(request: NextRequest, context:
     id: user.id,
     name: user.name,
     realName: user.realName,
-    idCard: user.idCard ? '****' + user.idCard.slice(-4) : null,
+    idCard: revealIdCard(user.idCard),
     phone: maskPhone(user.phone),
     email: user.email,
     avatarUrl: user.avatarUrl,

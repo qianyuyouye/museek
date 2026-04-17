@@ -28,14 +28,6 @@ const CONTRACT_DETAILS_STATIC: [string, string][] = [
   ['自动续约', '是'],
 ]
 
-const VERIFY_INFO = [
-  ['真实姓名', '张小明'],
-  ['身份证号', '310***********1234'],
-  ['实名手机号', '138****1234'],
-  ['认证状态', '已通过'],
-  ['认证时间', '2026-01-12 14:30'],
-]
-
 // ── Types ───────────────────────────────────────────────────────
 
 interface LoginLogItem {
@@ -155,6 +147,11 @@ export default function CreatorProfile() {
   // Sign agency checkbox
   const [agencyRead, setAgencyRead] = useState(false)
 
+  // Real-name form
+  const [rnName, setRnName] = useState('')
+  const [rnIdCard, setRnIdCard] = useState('')
+  const [rnSubmitting, setRnSubmitting] = useState(false)
+
   // Init edit form when user loads
   useEffect(() => {
     if (user) {
@@ -253,9 +250,22 @@ export default function CreatorProfile() {
             <div className="flex items-center justify-between px-3 py-2 bg-[#f9fafb] rounded-md border border-[var(--border)]">
               <div className="flex items-center gap-2 text-[13px]">
                 <span className="text-[var(--text3)]">🔐 实名认证</span>
-                <span className="text-[var(--text)] font-medium">{user.realName}（{rnStatus.label}）</span>
+                <span className="text-[var(--text)] font-medium">
+                  {user.realName || '未填写'}（{rnStatus.label}）
+                </span>
               </div>
-              <button className={btnGhost} onClick={() => setVerifyModal(true)}>查看认证</button>
+              <button
+                className={btnGhost}
+                onClick={() => {
+                  setRnName(user.realName || '')
+                  setRnIdCard('')
+                  setVerifyModal(true)
+                }}
+              >
+                {user.realNameStatus === 'unverified' || user.realNameStatus === 'rejected'
+                  ? '提交认证'
+                  : '查看认证'}
+              </button>
             </div>
             <div className="flex items-center justify-between px-3 py-2 bg-[#f9fafb] rounded-md border border-[var(--border)]">
               <div className="flex items-center gap-2 text-[13px]">
@@ -491,18 +501,100 @@ export default function CreatorProfile() {
 
       {/* Verify Info Modal */}
       <Modal
-        title="实名认证信息"
+        title="实名认证"
         open={verifyModal}
         onClose={() => setVerifyModal(false)}
       >
-        <div className="flex flex-col gap-2.5 text-[13px]">
-          {VERIFY_INFO.map(([k, v]) => (
-            <div key={k} className={rowCls}>
-              <span className="text-[var(--text3)]">{k}</span>
-              <span>{k === '认证状态' ? `✅ ${v}` : v}</span>
+        {user.realNameStatus === 'unverified' || user.realNameStatus === 'rejected' ? (
+          <div className="flex flex-col gap-4">
+            {user.realNameStatus === 'rejected' && (
+              <div className="px-3 py-2 rounded-md text-[13px] bg-[rgba(255,107,107,0.08)] text-[var(--red)]">
+                上次提交已被驳回，请核对信息后重新提交。
+              </div>
+            )}
+            <div>
+              <label className={labelCls}>真实姓名</label>
+              <input
+                className={inputCls}
+                value={rnName}
+                placeholder="请输入身份证上的姓名"
+                onChange={(e) => setRnName(e.target.value)}
+              />
             </div>
-          ))}
-        </div>
+            <div>
+              <label className={labelCls}>身份证号</label>
+              <input
+                className={inputCls}
+                value={rnIdCard}
+                placeholder="18 位身份证号"
+                maxLength={18}
+                onChange={(e) =>
+                  setRnIdCard(e.target.value.replace(/[^\dXx]/g, '').toUpperCase())
+                }
+              />
+            </div>
+            <div className="text-xs text-[var(--text3)] leading-relaxed">
+              身份证信息将加密存储，仅管理员审核时可见。提交后进入人工审核，状态变更后会通过消息中心通知。
+            </div>
+            <button
+              className={`${btnPrimary} ${rnSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+              disabled={rnSubmitting}
+              onClick={async () => {
+                if (!/^[\u4e00-\u9fa5·\s]{2,20}$|^[A-Za-z\s]{2,40}$/.test(rnName.trim())) {
+                  showToast('真实姓名格式不正确')
+                  return
+                }
+                if (!/^\d{17}[\dXx]$/.test(rnIdCard)) {
+                  showToast('身份证号格式不正确')
+                  return
+                }
+                setRnSubmitting(true)
+                const res = await apiCall('/api/profile/real-name', 'POST', {
+                  realName: rnName.trim(),
+                  idCard: rnIdCard,
+                })
+                setRnSubmitting(false)
+                if (res.ok) {
+                  setVerifyModal(false)
+                  setRnIdCard('')
+                  showToast('✅ 认证申请已提交，等待审核')
+                  refetch()
+                } else {
+                  showToast(res.message || '提交失败')
+                }
+              }}
+            >
+              提交认证申请
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2.5 text-[13px]">
+            <div className={rowCls}>
+              <span className="text-[var(--text3)]">真实姓名</span>
+              <span>{user.realName || '—'}</span>
+            </div>
+            <div className={rowCls}>
+              <span className="text-[var(--text3)]">实名手机号</span>
+              <span>{user.phone}</span>
+            </div>
+            <div className={rowCls}>
+              <span className="text-[var(--text3)]">身份证号</span>
+              <span>已加密保存</span>
+            </div>
+            <div className={rowCls}>
+              <span className="text-[var(--text3)]">认证状态</span>
+              <span style={{ color: rnStatus.color }}>
+                {user.realNameStatus === 'verified' ? '✅ ' : user.realNameStatus === 'pending' ? '⏳ ' : ''}
+                {rnStatus.label}
+              </span>
+            </div>
+            {user.realNameStatus === 'pending' && (
+              <div className="text-xs text-[var(--text3)] mt-1">
+                审核一般在 1 个工作日内完成，如需修改请等待审核结果或联系管理员。
+              </div>
+            )}
+          </div>
+        )}
       </Modal>
 
       {/* Contract Details Modal */}
