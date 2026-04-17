@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, useRef } from 'react'
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiCall } from '@/lib/use-api'
 import { extractAudioFeatures, type AudioFeatures } from '@/lib/audio-extract'
@@ -170,15 +170,79 @@ function Toast({ message }: { message: string }) {
 
 // ── Main Component ───────────────────────────────────────────────
 
+const CONTRIBUTION_BACK: Record<string, string> = { lead: '主导', participant: '协作' }
+
 export default function CreatorUploadPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<UploadForm>(INITIAL_FORM)
   const [toast, setToast] = useState('')
+  const [revisionSongId, setRevisionSongId] = useState<number | null>(null)
+  const [prefilling, setPrefilling] = useState(false)
 
   const audioRef = useRef<HTMLInputElement>(null)
   const coverRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+
+  // 从 URL 读取 songId；存在则拉取作品详情预填（修改并重新提交场景）
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const raw = params.get('songId')
+    const id = raw ? Number.parseInt(raw, 10) : NaN
+    if (!Number.isFinite(id)) return
+
+    setRevisionSongId(id)
+    setPrefilling(true)
+    fetch(`/api/creator/songs/${id}`)
+      .then((r) => r.json())
+      .then((json: { code: number; data?: {
+        title?: string; lyricist?: string; composer?: string; aiTools?: string[];
+        genre?: string; bpm?: number | null; lyrics?: string; styleDesc?: string;
+        creationDesc?: string; contribution?: string;
+        audioUrl?: string | null; coverUrl?: string | null;
+        audioFeatures?: AudioFeatures | null; status?: string;
+      }; message?: string }) => {
+        if (json.code !== 200 || !json.data) {
+          setToast(`❌ ${json.message || '加载作品失败'}`)
+          setTimeout(() => setToast(''), 3000)
+          return
+        }
+        const s = json.data
+        if (s.status && s.status !== 'needs_revision') {
+          setToast('❌ 仅需修改状态的作品可重新提交')
+          setTimeout(() => setToast(''), 3000)
+          setRevisionSongId(null)
+          return
+        }
+        setForm({
+          audioUploaded: !!s.audioUrl,
+          audioUrl: s.audioUrl ?? '',
+          audioFileName: s.audioUrl ? s.audioUrl.split('/').pop() ?? '' : '',
+          audioSize: '',
+          coverUploaded: !!s.coverUrl,
+          coverUrl: s.coverUrl ?? '',
+          title: s.title ?? '',
+          lyricist: s.lyricist ?? '',
+          composer: s.composer ?? '',
+          aiTool: s.aiTools?.[0] ?? 'Suno',
+          genre: s.genre ?? 'Pop',
+          bpm: s.bpm != null ? String(s.bpm) : '120',
+          prompt: s.styleDesc ?? '',
+          lyrics: s.lyrics ?? '',
+          contribution: CONTRIBUTION_BACK[s.contribution ?? 'lead'] ?? '主导',
+          creationDesc: s.creationDesc ?? '',
+          originality: false,
+          audioFeatures: s.audioFeatures ?? null,
+        })
+      })
+      .catch(() => {
+        setToast('❌ 加载作品失败')
+        setTimeout(() => setToast(''), 3000)
+      })
+      .finally(() => {
+        setPrefilling(false)
+      })
+  }, [])
 
   const upd = useCallback(
     <K extends keyof UploadForm>(key: K, value: UploadForm[K]) => {
@@ -307,6 +371,7 @@ export default function CreatorUploadPage() {
 
     const contributionMap: Record<string, string> = { '主导': 'lead', '协作': 'participant', '编辑': 'participant' }
     const res = await apiCall<{ id: number; copyrightCode: string }>('/api/creator/upload', 'POST', {
+      songId: revisionSongId ?? undefined,
       title: form.title,
       lyricist: form.lyricist,
       composer: form.composer,
@@ -323,7 +388,11 @@ export default function CreatorUploadPage() {
     })
 
     if (res.ok) {
-      showToast(`🎉 作品提交成功！版权编号：${res.data?.copyrightCode}`)
+      showToast(
+        revisionSongId
+          ? `🎉 作品已重新提交，版权编号：${res.data?.copyrightCode}`
+          : `🎉 作品提交成功！版权编号：${res.data?.copyrightCode}`,
+      )
       setTimeout(() => router.push('/creator/songs'), 1500)
     } else {
       showToast(`❌ ${res.message || '提交失败'}`)
@@ -349,9 +418,14 @@ export default function CreatorUploadPage() {
 
       {/* Page header */}
       <div>
-        <h1 className={textPageTitle}>自由上传</h1>
+        <h1 className={textPageTitle}>
+          {revisionSongId ? '修改并重新提交' : '自由上传'}
+        </h1>
         <p className="mt-1 text-sm text-[var(--text2)]">
-          不属于任何作业的独立创作上传 · 三步完成提交
+          {revisionSongId
+            ? '修改后提交将更新原作品并重新进入评审队列'
+            : '不属于任何作业的独立创作上传 · 三步完成提交'}
+          {prefilling ? ' · 加载中...' : ''}
         </p>
       </div>
 

@@ -224,7 +224,7 @@ export default function CreatorSongsPage() {
             {/* Revision button */}
             {song.status === 'needs_revision' && (
               <div className="mt-4">
-                <Link href="/creator/upload">
+                <Link href={`/creator/upload?songId=${song.id}`}>
                   <button className={btnPrimary}>📝 修改并重新提交</button>
                 </Link>
               </div>
