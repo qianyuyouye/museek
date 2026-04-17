@@ -276,7 +276,7 @@ export default function AdminGroupsPage() {
               <button
                 className={`${btnGhost} ${btnSmall}`}
                 onClick={async () => {
-                  if (!confirm('重新生成后原邀请码/链接将立即失效，确定继续？')) return
+                  if (!(await confirm({ message: '重新生成后原邀请码/链接将立即失效，确定继续？', danger: true }))) return
                   const newCode = Math.random().toString(36).substring(2, 10).toUpperCase()
                   const res = await apiCall(`/api/admin/groups/${g.id}`, 'PUT', { inviteCode: newCode })
                   if (res.ok) {
@@ -546,12 +546,13 @@ function InviteCodePanel({
   onClose: () => void
   showToast: (msg: string) => void
 }) {
+  const confirm = useConfirm()
   const [code, setCode] = useState(group.inviteCode)
   const [status, setStatus] = useState<'active' | 'paused'>(group.status)
   const link = `https://aimusic.com/join/${code}`
 
   async function regenerate() {
-    if (!confirm('重新生成后原邀请码将立即失效，确定继续？')) return
+    if (!(await confirm({ message: '重新生成后原邀请码将立即失效，确定继续？', danger: true }))) return
     const newCode = Math.random().toString(36).substring(2, 10).toUpperCase()
     const res = await apiCall(`/api/admin/groups/${group.id}`, 'PUT', { inviteCode: newCode })
     if (res.ok) {
