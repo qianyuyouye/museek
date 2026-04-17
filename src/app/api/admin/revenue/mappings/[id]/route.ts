@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler } from '@/lib/api-utils'
+import { backfillSettlements } from '@/lib/revenue-backfill'
 
 export const PUT = safeHandler(async function PUT(
   request: NextRequest,
@@ -31,7 +32,8 @@ export const PUT = safeHandler(async function PUT(
           confirmedBy: auth.userId,
         },
       })
-      return ok(updated)
+      const backfill = await backfillSettlements(prisma, mappingId)
+      return ok({ ...updated, backfill })
     }
 
     case 'reject': {
@@ -51,7 +53,13 @@ export const PUT = safeHandler(async function PUT(
           ...(platformSongId !== undefined && { platformSongId }),
         },
       })
-      return ok(updated)
+      // 如果该 mapping 已处于 confirmed 且具备 creatorId，本次 bind 相当于补齐信息，
+      // 同步回溯历史 revenue_rows 生成 settlement
+      let backfill
+      if (updated.status === 'confirmed' && updated.creatorId) {
+        backfill = await backfillSettlements(prisma, mappingId)
+      }
+      return ok(backfill ? { ...updated, backfill } : updated)
     }
 
     default:

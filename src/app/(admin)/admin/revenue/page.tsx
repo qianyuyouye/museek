@@ -250,7 +250,12 @@ export default function AdminRevenuePage() {
               const res = await apiCall(`/api/admin/revenue/mappings/${linkModal.id}`, 'PUT', { action: 'bind', creatorId })
               if (res.ok) {
                 setLinkModal(null)
-                showToast(`已绑定「${linkModal.songName}」的创作者`)
+                const created = (res.data as { backfill?: { created: number } } | null)?.backfill?.created ?? 0
+                showToast(
+                  created > 0
+                    ? `已绑定「${linkModal.songName}」，回溯生成 ${created} 条结算`
+                    : `已绑定「${linkModal.songName}」的创作者`,
+                )
                 refetchMappings()
               } else {
                 showToast(res.message ?? '绑定失败')
@@ -450,8 +455,15 @@ function MappingTab({
               <button className={`${btnSuccess} ${btnSmall}`} onClick={async e => {
                 e.stopPropagation()
                 const res = await apiCall(`/api/admin/revenue/mappings/${r.id}`, 'PUT', { action: 'confirm' })
-                if (res.ok) { showToast(`已确认「${r.songName}」的映射关系`); refetch() }
-                else showToast(res.message ?? '确认失败')
+                if (res.ok) {
+                  const created = (res.data as { backfill?: { created: number } } | null)?.backfill?.created ?? 0
+                  showToast(
+                    created > 0
+                      ? `已确认「${r.songName}」，回溯生成 ${created} 条结算`
+                      : `已确认「${r.songName}」的映射关系`,
+                  )
+                  refetch()
+                } else showToast(res.message ?? '确认失败')
               }}>
                 确认
               </button>
@@ -1058,8 +1070,14 @@ function ImportDetailContent({ row, showToast, refetch }: { row: RevenueImport; 
                     {d.matchedUserName && (
                       <button className={`${btnSuccess} ${btnSmall}`} onClick={async () => {
                         const res = await apiCall(`/api/admin/revenue/mappings/${d.id}`, 'PUT', { action: 'confirm' })
-                        if (res.ok) showToast(`已确认「${d.songName}」→「${d.matchedUserName}」，已写入映射表`)
-                        else showToast(res.message ?? '确认失败')
+                        if (res.ok) {
+                          const created = (res.data as { backfill?: { created: number } } | null)?.backfill?.created ?? 0
+                          showToast(
+                            created > 0
+                              ? `已确认「${d.songName}」→「${d.matchedUserName}」，回溯生成 ${created} 条结算`
+                              : `已确认「${d.songName}」→「${d.matchedUserName}」，已写入映射表`,
+                          )
+                        } else showToast(res.message ?? '确认失败')
                       }}>
                         确认绑定
                       </button>
