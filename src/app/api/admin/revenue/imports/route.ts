@@ -144,6 +144,73 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   })
   const mappingMap = new Map(existingMappings.map((m) => [m.qishuiSongId, m]))
 
+  // 对无映射的 songId 按歌名在 platform_songs 做模糊匹配（PRD §6.1 Step 3）
+  const songNameByQishuiId = new Map<string, string>()
+  for (const p of parsed) {
+    if (p.songName && !songNameByQishuiId.has(p.qishuiSongId)) {
+      songNameByQishuiId.set(p.qishuiSongId, p.songName)
+    }
+  }
+
+  const newMappingsData: Prisma.SongMappingCreateManyInput[] = []
+  const now = new Date()
+  for (const qishuiSongId of songIds) {
+    if (mappingMap.has(qishuiSongId)) continue
+    const songName = songNameByQishuiId.get(qishuiSongId)
+    if (!songName) {
+      newMappingsData.push({
+        qishuiSongId,
+        qishuiSongName: null,
+        matchType: 'none',
+        status: 'pending',
+      })
+      continue
+    }
+    // take: 2 只需判断是否唯一命中，避免歌名过宽时加载大量记录
+    const hits = await prisma.platformSong.findMany({
+      where: { title: { contains: songName } },
+      select: { id: true, userId: true },
+      take: 2,
+    })
+    if (hits.length === 1) {
+      newMappingsData.push({
+        qishuiSongId,
+        qishuiSongName: songName,
+        platformSongId: hits[0].id,
+        creatorId: hits[0].userId,
+        matchType: 'auto_exact',
+        status: 'confirmed',
+        confirmedAt: now,
+        confirmedBy: auth.userId,
+      })
+    } else if (hits.length > 1) {
+      newMappingsData.push({
+        qishuiSongId,
+        qishuiSongName: songName,
+        matchType: 'auto_fuzzy',
+        status: 'suspect',
+      })
+    } else {
+      newMappingsData.push({
+        qishuiSongId,
+        qishuiSongName: songName,
+        matchType: 'none',
+        status: 'pending',
+      })
+    }
+  }
+
+  if (newMappingsData.length > 0) {
+    await prisma.songMapping.createMany({ data: newMappingsData, skipDuplicates: true })
+    const created = await prisma.songMapping.findMany({
+      where: { qishuiSongId: { in: newMappingsData.map((m) => m.qishuiSongId) } },
+      select: { id: true, qishuiSongId: true, status: true },
+    })
+    for (const m of created) {
+      if (!mappingMap.has(m.qishuiSongId)) mappingMap.set(m.qishuiSongId, m)
+    }
+  }
+
   // 建 import + rows
   const imp = await prisma.revenueImport.create({
     data: {
@@ -167,10 +234,11 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     if (mapping && mapping.status === 'confirmed') {
       matchStatus = 'matched'
       matched++
-    } else if (mapping) {
+    } else if (mapping && mapping.status === 'suspect') {
       matchStatus = 'suspect'
       suspect++
     } else {
+      // 无映射，或 pending / irrelevant 映射 → 仍算 unmatched（但保留 mappingId 便于审计）
       matchStatus = 'unmatched'
       unmatched++
     }
