@@ -3,6 +3,37 @@ const bcrypt = require('bcryptjs')
 
 const prisma = new PrismaClient()
 
+// PRD §6.2 三档分成规则（与 src/lib/commission.ts DEFAULT_REVENUE_RULES 保持一致）
+const REVENUE_RULES = [
+  {
+    name: '高分激励',
+    creatorRatio: 0.8,
+    platformRatio: 0.2,
+    conditionType: 'min_song_score',
+    conditionValue: 90,
+    priority: 1,
+    enabled: true,
+  },
+  {
+    name: '量产奖励',
+    creatorRatio: 0.75,
+    platformRatio: 0.25,
+    conditionType: 'min_published_count',
+    conditionValue: 10,
+    priority: 2,
+    enabled: true,
+  },
+  {
+    name: '默认规则',
+    creatorRatio: 0.7,
+    platformRatio: 0.3,
+    conditionType: 'default',
+    conditionValue: null,
+    priority: 99,
+    enabled: true,
+  },
+]
+
 async function main() {
   const passwordHash = await bcrypt.hash('Abc12345', 10)
 
@@ -18,6 +49,13 @@ async function main() {
     where: { account: 'admin' },
     update: {},
     create: { account: 'admin', name: '超级管理员', passwordHash, roleId: superRole.id, status: true },
+  })
+
+  // 初始化分成规则（仅在不存在时插入，避免覆盖管理员已编辑的配置）
+  await prisma.systemSetting.upsert({
+    where: { key: 'revenue_rules' },
+    update: {},
+    create: { key: 'revenue_rules', value: REVENUE_RULES },
   })
 
   console.log('✅ 初始化完成')

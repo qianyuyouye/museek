@@ -3,6 +3,7 @@ import { Prisma, RevenuePlatform } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, parsePagination, safeHandler } from '@/lib/api-utils'
 import { parseCSV } from '@/lib/csv'
+import { loadRevenueRules, resolveCommissionRatio } from '@/lib/commission'
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
   const auth = requireAdmin(request)
@@ -205,15 +206,23 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     },
   })
 
-  // 对匹配成功（confirmed）的行自动生成 Settlement
+  // 对匹配成功（confirmed）的行自动生成 Settlement，按 PRD §6.2 规则表选比例
   if (matched > 0) {
     const matchedRows = await prisma.revenueRow.findMany({
       where: { importId: imp.id, matchStatus: 'matched' },
-      include: { mapping: { select: { creatorId: true } } },
+      include: { mapping: { select: { creatorId: true, platformSongId: true } } },
     })
-    const settlementsData = matchedRows
-      .filter((r) => r.mapping?.creatorId)
-      .map((r) => ({
+    const rules = await loadRevenueRules(prisma)
+    const settlementsData = [] as Prisma.SettlementCreateManyInput[]
+    for (const r of matchedRows) {
+      const creatorId = r.mapping?.creatorId
+      if (!creatorId) continue
+      const ratio = await resolveCommissionRatio(
+        prisma,
+        { creatorId, songId: r.mapping?.platformSongId ?? null },
+        rules,
+      )
+      settlementsData.push({
         revenueRowId: r.id,
         qishuiSongId: r.qishuiSongId,
         songName: r.songName,
@@ -221,12 +230,13 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
         douyinRevenue: r.douyinRevenue,
         qishuiRevenue: r.qishuiRevenue,
         totalRevenue: r.totalRevenue,
-        creatorId: r.mapping!.creatorId!,
-        platformRatio: new Prisma.Decimal('0.30'),
-        creatorRatio: new Prisma.Decimal('0.70'),
-        creatorAmount: r.totalRevenue.mul(0.7),
-        settleStatus: 'pending' as const,
-      }))
+        creatorId,
+        platformRatio: ratio.platformRatio,
+        creatorRatio: ratio.creatorRatio,
+        creatorAmount: r.totalRevenue.mul(ratio.creatorRatio),
+        settleStatus: 'pending',
+      })
+    }
     if (settlementsData.length > 0) {
       await prisma.settlement.createMany({ data: settlementsData, skipDuplicates: true })
     }

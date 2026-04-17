@@ -2,11 +2,12 @@ import { NextRequest } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
+import { DEFAULT_REVENUE_RULES } from '@/lib/commission'
 
 const PRESET_KEYS: Record<string, unknown> = {
   scoring_weights: { technique: 30, creativity: 40, commercial: 30 },
   auto_archive_threshold: 80,
-  revenue_rules: [{ name: '', creatorRatio: 70, platformRatio: 30, condition: '', enabled: true }],
+  revenue_rules: DEFAULT_REVENUE_RULES,
   review_templates: [],
   platform_configs: [{ name: '', region: '', enabled: true, mapped: false }],
   ai_tools: [],

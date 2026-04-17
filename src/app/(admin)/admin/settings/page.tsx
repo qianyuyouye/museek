@@ -56,8 +56,17 @@ function parseSettingsData(raw: SettingsApiItem[] | null): SettingsData | null {
   const autoThreshold = map.get('auto_archive_threshold') as number | undefined
   const threshold = { minScore: autoThreshold ?? 80, recommendLevel: '建议修改后发行' }
 
-  const revenueRules = map.get('revenue_rules') as CommissionRule[] | undefined
-  const commissionRules = revenueRules ?? []
+  const revenueRulesRaw = map.get('revenue_rules')
+  const commissionRules = Array.isArray(revenueRulesRaw)
+    ? (revenueRulesRaw as unknown[])
+        .filter(
+          (r): r is CommissionRule =>
+            !!r &&
+            typeof r === 'object' &&
+            typeof (r as Record<string, unknown>).creatorRatio === 'number' &&
+            typeof (r as Record<string, unknown>).conditionType === 'string',
+        )
+    : []
 
   const templates = (map.get('review_templates') as string[]) ?? []
   const platformConfigs = map.get('platform_configs') as PlatformItem[] | undefined
@@ -239,20 +248,41 @@ function ScoresTab({ onSave, initialData }: { showToast: (msg: string) => void; 
 
 // ── ② 分成比例规则 ──────────────────────────────────────────────
 
+type CommissionConditionType = 'default' | 'min_song_score' | 'min_published_count'
+
 interface CommissionRule {
   name: string
-  student: string
-  platform: string
-  condition: string
-  active: boolean
+  creatorRatio: number
+  platformRatio: number
+  conditionType: CommissionConditionType
+  conditionValue: number | null
+  priority: number
+  enabled: boolean
   [key: string]: unknown
 }
 
-const COMMISSION_DATA: CommissionRule[] = [
-  { name: '默认规则', student: '70%', platform: '30%', condition: '所有创作者', active: true },
-  { name: '高分激励', student: '80%', platform: '20%', condition: '评分≥90', active: true },
-  { name: '量产奖励', student: '75%', platform: '25%', condition: '累计发行≥10首', active: true },
+const CONDITION_OPTIONS: { value: CommissionConditionType; label: string; needsValue: boolean; valueLabel: string }[] = [
+  { value: 'default', label: '默认（兜底规则）', needsValue: false, valueLabel: '' },
+  { value: 'min_song_score', label: '作品评分 ≥', needsValue: true, valueLabel: '最低分数（0-100）' },
+  { value: 'min_published_count', label: '创作者累计已发行 ≥', needsValue: true, valueLabel: '最少作品数' },
 ]
+
+const COMMISSION_FALLBACK: CommissionRule[] = [
+  { name: '高分激励', creatorRatio: 0.8, platformRatio: 0.2, conditionType: 'min_song_score', conditionValue: 90, priority: 1, enabled: true },
+  { name: '量产奖励', creatorRatio: 0.75, platformRatio: 0.25, conditionType: 'min_published_count', conditionValue: 10, priority: 2, enabled: true },
+  { name: '默认规则', creatorRatio: 0.7, platformRatio: 0.3, conditionType: 'default', conditionValue: null, priority: 99, enabled: true },
+]
+
+function conditionLabel(rule: CommissionRule): string {
+  const opt = CONDITION_OPTIONS.find((o) => o.value === rule.conditionType)
+  if (!opt) return rule.conditionType
+  if (!opt.needsValue) return opt.label
+  return `${opt.label} ${rule.conditionValue ?? '-'}`
+}
+
+function ratioPercent(v: number): string {
+  return `${Math.round(v * 1000) / 10}%`
+}
 
 function CommissionTab({
   showToast,
@@ -263,16 +293,34 @@ function CommissionTab({
   onSave: (s: Partial<SettingsData>) => void
   initialData: SettingsData | null
 }) {
-  const [rules, setRules] = useState<CommissionRule[]>(initialData?.commissionRules ?? COMMISSION_DATA)
+  const [rules, setRules] = useState<CommissionRule[]>(
+    initialData?.commissionRules && initialData.commissionRules.length > 0
+      ? initialData.commissionRules
+      : COMMISSION_FALLBACK,
+  )
   const [editing, setEditing] = useState<{ rule: CommissionRule; index: number } | null>(null)
 
   useEffect(() => {
-    if (initialData) setRules(initialData.commissionRules ?? COMMISSION_DATA)
+    if (initialData) {
+      setRules(
+        initialData.commissionRules && initialData.commissionRules.length > 0
+          ? initialData.commissionRules
+          : COMMISSION_FALLBACK,
+      )
+    }
   }, [initialData])
 
   function openNew() {
     setEditing({
-      rule: { name: '', student: '70%', platform: '30%', condition: '', active: true },
+      rule: {
+        name: '',
+        creatorRatio: 0.7,
+        platformRatio: 0.3,
+        conditionType: 'default',
+        conditionValue: null,
+        priority: rules.length > 0 ? Math.max(...rules.map((r) => r.priority)) + 1 : 1,
+        enabled: true,
+      },
       index: -1,
     })
   }
@@ -282,8 +330,9 @@ function CommissionTab({
   }
 
   function persist(next: CommissionRule[]) {
-    setRules(next)
-    onSave({ commissionRules: next })
+    const sorted = [...next].sort((a, b) => a.priority - b.priority)
+    setRules(sorted)
+    onSave({ commissionRules: sorted })
   }
 
   function saveRule() {
@@ -293,6 +342,20 @@ function CommissionTab({
       showToast('规则名称不能为空')
       return
     }
+    if (r.creatorRatio < 0 || r.creatorRatio > 1 || r.platformRatio < 0 || r.platformRatio > 1) {
+      showToast('比例必须在 0-1 之间')
+      return
+    }
+    if (Math.abs(r.creatorRatio + r.platformRatio - 1) > 0.001) {
+      showToast('创作者比例 + 平台比例必须等于 100%')
+      return
+    }
+    const opt = CONDITION_OPTIONS.find((o) => o.value === r.conditionType)
+    if (opt?.needsValue && (r.conditionValue == null || !isFinite(r.conditionValue))) {
+      showToast('此条件需要填写数值')
+      return
+    }
+
     const next = [...rules]
     if (editing.index >= 0) next[editing.index] = r
     else {
@@ -312,16 +375,13 @@ function CommissionTab({
   }
 
   const columns: Column<CommissionRule>[] = [
+    { key: 'priority', title: '优先级', render: (v) => <span className="font-mono">{v as number}</span> },
+    { key: 'name', title: '规则名称', render: (v) => <span style={{ fontWeight: 500 }}>{v as string}</span> },
+    { key: 'creatorRatio', title: '创作者', render: (v) => ratioPercent(v as number) },
+    { key: 'platformRatio', title: '平台', render: (v) => ratioPercent(v as number) },
+    { key: 'conditionType', title: '触发条件', render: (_v, row) => conditionLabel(row as unknown as CommissionRule) },
     {
-      key: 'name',
-      title: '规则名称',
-      render: (v) => <span style={{ fontWeight: 500 }}>{v as string}</span>,
-    },
-    { key: 'student', title: '创作者比例' },
-    { key: 'platform', title: '平台比例' },
-    { key: 'condition', title: '触发条件' },
-    {
-      key: 'active',
+      key: 'enabled',
       title: '状态',
       render: (v) =>
         v ? (
@@ -334,7 +394,7 @@ function CommissionTab({
       key: 'name',
       title: '操作',
       render: (_v, row) => {
-        const rule = row as CommissionRule
+        const rule = row as unknown as CommissionRule
         const index = rules.findIndex((r) => r.name === rule.name)
         return (
           <div className="flex gap-2">
@@ -359,6 +419,9 @@ function CommissionTab({
   return (
     <div>
       <h3 className="text-[15px] font-semibold mb-4">分成比例规则</h3>
+      <div className="text-xs text-[var(--text3)] mb-3">
+        收益生成结算时按优先级从小到大扫描，命中第一条规则即选用其比例。必须保留至少一条 conditionType=default 的兜底规则。
+      </div>
       <DataTable
         columns={columns as unknown as Column<Record<string, unknown>>[]}
         data={rules as unknown as Record<string, unknown>[]}
@@ -389,36 +452,103 @@ function CommissionTab({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={labelCls}>创作者比例（如 70%）</label>
+                <label className={labelCls}>创作者比例</label>
                 <input
                   className={inputCls}
-                  value={editing.rule.student}
-                  onChange={(e) => setEditing({ ...editing, rule: { ...editing.rule, student: e.target.value } })}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="1"
+                  value={editing.rule.creatorRatio}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value)
+                    const creator = isNaN(v) ? 0 : Math.min(1, Math.max(0, v))
+                    setEditing({
+                      ...editing,
+                      rule: {
+                        ...editing.rule,
+                        creatorRatio: creator,
+                        platformRatio: +(1 - creator).toFixed(2),
+                      },
+                    })
+                  }}
                 />
+                <div className="text-xs text-[var(--text3)] mt-1">{ratioPercent(editing.rule.creatorRatio)}</div>
               </div>
               <div>
-                <label className={labelCls}>平台比例（如 30%）</label>
+                <label className={labelCls}>平台比例（自动 = 1 − 创作者）</label>
                 <input
-                  className={inputCls}
-                  value={editing.rule.platform}
-                  onChange={(e) => setEditing({ ...editing, rule: { ...editing.rule, platform: e.target.value } })}
+                  className={`${inputCls} bg-[var(--bg4)] cursor-not-allowed`}
+                  value={editing.rule.platformRatio.toFixed(2)}
+                  disabled
                 />
+                <div className="text-xs text-[var(--text3)] mt-1">{ratioPercent(editing.rule.platformRatio)}</div>
               </div>
             </div>
             <div>
               <label className={labelCls}>触发条件</label>
+              <select
+                className={inputCls}
+                value={editing.rule.conditionType}
+                onChange={(e) => {
+                  const ct = e.target.value as CommissionConditionType
+                  const opt = CONDITION_OPTIONS.find((o) => o.value === ct)
+                  setEditing({
+                    ...editing,
+                    rule: {
+                      ...editing.rule,
+                      conditionType: ct,
+                      conditionValue: opt?.needsValue ? editing.rule.conditionValue ?? 0 : null,
+                    },
+                  })
+                }}
+              >
+                {CONDITION_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+            {(() => {
+              const opt = CONDITION_OPTIONS.find((o) => o.value === editing.rule.conditionType)
+              if (!opt?.needsValue) return null
+              return (
+                <div>
+                  <label className={labelCls}>{opt.valueLabel}</label>
+                  <input
+                    className={inputCls}
+                    type="number"
+                    value={editing.rule.conditionValue ?? ''}
+                    onChange={(e) => {
+                      const v = parseFloat(e.target.value)
+                      setEditing({
+                        ...editing,
+                        rule: { ...editing.rule, conditionValue: isNaN(v) ? null : v },
+                      })
+                    }}
+                  />
+                </div>
+              )
+            })()}
+            <div>
+              <label className={labelCls}>优先级（数字小 = 优先级高）</label>
               <input
                 className={inputCls}
-                placeholder="如：评分≥90 或 所有创作者"
-                value={editing.rule.condition}
-                onChange={(e) => setEditing({ ...editing, rule: { ...editing.rule, condition: e.target.value } })}
+                type="number"
+                value={editing.rule.priority}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value, 10)
+                  setEditing({
+                    ...editing,
+                    rule: { ...editing.rule, priority: isNaN(v) ? 99 : v },
+                  })
+                }}
               />
             </div>
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
-                checked={editing.rule.active}
-                onChange={(e) => setEditing({ ...editing, rule: { ...editing.rule, active: e.target.checked } })}
+                checked={editing.rule.enabled}
+                onChange={(e) => setEditing({ ...editing, rule: { ...editing.rule, enabled: e.target.checked } })}
               />
               启用此规则
             </label>
