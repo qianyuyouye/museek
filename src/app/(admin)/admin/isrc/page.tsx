@@ -4,7 +4,9 @@ import { useState, useMemo } from 'react'
 import { PageHeader } from '@/components/admin/page-header'
 import { StatCard } from '@/components/admin/stat-card'
 import { DataTable, Column } from '@/components/admin/data-table'
+import { useRef } from 'react'
 import { useApi, apiCall } from '@/lib/use-api'
+import { parseCSV } from '@/lib/csv'
 import { downloadCSV, today } from '@/lib/export'
 import { pageWrap, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'
 
@@ -31,6 +33,37 @@ export default function AdminIsrcPage() {
   const [toast, setToast] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [dragOver, setDragOver] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const backfillInputRef = useRef<HTMLInputElement>(null)
+
+  async function handleBackfillFile(file: File) {
+    setImporting(true)
+    try {
+      const text = await file.text()
+      const rows = parseCSV(text)
+      let ok = 0, fail = 0
+      // 跳过表头（如果第一行包含"歌曲ID"或"ISRC"）
+      const start = rows[0]?.some((c) => /歌曲|ISRC|id/i.test(c)) ? 1 : 0
+      for (let i = start; i < rows.length; i++) {
+        const r = rows[i]
+        if (!r || r.length < 2) continue
+        // 读所有 cell 中的数字 id 和 ISRC 编码
+        const idCell = r.find((c) => /^\d+$/.test(c?.trim() ?? ''))
+        const isrcCell = r.map((c) => (c ?? '').replace(/-/g, '').trim().toUpperCase())
+          .find((c) => /^[A-Z]{2}[A-Z0-9]{3}\d{7}$/.test(c))
+        if (!idCell || !isrcCell) { fail++; continue }
+        const res = await apiCall(`/api/admin/songs/${idCell}/isrc`, 'POST', { isrc: isrcCell })
+        if (res.ok) ok++; else fail++
+      }
+      showToast(`✅ 回填完成：成功 ${ok} · 失败 ${fail}`)
+      refetch()
+    } catch {
+      showToast('文件读取失败')
+    } finally {
+      setImporting(false)
+      if (backfillInputRef.current) backfillInputRef.current.value = ''
+    }
+  }
 
   const { data, loading, refetch } = useApi<{ list: SongItem[]; total: number }>(
     '/api/admin/songs?status=ready_to_publish',
@@ -288,6 +321,13 @@ export default function AdminIsrcPage() {
             从ISRC申报平台获取编码后，上传回填文件批量录入。
           </p>
 
+          <input
+            ref={backfillInputRef}
+            type="file"
+            accept=".csv"
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleBackfillFile(f) }}
+          />
           <div
             onDragOver={(e) => {
               e.preventDefault()
@@ -297,21 +337,24 @@ export default function AdminIsrcPage() {
             onDrop={(e) => {
               e.preventDefault()
               setDragOver(false)
-              showToast('已上传 ISRC 回填文件，正在处理...')
+              const f = e.dataTransfer.files?.[0]
+              if (f) handleBackfillFile(f)
             }}
-            onClick={() => showToast('已上传 ISRC 回填文件，正在处理...')}
-            className="cursor-pointer text-center rounded-xl py-10 px-5 transition-all"
+            onClick={() => !importing && backfillInputRef.current?.click()}
+            className="text-center rounded-xl py-10 px-5 transition-all"
             style={{
               border: `2px dashed ${dragOver ? 'var(--accent)' : '#e0e4ed'}`,
               background: dragOver ? 'rgba(99,102,241,0.04)' : '#fafbfd',
+              cursor: importing ? 'wait' : 'pointer',
+              opacity: importing ? 0.6 : 1,
             }}
           >
             <div className="text-[40px] mb-3 opacity-50">📄</div>
             <div className="text-sm text-[var(--text2)] mb-1">
-              点击或将文件拖拽到这里上传
+              {importing ? '处理中...' : '点击或将 CSV 拖到此处'}
             </div>
             <div className="text-xs text-[var(--text3)]">
-              支持扩展名：.Excel
+              每行一条记录：歌曲ID 和 ISRC 编码两列，自动识别
             </div>
           </div>
         </div>

@@ -813,8 +813,37 @@ function SettleTab({ showToast, settlements, refetch }: { showToast: (msg: strin
 // ── Tab: 其他平台 ───────────────────────────────────────────────
 
 function OtherPlatformTab({ showToast }: { showToast: (msg: string) => void }) {
-  const { data: otherData } = useApi<{ imports: OtherImport[] }>('/api/admin/revenue/other-imports')
+  const { data: otherData, refetch: refetchOther } = useApi<{ imports: OtherImport[] }>('/api/admin/revenue/other-imports')
   const otherImports = otherData?.imports ?? []
+  const [platform, setPlatform] = useState('qq_music')
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  async function doImport() {
+    if (!pendingFile) { showToast('请先选择文件'); return }
+    setUploading(true)
+    const fd = new FormData()
+    fd.append('file', pendingFile)
+    fd.append('platform', platform)
+    try {
+      const res = await fetch('/api/admin/revenue/imports', { method: 'POST', body: fd })
+      const json = await res.json()
+      if (json.code === 200) {
+        const d = json.data
+        showToast(`✅ 导入完成：${d.totalRows} 行 · 匹配 ${d.matchedRows} · 未匹配 ${d.unmatchedRows}`)
+        setPendingFile(null)
+        refetchOther()
+      } else {
+        showToast(json.message || '导入失败')
+      }
+    } catch {
+      showToast('网络错误')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
 
   const otherColumns: Column<Record<string, unknown>>[] = [
     { key: 'platform', title: '平台' },
@@ -832,11 +861,28 @@ function OtherPlatformTab({ showToast }: { showToast: (msg: string) => void }) {
     <div>
       {/* Upload section */}
       <div className={cardCls}>
+        <p className="text-xs text-[var(--text3)] mb-3">
+          其他平台先沿用汽水 CSV 模板（类型 | 起止日期 | 歌曲名 | 歌曲ID | 抖音收入 | 汽水收入 | 总收入），后续可单独适配各家导出格式。
+        </p>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv"
+          className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) setPendingFile(f) }}
+        />
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <select className={inputCls} style={{ width: 200, flex: 'none' }}>
-            <option>QQ音乐</option>
-            <option>网易云音乐</option>
-            <option>Spotify</option>
+          <select
+            className={inputCls}
+            style={{ width: 200, flex: 'none' }}
+            value={platform}
+            onChange={(e) => setPlatform(e.target.value)}
+          >
+            <option value="qq_music">QQ音乐</option>
+            <option value="netease">网易云音乐</option>
+            <option value="spotify">Spotify</option>
+            <option value="apple_music">Apple Music</option>
+            <option value="kugou">酷狗音乐</option>
           </select>
           <div
             style={{
@@ -845,15 +891,18 @@ function OtherPlatformTab({ showToast }: { showToast: (msg: string) => void }) {
               borderRadius: 8,
               padding: '10px 16px',
               textAlign: 'center',
-              cursor: 'pointer',
+              cursor: uploading ? 'wait' : 'pointer',
               fontSize: 13,
               color: 'var(--text2)',
+              opacity: uploading ? 0.6 : 1,
             }}
-            onClick={() => showToast('上传成功')}
+            onClick={() => !uploading && fileInputRef.current?.click()}
           >
-            📎 上传 Excel/CSV
+            📎 {pendingFile ? pendingFile.name : '点击选择 CSV 文件'}
           </div>
-          <button className={btnPrimary} onClick={() => showToast('开始导入')}>导入</button>
+          <button className={btnPrimary} onClick={doImport} disabled={uploading || !pendingFile}>
+            {uploading ? '导入中...' : '导入'}
+          </button>
         </div>
       </div>
 
