@@ -314,21 +314,20 @@ export default function ReviewAssessPage() {
               </div>
               <div className="mb-2.5">
                 <span className="text-[var(--text3)]">Prompt：</span>
-                <div className="p-2 bg-[var(--bg4)] rounded-md mt-1 text-xs text-[var(--text2)] leading-relaxed">
-                  使用{song.aiTool}生成，风格为{song.genre}，BPM {song.bpm}
+                <div className="p-2 bg-[var(--bg4)] rounded-md mt-1 text-xs text-[var(--text2)] leading-relaxed whitespace-pre-wrap">
+                  {song.styleDesc?.trim() || '创作者未填写 Prompt'}
+                </div>
+              </div>
+              <div className="mb-2.5">
+                <span className="text-[var(--text3)]">歌词：</span>
+                <div className="p-2 bg-[var(--bg4)] rounded-md mt-1 text-xs text-[var(--text2)] leading-relaxed max-h-[120px] overflow-auto whitespace-pre-line">
+                  {song.lyrics?.trim() || '创作者未填写歌词'}
                 </div>
               </div>
               <div>
-                <span className="text-[var(--text3)]">歌词：</span>
-                <div className="p-2 bg-[var(--bg4)] rounded-md mt-1 text-xs text-[var(--text2)] leading-relaxed max-h-[120px] overflow-auto whitespace-pre-line">
-                  {`这里是歌词内容预览区域...
-每一句歌词都会在这里显示
-方便老师边听边看歌词
-编造人生是你的骗局
-落下的内心个偶尔
-拥抱真实的自己
-梦想在远方等待
-每一步都算数`}
+                <span className="text-[var(--text3)]">创作过程说明：</span>
+                <div className="p-2 bg-[var(--bg4)] rounded-md mt-1 text-xs text-[var(--text2)] leading-relaxed whitespace-pre-wrap">
+                  {song.creationDesc?.trim() || '创作者未填写'}
                 </div>
               </div>
             </div>
