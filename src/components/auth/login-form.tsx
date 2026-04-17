@@ -208,7 +208,8 @@ export function LoginForm({ portal }: { portal: string }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', background: cfg.bg }}>
+    <div style={{ minHeight: '100vh', background: cfg.bg }} className="flex items-stretch justify-center">
+      <div className="flex w-full max-w-[1200px]">
       {/* ── Left Hero ── */}
       <div style={{ flex: '1 1 56%', padding: '56px 56px 40px', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         {/* Dot grid */}
@@ -470,6 +471,7 @@ export function LoginForm({ portal }: { portal: string }) {
             )}
           </div>
         </div>
+      </div>
       </div>
 
       {/* ── Forgot Password Modal ── */}
