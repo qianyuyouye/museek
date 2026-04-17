@@ -52,19 +52,27 @@ commit 但不 push。完成后告诉我下一步建议。
 5. 保留原波形 UI（作为可视化装饰），但播放状态绑到真实音频
 6. 音频源来自 `song.audioUrl`（API 已返回，不需要改后端）
 
-**需要用户确认**：
-- 是否需要**时间轴标记工具**？PRD §7.2.3 要求，但复杂度高（需要后端存 Review.tags 或新表）。建议**本任务只做音频播放 + A-B + 变速，时间轴标记延后到 P2**
-- 是否需要**波形图随播放进度高亮**？如需要可以用现有 audioFeatures 数据，工作量 +30 分钟
+**用户已决策**：
+- ✅ **时间轴标记工具要做**（不延后）：评审时点击波形可打时间点注记，提交评审时随 `reviews.tags` 一起存 JSON。建议字段结构：
+  ```json
+  { "marks": [{ "t": 23.5, "note": "此处混音偏闷" }, { "t": 67.2, "note": "副歌转调生硬" }] }
+  ```
+  - UI：波形图下方显示当前标记列表；点击波形触发 prompt 输入备注
+  - 后端：`/api/review/submit` 接收 `tags` 即可（schema 已支持 JSON）
+- ✅ **波形随播放进度高亮**：用现有 `song.audioFeatures` 的 waveformPeaks 绘制，播放时用 `clipPath` 随 `currentTime/duration` 推进
 
 **验收标准**：
 - [ ] 点击播放按钮，真实音频开始播放
 - [ ] 选择 0.5x/0.75x/1.25x/1.5x 速度，播放速度变化
 - [ ] 点击 A 设置起点、B 设置终点，启用循环后自动回跳
+- [ ] 波形随播放进度高亮（已播部分 vs 未播部分颜色区分）
+- [ ] 点击波形任意位置弹 prompt 输入注记，列表显示所有标记
+- [ ] 标记随评审提交写入 `reviews.tags` JSON
 - [ ] 评审提交后音频停止
 
-**预计工作量**：2-3 小时  
+**预计工作量**：3-4 小时（含时间轴标记）  
 **依赖**：无  
-**commit 范围**：只动 assess 页面，不影响其他端
+**commit 范围**：assess 页面 + 可能新建 `components/review/AudioPlayer.tsx`
 
 ---
 
@@ -91,20 +99,34 @@ commit 但不 push。完成后告诉我下一步建议。
    - Modal 字段：真实姓名 input、身份证号 input（前端正则校验）
    - 提交成功后 toast + 刷新用户信息
 3. 管理端已有 `/api/admin/students/[id]/verify`（审核通过/驳回），**已打通** — 不需改
-4. 身份证号明文存储 PRD 要求加密，但 schema 没加密设施。**本任务保持明文**，加密延后
 
-**需要用户确认**：
-- 身份证号**是否需要加密存储**？加密需要 key 管理 + 迁移，建议先明文，加密单独一卡
-- 是否允许 `verified` 状态后**重新提交**？PRD 未明确。建议：不允许（`verified` 按钮 disabled）
+4. **身份证号加密存储**（用户决策）：
+   - 新建 `src/lib/encrypt.ts`，导出 `encryptIdCard(plain)` / `decryptIdCard(cipher)`
+   - 算法：AES-256-GCM（Node `crypto` 内置，不新增依赖）
+   - Key 来源：`process.env.ENCRYPTION_KEY`（32 字节 hex，启动时强制校验；未配置则启动报错）
+   - 存储格式：`iv(12B) + authTag(16B) + ciphertext` 用 base64 编码成字符串存 `idCard` 字段
+   - 管理端读取时在 `/api/admin/students/[id]` 里 decrypt 返回（仅后端处理，避免前端拿到 key）
+   - 列表页 `/api/admin/students` 返回脱敏版 `110***1234`（不 decrypt）
+
+5. **新增 env 变量**：`ENCRYPTION_KEY`（32 字节十六进制，示例 `openssl rand -hex 32` 生成）
+   - `docker-compose.yml` 和 `.env.example` 都要加
+   - 部署时告知用户生成并配置
+
+**用户已决策**：
+- ✅ **身份证号加密存储**（AES-256-GCM，需要 ENCRYPTION_KEY 部署变量）
+- 是否允许 `verified` 状态后**重新提交**？PRD 未明确。**本卡默认**：不允许（`verified` 按钮 disabled）— 如需重新认证需管理员先驳回
 
 **验收标准**：
 - [ ] unverified 创作者能打开 Modal 提交姓名+身份证
-- [ ] 提交后 `realNameStatus` 变 pending，数据库有 `realName/idCard` 值
-- [ ] 管理端"用户档案"能看到此创作者 `pending`，通过/驳回按钮正常
+- [ ] 提交后 `realNameStatus` 变 pending，数据库 `idCard` 字段为加密字符串（不是明文 18 位数字）
+- [ ] 管理端"用户档案详情"能查看**解密后的身份证**（仅详情接口 decrypt）
+- [ ] 管理端"用户档案列表"显示脱敏格式 `110***1234`
 - [ ] 驳回后创作者能修改并重新提交
+- [ ] 未配置 `ENCRYPTION_KEY` 时服务启动报错（明确提示）
 
-**预计工作量**：1.5 小时  
+**预计工作量**：2.5 小时（含加密工具 + 脱敏逻辑）  
 **依赖**：无  
+**部署前须知**：生产环境必须先生成并配置 `ENCRYPTION_KEY`，否则身份证提交会失败  
 **注意**：这是 PRD §1.3 核心流程 / 打款前置条件，不做完则 Settlement.paid 永远无法触发
 
 ---
@@ -119,44 +141,83 @@ commit 但不 push。完成后告诉我下一步建议。
 - **可能新建** `src/lib/commission.ts`（规则评估函数，供多处调用）
 
 **实现思路**：
-1. 新建 `src/lib/commission.ts`：
+1. 扩展 `system_settings.revenue_rules` 的规则字段格式（用户决策：完全动态）：
+   ```json
+   [
+     {
+       "name": "高分激励",
+       "creatorRatio": 0.80,
+       "platformRatio": 0.20,
+       "conditionType": "min_song_score",
+       "conditionValue": 90,
+       "priority": 1,
+       "enabled": true
+     },
+     {
+       "name": "量产奖励",
+       "creatorRatio": 0.75,
+       "platformRatio": 0.25,
+       "conditionType": "min_published_count",
+       "conditionValue": 10,
+       "priority": 2,
+       "enabled": true
+     },
+     {
+       "name": "默认规则",
+       "creatorRatio": 0.70,
+       "platformRatio": 0.30,
+       "conditionType": "default",
+       "conditionValue": null,
+       "priority": 99,
+       "enabled": true
+     }
+   ]
+   ```
+   - **支持的 conditionType**（enum）：
+     - `default` — 兜底（无条件，最低优先级）
+     - `min_song_score` — 作品 `score >= conditionValue` 时命中（需 songId）
+     - `min_published_count` — 创作者累计 published 作品数 `>= conditionValue`
+   - 后续可扩展（如 `min_total_revenue`、`user_tag_in`）
+2. 新建 `src/lib/commission.ts`：
    ```ts
    export async function resolveCommissionRatio(
      prisma: PrismaClient,
      ctx: { creatorId: number; songId?: number | null }
    ): Promise<{ creatorRatio: Decimal; platformRatio: Decimal; ruleName: string }> {
-     // 1. 读 system_settings.revenue_rules（数组）
-     // 2. 按优先级评估：
-     //    a. 高分激励：若 songId 提供 → 查 platform_songs.score，≥90 则用 80/20 规则
-     //    b. 量产奖励：查 creator 的 published 作品数，≥10 则用 75/25
-     //    c. 默认：70/30（或第一条 active=true 的规则）
-     // 3. 返回匹配的规则
+     // 1. 读 system_settings where key='revenue_rules'
+     // 2. 过滤 enabled=true，按 priority 升序（数字小=优先级高）
+     // 3. 对每条规则逐个评估 conditionType：
+     //    - default 始终匹配
+     //    - min_song_score: ctx.songId 存在时查 platform_songs.score
+     //    - min_published_count: 查 creator 的 published 数
+     // 4. 返回第一条匹配的规则（创作者比例/平台比例/名称）
+     // 5. 若全部不匹配（异常），返回 { 0.70, 0.30, 'fallback' } 并写操作日志警告
    }
    ```
-3. `imports/route.ts` 里把 `platformRatio: 0.30 / creatorRatio: 0.70` 硬编码的位置替换为 `resolveCommissionRatio` 返回值
-4. 规则参数**可从系统设置实时读**（settings 里 revenueRules 已能编辑）
+3. `imports/route.ts` 和后续 P0-4 backfill 里创建 settlement 时，调用 `resolveCommissionRatio` 获取比例
+4. **同步更新** `admin/settings/page.tsx` 的 `CommissionTab`：
+   - Modal 里把原本的"触发条件（文本）"改为 "条件类型 select + 数值 input"
+   - select 选项：默认规则 / 最低作品评分 / 最低已发行作品数
+   - 对应 conditionType 字段
+   - 列表展示时把 conditionType 反向翻译成中文描述
 
-**PRD 要求（§6.2）的三档规则**：
+**PRD 要求（§6.2）三档规则作为种子数据**，seed.js 插入时按上述 JSON 格式。
 
-| 规则 | 创作者 | 平台 | 条件 | 优先级 |
-|---|---|---|---|---|
-| 高分激励 | 80% | 20% | 该作品 totalScore ≥ 90 | 最高 |
-| 量产奖励 | 75% | 25% | 创作者累计已发行 ≥ 10 首 | 次高 |
-| 默认 | 70% | 30% | 兜底 | 最低 |
+**边界**：
+- revenue_rows 无 platform_song 关联时（只通过 creator_id 映射），`min_song_score` 自动不匹配，跳到下一条规则
+- 用户决策 ✅ **完全 DB 驱动**，UI 里改规则立即生效
 
-**需要用户确认**：
-- 规则**是否从 `system_settings.revenue_rules` 读**（已有 CRUD UI），还是硬编码在 `commission.ts`？
-  - **推荐**：DB 读，但本任务先在 `commission.ts` 里写死逻辑，system_settings 里的规则仅作展示 — 如果完全 DB 驱动需要解析规则表达式（工作量大 ×3）
-- 当 revenue_rows 无 platform_song 关联时（只通过 creator_id 映射），**高分激励如何判定**？
-  - **推荐**：此时只能评估"量产奖励"和"默认"，高分激励跳过
+**需要用户确认**：无（已决策完全动态）
 
 **验收标准**：
+- [ ] seed.js 插入 3 条初始规则（按 PRD §6.2）
 - [ ] 导入 CSV 时，映射到 score ≥ 90 的歌曲自动按 80/20 生成 settlement
 - [ ] 映射到累计发行 ≥ 10 首作者的歌曲按 75/25
 - [ ] 其他默认 70/30
-- [ ] 可在测试数据上观察不同规则的 creatorAmount 计算正确
+- [ ] settings → 分成规则 Modal 能设置 conditionType + conditionValue
+- [ ] 修改规则后**立即对下次导入生效**（不需重启服务）
 
-**预计工作量**：2 小时  
+**预计工作量**：3 小时（含 UI 改造）  
 **依赖**：无（但 P0-4 回溯生成也需要调用此函数，推荐和 P0-4 连做）
 
 ---
@@ -196,8 +257,8 @@ commit 但不 push。完成后告诉我下一步建议。
 - 若 revenue_rows.matchStatus='irrelevant' → 跳过
 - 若一个 mapping 对应上百条 revenue_rows → 用 prisma.$transaction 批量
 
-**需要用户确认**：
-- 回溯**是否异步**？PRD §10.4 要求 MQ 异步。当前项目没 MQ 基础设施，建议**同步处理**（快则 <2s，慢则阻塞用户响应但可接受）
+**用户已决策**：
+- ✅ **同步执行**：在 PUT 请求里等待回溯完成再返回（可接受 <2s 阻塞）
 - 映射**解除**时应该做什么？PRD §8 说"旧 settlement 标记 exception，重新生成新 settlement"。本任务**只做确认→生成**，解除场景延后到 P2
 
 **验收标准**：
@@ -269,9 +330,20 @@ commit 但不 push。完成后告诉我下一步建议。
 ## P1-4 CSV period 保留原始字符串
 
 **改动**：`api/admin/revenue/imports/route.ts`  
-**要点**：把 `period = "2026-02"` 改为 `period = "2026/02/01 - 2026/02/28"`（直接存原始字符串）。注意 `@@unique(qishuiSongId, period)` 约束对字符串精确匹配敏感  
-**工时**：15 分钟  
-**⚠️ 风险**：若已有导入记录 period 是 "2026-02" 格式，历史数据和新数据会不去重。需数据迁移脚本。**建议在 P1-3 前做**
+**要点**：把 `period = "2026-02"` 改为 `period = "2026/02/01 - 2026/02/28"`（直接存原始字符串）。注意 `@@unique(qishuiSongId, period)` 约束对字符串精确匹配敏感。  
+**用户已决策**：✅ **清空历史数据**（`revenue_imports / revenue_rows / settlements` 三表全清，不做迁移）  
+**执行步骤**：
+1. 先改代码（period 存原始字符串）
+2. 部署前在服务器执行：
+   ```sql
+   DELETE FROM settlements;
+   DELETE FROM revenue_rows;
+   DELETE FROM revenue_imports;
+   ```
+3. 或用 Prisma：`await prisma.$transaction([prisma.settlement.deleteMany(), prisma.revenueRow.deleteMany(), prisma.revenueImport.deleteMany()])`
+4. 之后重新导入 CSV  
+**工时**：20 分钟（代码）+ 清空操作  
+**在 P1-3 前做**（避免新老数据混用导致匹配异常）
 
 ## P1-5 Creator 重新提交预填
 
