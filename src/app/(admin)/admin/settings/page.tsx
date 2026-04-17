@@ -143,8 +143,8 @@ export default function AdminSettingsPage() {
         {tab === 'scores' && <ScoresTab showToast={showToast} onSave={handleSave} initialData={data} />}
         {tab === 'commission' && <CommissionTab showToast={showToast} onSave={handleSave} initialData={data} />}
         {tab === 'templates' && <TemplatesTab showToast={showToast} onSave={handleSave} initialData={data} />}
-        {tab === 'platforms' && <PlatformsTab initialData={data} />}
-        {tab === 'options' && <OptionsTab initialData={data} />}
+        {tab === 'platforms' && <PlatformsTab showToast={showToast} onSave={handleSave} initialData={data} />}
+        {tab === 'options' && <OptionsTab showToast={showToast} onSave={handleSave} initialData={data} />}
       </div>
     </div>
   )
@@ -529,25 +529,122 @@ const PLATFORM_DATA: PlatformItem[] = [
   { name: 'Apple Music', region: '全球', status: true, mapping: false },
 ]
 
-function PlatformsTab({ initialData }: { initialData: SettingsData | null }) {
-  const platformData = initialData?.platforms ?? PLATFORM_DATA
+function PlatformsTab({
+  showToast,
+  onSave,
+  initialData,
+}: {
+  showToast: (msg: string) => void
+  onSave: (s: Partial<SettingsData>) => void
+  initialData: SettingsData | null
+}) {
+  const [platforms, setPlatforms] = useState<PlatformItem[]>(initialData?.platforms ?? PLATFORM_DATA)
+  const [editing, setEditing] = useState<{ item: PlatformItem; index: number } | null>(null)
+
+  useEffect(() => {
+    if (initialData) setPlatforms(initialData.platforms ?? PLATFORM_DATA)
+  }, [initialData])
+
+  function persist(next: PlatformItem[]) {
+    setPlatforms(next)
+    onSave({ platforms: next })
+  }
+
+  function toggle(index: number, field: 'status' | 'mapping') {
+    const next = platforms.map((p, i) => (i === index ? { ...p, [field]: !p[field] } : p))
+    persist(next)
+  }
+
+  function openNew() {
+    setEditing({ item: { name: '', region: '中国', status: true, mapping: false }, index: -1 })
+  }
+
+  function openEdit(p: PlatformItem, index: number) {
+    setEditing({ item: { ...p }, index })
+  }
+
+  function saveEditing() {
+    if (!editing) return
+    const it = editing.item
+    if (!it.name.trim()) {
+      showToast('平台名称不能为空')
+      return
+    }
+    const next = [...platforms]
+    if (editing.index >= 0) next[editing.index] = it
+    else {
+      if (next.some((x) => x.name === it.name)) {
+        showToast('平台名已存在')
+        return
+      }
+      next.push(it)
+    }
+    persist(next)
+    setEditing(null)
+    showToast('已保存')
+  }
+
+  function remove(index: number) {
+    if (!confirm('确认删除此平台？')) return
+    persist(platforms.filter((_, i) => i !== index))
+  }
+
   const columns: Column<PlatformItem>[] = [
     { key: 'name', title: '平台名称' },
     { key: 'region', title: '地区' },
     {
       key: 'status',
       title: '状态',
-      render: (v) =>
-        v ? (
-          <span style={{ color: 'var(--green2)' }}>启用</span>
-        ) : (
-          <span style={{ color: 'var(--text3)' }}>停用</span>
-        ),
+      render: (v, row) => {
+        const index = platforms.findIndex((p) => p.name === (row as PlatformItem).name)
+        return (
+          <button
+            className="bg-transparent border-0 cursor-pointer text-xs"
+            style={{ color: v ? 'var(--green2)' : 'var(--text3)' }}
+            onClick={() => toggle(index, 'status')}
+          >
+            {v ? '✓ 启用' : '○ 停用'}
+          </button>
+        )
+      },
     },
     {
       key: 'mapping',
       title: '报表字段映射',
-      render: (v) => (v ? '✅ 已配置' : '⚠️ 待配置'),
+      render: (v, row) => {
+        const index = platforms.findIndex((p) => p.name === (row as PlatformItem).name)
+        return (
+          <button
+            className="bg-transparent border-0 cursor-pointer text-xs text-[var(--text2)]"
+            onClick={() => toggle(index, 'mapping')}
+          >
+            {v ? '✅ 已配置' : '⚠️ 待配置'}
+          </button>
+        )
+      },
+    },
+    {
+      key: 'name',
+      title: '操作',
+      render: (_v, row) => {
+        const index = platforms.findIndex((p) => p.name === (row as PlatformItem).name)
+        return (
+          <div className="flex gap-2">
+            <button
+              className="text-xs text-[var(--accent)] bg-transparent border-0 cursor-pointer"
+              onClick={() => openEdit(row as PlatformItem, index)}
+            >
+              编辑
+            </button>
+            <button
+              className="text-xs text-[var(--red)] bg-transparent border-0 cursor-pointer"
+              onClick={() => remove(index)}
+            >
+              删除
+            </button>
+          </div>
+        )
+      },
     },
   ]
 
@@ -556,9 +653,67 @@ function PlatformsTab({ initialData }: { initialData: SettingsData | null }) {
       <h3 className="text-[15px] font-semibold mb-4">合作流媒体平台</h3>
       <DataTable
         columns={columns as unknown as Column<Record<string, unknown>>[]}
-        data={platformData as unknown as Record<string, unknown>[]}
+        data={platforms as unknown as Record<string, unknown>[]}
         rowKey={(r) => (r as unknown as PlatformItem).name}
       />
+      <div className="mt-4">
+        <button className={btnPrimary} onClick={openNew}>+ 添加平台</button>
+      </div>
+
+      <AdminModal
+        open={!!editing}
+        onClose={() => setEditing(null)}
+        title={editing && editing.index >= 0 ? '编辑平台' : '新增平台'}
+        width={440}
+      >
+        {editing && (
+          <div className="flex flex-col gap-3">
+            <div>
+              <label className={labelCls}>平台名称</label>
+              <input
+                className={inputCls}
+                value={editing.item.name}
+                disabled={editing.index >= 0}
+                onChange={(e) => setEditing({ ...editing, item: { ...editing.item, name: e.target.value } })}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>地区</label>
+              <select
+                className={inputCls}
+                value={editing.item.region}
+                onChange={(e) => setEditing({ ...editing, item: { ...editing.item, region: e.target.value } })}
+              >
+                <option value="中国">中国</option>
+                <option value="全球">全球</option>
+                <option value="北美">北美</option>
+                <option value="欧洲">欧洲</option>
+                <option value="日韩">日韩</option>
+              </select>
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={editing.item.status}
+                onChange={(e) => setEditing({ ...editing, item: { ...editing.item, status: e.target.checked } })}
+              />
+              启用此平台
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={editing.item.mapping}
+                onChange={(e) => setEditing({ ...editing, item: { ...editing.item, mapping: e.target.checked } })}
+              />
+              已配置报表字段映射
+            </label>
+            <div className="flex gap-2 justify-end mt-2">
+              <button className={btnGhost} onClick={() => setEditing(null)}>取消</button>
+              <button className={btnPrimary} onClick={saveEditing}>保存</button>
+            </div>
+          </div>
+        )}
+      </AdminModal>
     </div>
   )
 }
@@ -568,34 +723,102 @@ function PlatformsTab({ initialData }: { initialData: SettingsData | null }) {
 const AI_TOOLS = ['汽水创作实验室', 'Suno', 'Udio', 'TME Studio', 'AIVA', 'Boomy', 'Soundraw']
 const GENRES = ['Pop', 'Rock', 'R&B', 'Hip-Hop', '电子', '古典', '民谣', '爵士', '蓝调', '金属']
 
-function OptionsTab({ initialData }: { initialData: SettingsData | null }) {
-  const aiToolsList = initialData?.aiTools ?? AI_TOOLS
-  const genresList = initialData?.genres ?? GENRES
-  const tagStyle = {
-    padding: '4px 14px',
-    borderRadius: 20,
-    border: '1px solid var(--border)',
-    fontSize: 13,
+function TagEditor({
+  label,
+  items,
+  onChange,
+  placeholder,
+}: {
+  label: string
+  items: string[]
+  onChange: (next: string[]) => void
+  placeholder: string
+}) {
+  const [input, setInput] = useState('')
+
+  function add() {
+    const v = input.trim()
+    if (!v) return
+    if (items.includes(v)) return
+    onChange([...items, v])
+    setInput('')
   }
 
   return (
     <div>
-      <h3 className="text-[15px] font-semibold mb-4">AI工具选项</h3>
-      <div className="flex flex-wrap gap-2 mb-5">
-        {aiToolsList.map((t) => (
-          <span key={t} style={tagStyle}>
+      <h3 className="text-[15px] font-semibold mb-4">{label}</h3>
+      <div className="flex flex-wrap gap-2 mb-3">
+        {items.map((t) => (
+          <span
+            key={t}
+            className="px-3.5 py-1.5 rounded-full border border-[var(--border)] text-sm flex items-center gap-2"
+          >
             {t}
+            <button
+              onClick={() => onChange(items.filter((x) => x !== t))}
+              className="bg-transparent border-0 text-[var(--red)] cursor-pointer text-sm"
+            >
+              ×
+            </button>
           </span>
         ))}
       </div>
-      <h3 className="text-[15px] font-semibold mb-4">流派选项</h3>
-      <div className="flex flex-wrap gap-2">
-        {genresList.map((t) => (
-          <span key={t} style={tagStyle}>
-            {t}
-          </span>
-        ))}
+      <div className="flex gap-2">
+        <input
+          className={inputCls}
+          style={{ flex: 1 }}
+          placeholder={placeholder}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') add() }}
+        />
+        <button className={btnPrimary} onClick={add}>添加</button>
       </div>
+    </div>
+  )
+}
+
+function OptionsTab({
+  showToast,
+  onSave,
+  initialData,
+}: {
+  showToast: (msg: string) => void
+  onSave: (s: Partial<SettingsData>) => void
+  initialData: SettingsData | null
+}) {
+  const [aiTools, setAiTools] = useState<string[]>(initialData?.aiTools ?? AI_TOOLS)
+  const [genres, setGenres] = useState<string[]>(initialData?.genres ?? GENRES)
+
+  useEffect(() => {
+    if (initialData) {
+      setAiTools(initialData.aiTools ?? AI_TOOLS)
+      setGenres(initialData.genres ?? GENRES)
+    }
+  }, [initialData])
+
+  return (
+    <div className="flex flex-col gap-6">
+      <TagEditor
+        label="AI 工具选项"
+        items={aiTools}
+        placeholder="输入新 AI 工具名称..."
+        onChange={(next) => {
+          setAiTools(next)
+          onSave({ aiTools: next })
+          showToast('已更新 AI 工具列表')
+        }}
+      />
+      <TagEditor
+        label="流派选项"
+        items={genres}
+        placeholder="输入新流派..."
+        onChange={(next) => {
+          setGenres(next)
+          onSave({ genres: next })
+          showToast('已更新流派列表')
+        }}
+      />
     </div>
   )
 }
