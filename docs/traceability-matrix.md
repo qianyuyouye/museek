@@ -28,7 +28,7 @@
 | | 作业提交 + 动态字段 | ✅ | `creator/assignments` + `/api/admin/assignments/[id]/fields` 可配置 |
 | | 版权编号 `AIMU-YYYY-NNNNNN` | 🟡 | schema `copyrightCode UNIQUE`，**需确认是否按年重置序号** |
 | | 提交即 `pending_review` | ✅ | |
-| **Phase 3 评审** | 试听（A-B 循环 + 变速） | 🔴 | `review/assess/page.tsx` **无 `<audio>` 元素**，仅 UI mock |
+| **Phase 3 评审** | 试听（A-B 循环 + 变速） | ✅ | P0-1 已修：`components/review/AudioPlayer.tsx` 真 `<audio>` + 变速/AB/波形进度 |
 | | AI 预分析报告 | ✅ | `/api/review/songs/[id]/analysis` + `lib/ai-analysis.ts` |
 | | 三维打分（30/40/30）+ 加权 | ✅ | 前端实时计算、后端再次校验 |
 | | 快捷评语 + 评语 ≥20 字 | ✅ | |
@@ -58,7 +58,7 @@
 | PRD 表 | Schema 存在 | 字段完整性 | 未使用字段 / 差距 |
 |---|---|---|---|
 | groups | ✅ | ✅ | |
-| users | ✅ | ✅ | `idCard` 加密存储 PRD 要求，代码明文 |
+| users | ✅ | ✅ | P0-2 已修：idCard AES-256-GCM 加密，字段扩宽至 VarChar(128) |
 | user_groups | ✅ | ✅ | |
 | platform_songs | ✅ | ✅ | `albumName/albumArtist/performer` 保存但前端详情页未展示 |
 | assignments | ✅ | ✅ | |
@@ -99,7 +99,7 @@
 | §7.1.6 我的学习 | `creator/learning` | 🔴 | 全硬编码（成就/徽章/时长） |
 | §7.1.6 消息中心 | `creator/notifications` | ✅ | |
 | §7.1.6 个人中心 - 基本信息 | `creator/profile` | ✅ | |
-| §1.3 实名认证入口 | 同上 | 🔴 | 按钮只 toast，**无提交真实姓名/身份证号表单** |
+| §1.3 实名认证入口 | 同上 | ✅ | P0-2 已修：Modal 表单 + POST /api/profile/real-name（加密存储） |
 | §7.1.6 头像上传 | 同上 | 🟠 | `onClick` 只 toast |
 | §7.1.6 手机号修改（验证码） | 同上 | 🟠 | 按钮存在无流程 |
 | §7.1.6 协议签署 | 同上 | ✅ | `POST /api/profile/agency` |
@@ -113,15 +113,15 @@
 | §7.2.1 30 天趋势图 | 同上 | ✅ | |
 | §7.2.2 待评审队列 | `review/queue` | 🟡 | 前端期望 `studentName`，API 返回 `userName`（显示为空） |
 | §7.2.2 流派/姓名筛选 | 同上 | ✅ | |
-| §7.2.3 **音频播放（A-B+变速）** | `review/assess` | 🔴 | **无 `<audio>` 元素**，完全无法试听 |
+| §7.2.3 **音频播放（A-B+变速）** | `review/assess` | ✅ | P0-1 已修：真实音频播放 + 变速 + A-B 循环 |
 | §7.2.3 AI 预分析 | 同上 | ✅ | |
 | §7.2.3 三维滑块 + 加权 | 同上 | ✅ | |
 | §7.2.3 快捷评语 + 评语校验 | 同上 | ✅ | |
 | §7.2.3 推荐等级 + 状态流转 | 同上 | ✅ | |
 | §7.2.3 歌词全文 | 同上 | 🟠 | 硬编码示例文本，**未从 API 读 `lyrics`** |
 | §7.2.3 Prompt/Style 展示 | 同上 | 🟠 | 组合生成，**未从 API 读 `styleDesc`** |
-| §7.2.3 时间轴标记工具 | 同上 | 🔴 | PRD 要求但代码完全未实现 |
-| §7.2.3 波形标记 | 同上 | 🔴 | 同上 |
+| §7.2.3 时间轴标记工具 | 同上 | ✅ | P0-1 已修：Shift+点击波形打标，随 tags JSON 提交 |
+| §7.2.3 波形标记 | 同上 | ✅ | P0-1 已修：标记在波形上显示竖线 + 列表回跳 |
 | §7.2.4 绩效统计 | `review/stats` | ✅ | 历史表 "用时" 列固定显示 `-` |
 | §7.2.5 个人中心 | `review/profile` | ✅ | 手机号/头像同 creator 问题 |
 
@@ -239,8 +239,8 @@
 ## 9. 优先级修复清单（按阻塞程度）
 
 ### 🔴 P0 - 阻塞核心业务
-1. **评审端音频播放**（`review/assess`）：加 `<audio>` 元素 + A-B 循环 + 变速控件。**没播放，评审全靠猜**
-2. **创作者实名认证入口**（`creator/profile`）：表单提交真名/身份证号，调新增 API `POST /api/profile/real-name`，写入 `users.realName/idCard/realNameStatus=pending`
+1. ✅ **评审端音频播放**（`review/assess`）：P0-1 已完成 — 真实 `<audio>` + 变速 + A-B 循环 + 波形进度 + 时间轴标记
+2. ✅ **创作者实名认证入口**（`creator/profile`）：P0-2 已完成 — Modal 表单 + AES-256-GCM 加密存储 + 管理端详情解密
 3. **分成规则三档自动评估**（Phase 6 结算生成）：查 `scoring_weights` + 查作品 score / 创作者累计发行数，按优先级选 ratio
 4. **回溯生成结算**（song_mappings `pending/suspect → confirmed`）：绑定后扫描该 qishuiSongId 历史 revenue_rows 批量建 settlement
 5. **打款前实名阻断**：`/api/admin/revenue/settlements` 标记 paid 时校验 `creator.realNameStatus === 'verified'`
@@ -304,9 +304,9 @@
 | 维度 | 得分 |
 |---|---|
 | 数据模型完整性 | **95%** — 缺 LearningRecord |
-| 管理端可用度 | **92%** — 缺回溯生成/实名阻断/分成自动评估 |
-| 创作者端可用度 | **78%** — 缺实名入口/学习记录/头像上传 |
-| 评审端可用度 | **55%** — 缺音频播放（P0），其他细节缺失 |
+| 管理端可用度 | **93%** — 缺回溯生成/实名阻断/分成自动评估（P0-2 解密通道已补） |
+| 创作者端可用度 | **85%** — P0-2 补实名入口；仍缺学习记录/头像上传 |
+| 评审端可用度 | **78%** — P0-1 补音频播放 + 时间轴标记；仍缺歌词/Prompt 读真实数据等小项 |
 | 收益全链路 | **72%** — CSV 能导入，但名称匹配/回溯/分成三档未实现 |
 | 公共基础设施 | **70%** — 生产 OSS/短信需配置，登录鉴权完整 |
 | **综合** | **~78%** |
