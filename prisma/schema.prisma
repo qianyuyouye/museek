@@ -58,6 +58,7 @@ model User {
   settlements     Settlement[]
   songMappings    SongMapping[]   @relation("MappingCreator")
   confirmedMappings SongMapping[] @relation("MappingConfirmer")
+  learningRecords LearningRecord[]
 
   @@index([type])
   @@index([realNameStatus])
@@ -498,8 +499,29 @@ model CmsContent {
   createdAt DateTime     @default(now()) @map("created_at")
   updatedAt DateTime     @updatedAt @map("updated_at")
 
+  learningRecords LearningRecord[]
+
   @@index([status, category])
   @@map("cms_contents")
+}
+
+// 4.17.1 learning_records（学习进度记录）
+model LearningRecord {
+  id           Int       @id @default(autoincrement())
+  userId       Int       @map("user_id")
+  contentId    Int       @map("content_id")
+  progress     Int       @default(0) @db.SmallInt
+  duration     Int       @default(0)
+  completedAt  DateTime? @map("completed_at")
+  lastViewedAt DateTime  @default(now()) @map("last_viewed_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  user         User       @relation(fields: [userId], references: [id])
+  content      CmsContent @relation(fields: [contentId], references: [id])
+
+  @@unique([userId, contentId])
+  @@index([userId, lastViewedAt])
+  @@map("learning_records")
 }
 
 enum ContentType {

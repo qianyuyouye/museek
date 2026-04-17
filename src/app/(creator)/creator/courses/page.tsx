@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useApi } from '@/lib/use-api'
+import { useEffect, useRef, useState } from 'react'
+import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle } from '@/lib/ui-tokens'
 
 // ── Constants ───────────────────────────────────────────────────
@@ -95,6 +95,42 @@ function DetailModal({ item, onClose }: { item: CmsItem; onClose: () => void }) 
   const videoDetail = VIDEO_DETAILS[item.id]
   const articleDetail = ARTICLE_DETAILS[item.id]
   const sections = isVideo ? (videoDetail?.sections ?? ['工具介绍', 'Prompt 技巧', '实战案例', '问题排查']) : (articleDetail?.sections ?? ['核心概念', '应用场景'])
+
+  // 学习埋点：打开即初始化记录，每 30s 上报 30s 增量，关闭时结算剩余
+  // 停留 ≥30 秒 视为完成（避免误点瞬开瞬关被计入完成数）
+  const openedAtRef = useRef(Date.now())
+  const tickRef = useRef(Date.now())
+  useEffect(() => {
+    openedAtRef.current = Date.now()
+    tickRef.current = Date.now()
+    let cancelled = false
+    // 初次 upsert，建立记录（progress=1 代表"开始"）
+    apiCall('/api/learning', 'POST', { contentId: item.id, progress: 1 }).catch(() => {})
+
+    const interval = setInterval(() => {
+      if (cancelled) return
+      const now = Date.now()
+      const delta = Math.floor((now - tickRef.current) / 1000)
+      if (delta <= 0) return
+      tickRef.current = now
+      apiCall('/api/learning', 'POST', { contentId: item.id, durationDelta: delta }).catch(() => {})
+    }, 30000)
+
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+      const now = Date.now()
+      const delta = Math.floor((now - tickRef.current) / 1000)
+      const totalStayed = Math.floor((now - openedAtRef.current) / 1000)
+      const shouldComplete = totalStayed >= 30
+      apiCall('/api/learning', 'POST', {
+        contentId: item.id,
+        durationDelta: delta > 0 ? delta : 0,
+        progress: shouldComplete ? 100 : undefined,
+        completed: shouldComplete,
+      }).catch(() => {})
+    }
+  }, [item.id])
 
   return (
     <div

@@ -803,6 +803,7 @@ P1-3 (名称匹配) ─> 完整收益流 ─────┘        │
 - [x] P1-5 创作者重新提交预填（update-in-place + version++） — commit `d61bf4d`（2026-04-17）
 - [x] P1-6 queue 字段名 studentName 对齐 — commit `2959bfe`（2026-04-17）
 - [x] P1-7 创作者头像上传 — commit `8bc37e6`（2026-04-17）
+- [x] P2-1 学习进度表 LearningRecord — commit pending（2026-04-17）
 
 ---
 

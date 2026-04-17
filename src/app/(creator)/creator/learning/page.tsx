@@ -3,35 +3,72 @@
 import { useApi } from '@/lib/use-api'
 import { pageWrap, textPageTitle, cardCls } from '@/lib/ui-tokens'
 
-const LEARNING_PATH = [
-  { stage: '入门', desc: 'AI音乐工具基础操作', progress: 100, color: 'var(--green2)' },
-  { stage: '进阶', desc: '基础乐理与音乐流派', progress: 60, color: 'var(--accent2)' },
-  { stage: '高阶', desc: 'Prompt工程与版权知识', progress: 20, color: 'var(--orange)' },
+interface Badge {
+  id: string
+  icon: string
+  name: string
+  earned: boolean
+}
+
+interface AchievementsData {
+  totalCourses: number
+  completedCount: number
+  totalDurationSeconds: number
+  totalDurationHours: number
+  weekDurationSeconds: number
+  weekDurationHours: number
+  maxStreakDays: number
+  badges: Badge[]
+}
+
+// 学习路径阶段映射（按 cms category 聚合真实进度）
+const PATH_STAGES = [
+  { stage: '入门', desc: 'AI音乐工具基础操作', categories: ['AI工具教程'], color: 'var(--green2)' },
+  { stage: '进阶', desc: '基础乐理与音乐流派', categories: ['基础乐理', '音乐流派'], color: 'var(--accent2)' },
+  { stage: '高阶', desc: 'Prompt工程与版权知识', categories: ['版权知识'], color: 'var(--orange)' },
 ]
 
-const BADGES = [
-  { icon: '🎵', name: '首次上传', earned: true },
-  { icon: '⭐', name: '首个80分+', earned: true },
-  { icon: '🚀', name: '首次发行', earned: true },
-  { icon: '📚', name: '入门通关', earned: true },
-  { icon: '🔥', name: '连续7天', earned: false },
-  { icon: '💎', name: '10首发行', earned: false },
-]
-
-// ── Page ─────────────────────────────────────────────────────────
+interface LearningRecordItem {
+  id: number
+  progress: number
+  duration: number
+  completedAt: string | null
+  lastViewedAt: string
+  content: { id: number; title: string; category: string; type: 'video' | 'article'; cover: string | null }
+}
 
 export default function CreatorLearning() {
-  const { data: contentData } = useApi<{ list: unknown[]; total: number }>('/api/content?pageSize=1')
+  const { data: achievements, loading: loadingAch } = useApi<AchievementsData>('/api/learning/achievements')
+  const { data: recordsData, loading: loadingRec } = useApi<{ list: LearningRecordItem[] }>('/api/learning')
 
-  const totalCourses = contentData?.total ?? 6
-  const completedCourses = Math.ceil(totalCourses * 0.67)
+  if (loadingAch || loadingRec) {
+    return (
+      <div className={pageWrap}>
+        <div className="flex items-center justify-center py-20 text-sm text-[var(--text3)]">加载中...</div>
+      </div>
+    )
+  }
+
+  const totalCourses = achievements?.totalCourses ?? 0
+  const completed = achievements?.completedCount ?? 0
+  const weekHours = achievements?.weekDurationHours ?? 0
+  const earnedBadges = achievements?.badges.filter(b => b.earned).length ?? 0
+  const records = recordsData?.list ?? []
 
   const STATS = [
-    { icon: '📚', label: '已完成课程', value: `${completedCourses}/${totalCourses}`, color: 'var(--accent2)', bg: 'rgba(79,70,229,0.08)' },
-    // TODO: 待学习记录功能实现后对接实际数据（当前无学习记录表）
-    { icon: '⏱', label: '本周学习', value: '3.5h', color: 'var(--green)', bg: 'rgba(6,148,162,0.08)' },
-    { icon: '🏆', label: '成就徽章', value: '3', color: 'var(--orange)', bg: 'rgba(217,119,6,0.08)' },
+    { icon: '📚', label: '已完成课程', value: `${completed}/${totalCourses}`, color: 'var(--accent2)', bg: 'rgba(79,70,229,0.08)' },
+    { icon: '⏱', label: '本周学习', value: `${weekHours}h`, color: 'var(--green)', bg: 'rgba(6,148,162,0.08)' },
+    { icon: '🏆', label: '成就徽章', value: String(earnedBadges), color: 'var(--orange)', bg: 'rgba(217,119,6,0.08)' },
   ]
+
+  // 按阶段聚合：progress 平均值（该阶段下所有属于 categories 的课程 progress 取均值）
+  const stageProgress = PATH_STAGES.map(s => {
+    const stageRecords = records.filter(r => s.categories.includes(r.content.category))
+    const avg = stageRecords.length === 0
+      ? 0
+      : Math.round(stageRecords.reduce((sum, r) => sum + r.progress, 0) / stageRecords.length)
+    return { ...s, progress: avg }
+  })
 
   return (
     <div className={pageWrap}>
@@ -92,7 +129,7 @@ export default function CreatorLearning() {
         {/* Learning Path */}
         <div className={cardCls}>
           <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>📈 学习路径</h3>
-          {LEARNING_PATH.map((s) => (
+          {stageProgress.map((s) => (
             <div key={s.stage} style={{ marginBottom: 16 }}>
               <div
                 style={{
@@ -127,15 +164,18 @@ export default function CreatorLearning() {
               </div>
             </div>
           ))}
+          {records.length === 0 && (
+            <p className="text-xs text-[var(--text3)] mt-4">尚未开始学习任何课程，前往<a href="/creator/courses" className="text-[var(--accent)] underline mx-1">课程中心</a>开启学习之旅。</p>
+          )}
         </div>
 
         {/* Achievement Badges */}
         <div className={cardCls}>
           <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>🏅 成就徽章</h3>
           <div className="grid grid-cols-2 gap-3">
-            {BADGES.map((a) => (
+            {(achievements?.badges ?? []).map((a) => (
               <div
-                key={a.name}
+                key={a.id}
                 style={{
                   textAlign: 'center',
                   padding: 12,

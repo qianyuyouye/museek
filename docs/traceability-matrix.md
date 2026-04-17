@@ -78,7 +78,7 @@
 | notifications | ✅ | ✅ | PRD §4 未列，但实现需要 |
 | sms_codes | ✅ | ✅ | 同上 |
 | login_logs | ✅ | ✅ | 同上 |
-| **LearningRecord** | 🔴 | — | **PRD §7.1.6 "我的学习 · 学习进度追踪" 但无表** |
+| **LearningRecord** | ✅ | ✅ | P2-1 已补：schema 新增 learning_records + API + 创作者 learning/courses 页面接入 |
 
 ---
 
@@ -88,7 +88,7 @@
 
 | PRD 功能 | 页面 | 状态 | 关键差距 |
 |---|---|---|---|
-| §7.1.1 Dashboard 实时统计 | `creator/home` | ✅ | 学习进度硬编码 `4/N`，待学习记录表 |
+| §7.1.1 Dashboard 实时统计 | `creator/home` | ✅ | 学习进度硬编码 `4/N`（后续可接 P2-1 学习记录 API） |
 | §7.1.2 自由上传 3 步 | `creator/upload` | ✅ | 已完整 |
 | §7.1.2 重新提交预填 | 同上 | ✅ | P1-5 已修：跳 `/creator/upload?songId=x`，upload 支持 songId update-in-place + version++ |
 | §7.1.3 作业提交 | `creator/assignments` | ✅ | 动态表单 / version++ 都通 |
@@ -96,7 +96,7 @@
 | §7.1.5 我的收益 2 Tab | `creator/revenue` | 🟡 | 数据更新时间硬编码日期 |
 | §7.1.6 课程中心 | `creator/courses` | 🟡 | 视频/文章详情 sections 硬编码 |
 | §7.1.6 作品广场 | `creator/community` | 🟡 | 分享按钮仅 toast，无 `navigator.clipboard` |
-| §7.1.6 我的学习 | `creator/learning` | 🔴 | 全硬编码（成就/徽章/时长） |
+| §7.1.6 我的学习 | `creator/learning` | ✅ | P2-1 已修：学习路径/徽章/时长均由 /api/learning + /api/learning/achievements 驱动 |
 | §7.1.6 消息中心 | `creator/notifications` | ✅ | |
 | §7.1.6 个人中心 - 基本信息 | `creator/profile` | ✅ | |
 | §1.3 实名认证入口 | 同上 | ✅ | P0-2 已修：Modal 表单 + POST /api/profile/real-name（加密存储） |
@@ -258,7 +258,7 @@
 13. **批量下载三条件校验报告**：下载按钮对选中集合校验，报告文件标红缺失项
 14. **OSS 生产签名 URL**：用阿里云 SDK `ali-oss`
 15. **operation_logs 写入覆盖**：删除/禁用/结算/发行/角色变更 均调 `logAction`
-16. **学习进度表 LearningRecord**：新增 schema + API + 前端接入
+16. ✅ **学习进度表 LearningRecord**（P2-1）：schema + /api/learning CRUD + achievements + creator 两页接入
 17. **CMS sections/duration 字段**：schema 扩展或 content 表加 JSON 字段
 18. **创作者手机号改（验证码流程）**
 19. **songs 退回/下架按钮暴露**
