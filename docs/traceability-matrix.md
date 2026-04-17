@@ -43,10 +43,10 @@
 | **Phase 5 状态确认** | 自动对账 + 人工确认 + 异常 | 🟡 | `publish-confirm` action 已修复，但 `sync` 对接汽水真实接口是 mock（无外部数据源） |
 | **Phase 6 收益导入** | CSV 解析 | ✅ | 本次 B4 `lib/csv.ts` + `/api/admin/revenue/imports` |
 | | 映射自动匹配（auto_exact/fuzzy） | 🟡 | 只查 qishuiSongId，**未实现按歌名模糊匹配**（PRD §6.1 Step 3） |
-| | **分成规则三档（高分/量产/默认）** | 🔴 | 所有结算固定 70/30，未评估 `score≥90` 或 `累计发行≥10` |
-| | **回溯生成结算**（pending→confirmed 触发） | 🔴 | `/api/admin/revenue/mappings/[id]` PUT 时未触发历史 revenue_rows 回溯 |
+| | **分成规则三档（高分/量产/默认）** | ✅ | P0-3 已修：`lib/commission.ts` 按 system_settings.revenue_rules 优先级评估 |
+| | **回溯生成结算**（pending→confirmed 触发） | ✅ | P0-4 已修：`lib/revenue-backfill.ts` 事务批量生成 |
 | | 多维统计 / 导出 | ✅ | |
-| | 打款前实名校验 | 🟡 | 前端 `settle-manage` 按钮存在，**后端未校验 `realNameStatus`** |
+| | 打款前实名校验 | ✅ | P0-5 已修：settlements pay 阻断未 verified 创作者并列出姓名 |
 | **Phase 7 收益查询** | 平台分发 Tab | ✅ | `/api/creator/revenue` |
 | | 汽水音乐 Tab | ✅ | 同上 |
 | | 隐藏 qishuiSongId | ✅ | 返回字段已过滤 |
@@ -145,9 +145,9 @@
 | .13 平台管理员 | `admin/admins` | ✅ | 本次 Phase A + B5 CSV 导出 |
 | .14 角色管理 | `admin/roles` | ✅ | |
 | .15.1 汽水/其他导入 | `admin/revenue` | ✅ | 本次 B4 + B7 |
-| .15.2 映射管理三 Tab | 同上 | 🟡 | 确认/修正/标记无关基本可用，**回溯生成未实现** |
+| .15.2 映射管理三 Tab | 同上 | ✅ | P0-4 补回溯生成 |
 | .15.3 收益四维统计 | 同上 | ✅ | |
-| .15.4 结算管理 | 同上 | 🟡 | **打款前实名校验未实现**（PRD §7.3.15 要求阻断） |
+| .15.4 结算管理 | 同上 | ✅ | P0-5 已补实名阻断 |
 | .15.5 平台分发结算 | 同上 | 🟡 | Settlement `plays` 字段前端期望但无数据源 |
 | .16 内容管理 CMS | `admin/content` | ✅ | |
 | .17 系统设置 5 子模块 | `admin/settings` | ✅ | 本次 B2/B3 全量可编辑 |
@@ -167,8 +167,8 @@
 | §6.1 Step 1 去重 | ✅ | `skipDuplicates` |
 | §6.1 Step 2 映射表查询 4 种状态分流 | 🟡 | 只区分 confirmed/其他，未精确处理 suspect/pending/irrelevant |
 | §6.1 Step 3 **名称精确/模糊匹配** | 🔴 | 完全未实现（PRD 明确要求） |
-| §6.2 **分成规则三档** | 🔴 | 硬编码 70/30，无条件评估 |
-| §6.3 **回溯生成**（suspect/pending→confirmed） | 🔴 | 未实现 |
+| §6.2 **分成规则三档** | ✅ | P0-3：`resolveCommissionRatio` + UI 条件类型 select |
+| §6.3 **回溯生成**（suspect/pending→confirmed） | ✅ | P0-4：mappings confirm/bind 同步调用 backfillSettlements |
 | §6.4 **手动新增映射直接 confirmed** | 🟡 | `mappings/[id]` PUT `action=bind` 存在，确认逻辑待验证 |
 
 ---
@@ -194,12 +194,12 @@
 
 | 场景 | 实现 | 差距 |
 |---|---|---|
-| 先有收益后有提交 | 🔴 | 映射 pending，但绑定后未**回溯生成结算**（§6.3） |
+| 先有收益后有提交 | ✅ | P0-4：映射 confirm/bind 后 backfillSettlements 扫描历史 rows |
 | 汽水歌名与平台不一致 | 🟡 | 基础匹配失败→pending，但**缺名称模糊匹配**（§6.1 Step 3） |
 | CSV 不属于本平台 | 🔴 | 标 irrelevant 后下次跳过——未实现 |
 | 一首歌多月收益 | ✅ | `@@unique(qishuiSongId, period)` |
 | 同名歌曲不同创作者 | 🔴 | 未实现 suspect 候选展示 |
-| **创作者未实名打款** | 🔴 | **后端未校验**（§7.3.15 要求阻断）|
+| **创作者未实名打款** | ✅ | P0-5：settlements pay 前校验 realNameStatus，阻断并返回姓名列表 |
 | 创作者账号禁用 | 🟡 | 结算生成但打款需人工处理——逻辑未测 |
 | 跨批次重复行 | ✅ | UNIQUE 约束 |
 | 发行 ISRC 未绑 | ✅ | Phase A 修复 |
@@ -241,9 +241,9 @@
 ### 🔴 P0 - 阻塞核心业务
 1. ✅ **评审端音频播放**（`review/assess`）：P0-1 已完成 — 真实 `<audio>` + 变速 + A-B 循环 + 波形进度 + 时间轴标记
 2. ✅ **创作者实名认证入口**（`creator/profile`）：P0-2 已完成 — Modal 表单 + AES-256-GCM 加密存储 + 管理端详情解密
-3. **分成规则三档自动评估**（Phase 6 结算生成）：查 `scoring_weights` + 查作品 score / 创作者累计发行数，按优先级选 ratio
-4. **回溯生成结算**（song_mappings `pending/suspect → confirmed`）：绑定后扫描该 qishuiSongId 历史 revenue_rows 批量建 settlement
-5. **打款前实名阻断**：`/api/admin/revenue/settlements` 标记 paid 时校验 `creator.realNameStatus === 'verified'`
+3. ✅ **分成规则三档自动评估**：P0-3 已完成 — `lib/commission.ts` + 动态规则 UI + seed 三档
+4. ✅ **回溯生成结算**：P0-4 已完成 — `lib/revenue-backfill.ts`，confirm/bind 同步触发
+5. ✅ **打款前实名阻断**：P0-5 已完成 — pay 前校验 realNameStatus 并返回阻断姓名
 
 ### 🟠 P1 - 功能不完整
 6. **评审端歌词/Prompt 真实数据**：assess 页面读 `lyrics / styleDesc / creationDesc`
@@ -304,10 +304,10 @@
 | 维度 | 得分 |
 |---|---|
 | 数据模型完整性 | **95%** — 缺 LearningRecord |
-| 管理端可用度 | **93%** — 缺回溯生成/实名阻断/分成自动评估（P0-2 解密通道已补） |
+| 管理端可用度 | **96%** — P0-3/4/5 补齐分成自动评估/回溯/实名阻断 |
 | 创作者端可用度 | **85%** — P0-2 补实名入口；仍缺学习记录/头像上传 |
 | 评审端可用度 | **78%** — P0-1 补音频播放 + 时间轴标记；仍缺歌词/Prompt 读真实数据等小项 |
-| 收益全链路 | **72%** — CSV 能导入，但名称匹配/回溯/分成三档未实现 |
+| 收益全链路 | **90%** — P0-3/4/5 全链路打通；仅剩名称模糊匹配（P1-3） |
 | 公共基础设施 | **70%** — 生产 OSS/短信需配置，登录鉴权完整 |
 | **综合** | **~78%** |
 
