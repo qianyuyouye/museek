@@ -17,15 +17,17 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # 首次初始化：建表 + 种子数据
+  # 首次初始化：建表 + 种子数据（用 builder 阶段镜像，含完整 node_modules）
   init:
-    build: .
+    build:
+      context: .
+      target: builder
     environment:
       - DATABASE_URL=mysql://root:${MYSQL_ROOT_PASSWORD:-museek2026}@db:3306/museek
     depends_on:
       db:
         condition: service_healthy
-    entrypoint: ["sh", "-c", "node node_modules/prisma/build/index.js db push --skip-generate && node prisma/seed.js"]
+    entrypoint: ["sh", "-c", "npx prisma db push --skip-generate && node prisma/seed.js"]
     restart: "no"
     profiles: ["init"]
 
