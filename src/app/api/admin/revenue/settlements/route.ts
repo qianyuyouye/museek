@@ -77,6 +77,28 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     return err(`${ids.length} 条记录中仅 ${eligible} 条处于 ${from} 状态，无法执行 ${action}`)
   }
 
+  // 打款前强制校验创作者实名（PRD §7.3.15）
+  if (action === 'pay') {
+    const targets = await prisma.settlement.findMany({
+      where: { id: { in: ids } },
+      select: {
+        id: true,
+        creator: { select: { id: true, name: true, realName: true, realNameStatus: true } },
+      },
+    })
+    const blocked = targets.filter((s) => s.creator.realNameStatus !== 'verified')
+    if (blocked.length > 0) {
+      const names = Array.from(
+        new Set(blocked.map((s) => s.creator.realName || s.creator.name || `#${s.creator.id}`)),
+      )
+      const preview = names.slice(0, 5).join('、')
+      const more = names.length > 5 ? `等 ${names.length} 人` : ''
+      return err(
+        `${blocked.length} 条记录的创作者未完成实名认证，无法打款：${preview}${more}`,
+      )
+    }
+  }
+
   const data: Record<string, unknown> = { settleStatus: to }
   if (timeField) {
     data[timeField] = new Date()
