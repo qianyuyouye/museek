@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle, cardCls, btnPrimary as btnPrimaryBase, inputCls, labelCls } from '@/lib/ui-tokens'
 
@@ -42,7 +42,7 @@ interface UserProfile {
   name: string
   email: string
   phone: string
-  avatar: string
+  avatarUrl: string | null
   realName: string
   realNameStatus: string
   agencyContract: boolean
@@ -128,8 +128,10 @@ export default function CreatorProfile() {
   const [contractModal, setContractModal] = useState(false)
   const [signAgencyModal, setSignAgencyModal] = useState(false)
 
-  // Avatar hover
+  // Avatar hover + upload
   const [avatarHover, setAvatarHover] = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
 
   // Toast
   const [toast, setToast] = useState('')
@@ -159,6 +161,45 @@ export default function CreatorProfile() {
       setEditEmail(user.email)
     }
   }, [user])
+
+  async function handleAvatarFile(file: File) {
+    if (avatarUploading) return
+    setAvatarUploading(true)
+    try {
+      const tokenRes = await fetch('/api/upload/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: file.name, fileSize: file.size, type: 'image' }),
+      })
+      const tokenJson = await tokenRes.json()
+      if (tokenJson.code !== 200) {
+        showToast(tokenJson.message || '获取上传凭证失败')
+        return
+      }
+      const { uploadUrl, fileUrl, headers: extraHeaders } = tokenJson.data
+      const putRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type, ...extraHeaders },
+      })
+      if (!putRes.ok) {
+        showToast('文件上传失败')
+        return
+      }
+      const saveRes = await apiCall('/api/profile/avatar', 'POST', { avatarUrl: fileUrl })
+      if (saveRes.ok) {
+        showToast('头像已更新')
+        refetch()
+      } else {
+        showToast(saveRes.message || '头像保存失败')
+      }
+    } catch {
+      showToast('头像上传出错')
+    } finally {
+      setAvatarUploading(false)
+      if (avatarInputRef.current) avatarInputRef.current.value = ''
+    }
+  }
 
   const REAL_NAME_STATUS_MAP: Record<
     string,
@@ -198,16 +239,35 @@ export default function CreatorProfile() {
 
           {/* Avatar */}
           <div className="flex justify-center mb-4">
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept=".jpg,.jpeg,.png,.webp,image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) handleAvatarFile(f)
+              }}
+            />
             <div
-              className="relative w-[72px] h-[72px] rounded-full bg-[#f0f4fb] border-2 border-[var(--border)] flex items-center justify-center text-4xl cursor-pointer transition-all"
+              className="relative w-[72px] h-[72px] rounded-full bg-[#f0f4fb] border-2 border-[var(--border)] flex items-center justify-center text-4xl cursor-pointer transition-all overflow-hidden"
               onMouseEnter={() => setAvatarHover(true)}
               onMouseLeave={() => setAvatarHover(false)}
-              onClick={() => showToast('已打开头像上传（原型演示）')}
+              onClick={() => !avatarUploading && avatarInputRef.current?.click()}
             >
-              {user.avatar}
-              {avatarHover && (
+              {user.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={user.avatarUrl}
+                  alt={user.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-[var(--text3)] text-2xl">🎵</span>
+              )}
+              {(avatarHover || avatarUploading) && (
                 <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center text-xs text-white">
-                  修改头像
+                  {avatarUploading ? '上传中...' : '修改头像'}
                 </div>
               )}
               {/* Camera icon */}
