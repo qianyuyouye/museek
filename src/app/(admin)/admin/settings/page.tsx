@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react'
 import { PageHeader } from '@/components/admin/page-header'
 import { AdminTab } from '@/components/admin/admin-tab'
+import { AdminModal } from '@/components/admin/admin-modal'
 import { DataTable, Column } from '@/components/admin/data-table'
 import { useApi, apiCall } from '@/lib/use-api'
-import { pageWrap, cardCls, btnPrimary, inputCls, labelCls } from '@/lib/ui-tokens'
+import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
 
 // ── Tab definitions ──────────────────────────────────────────────
 
@@ -82,8 +83,38 @@ export default function AdminSettingsPage() {
   }
 
   async function handleSave(data: Partial<SettingsData>) {
-    // 后端期望 { settings: [{ key, value }] } 数组格式
-    const settingsArray = Object.entries(data).map(([key, value]) => ({ key, value }))
+    // 前端 SettingsData 字段名 → 后端 PRESET_KEYS 字段名映射
+    const KEY_MAP: Record<string, string> = {
+      weights: 'scoring_weights',
+      threshold: 'auto_archive_threshold',
+      commissionRules: 'revenue_rules',
+      templates: 'review_templates',
+      platforms: 'platform_configs',
+      aiTools: 'ai_tools',
+      genres: 'genres',
+    }
+    const LABEL_TO_KEY: Record<string, string> = {
+      '技术熟练度': 'technique',
+      '创意立意': 'creativity',
+      '商业传播潜力': 'commercial',
+    }
+
+    const settingsArray = Object.entries(data).map(([k, v]) => {
+      let value: unknown = v
+      // weights: [{label,value}] → {technique,creativity,commercial}
+      if (k === 'weights' && Array.isArray(v)) {
+        value = (v as { label: string; value: number }[]).reduce((acc, w) => {
+          acc[LABEL_TO_KEY[w.label] ?? w.label] = w.value
+          return acc
+        }, {} as Record<string, number>)
+      }
+      // threshold: {minScore, recommendLevel} → number
+      if (k === 'threshold' && v && typeof v === 'object' && 'minScore' in v) {
+        value = (v as { minScore: number }).minScore
+      }
+      return { key: KEY_MAP[k] ?? k, value }
+    })
+
     const res = await apiCall('/api/admin/settings', 'PUT', { settings: settingsArray })
     if (res.ok) {
       showToast('设置已保存')
@@ -110,7 +141,7 @@ export default function AdminSettingsPage() {
 
       <div className={cardCls}>
         {tab === 'scores' && <ScoresTab showToast={showToast} onSave={handleSave} initialData={data} />}
-        {tab === 'commission' && <CommissionTab showToast={showToast} initialData={data} />}
+        {tab === 'commission' && <CommissionTab showToast={showToast} onSave={handleSave} initialData={data} />}
         {tab === 'templates' && <TemplatesTab showToast={showToast} onSave={handleSave} initialData={data} />}
         {tab === 'platforms' && <PlatformsTab initialData={data} />}
         {tab === 'options' && <OptionsTab initialData={data} />}
@@ -223,8 +254,63 @@ const COMMISSION_DATA: CommissionRule[] = [
   { name: '量产奖励', student: '75%', platform: '25%', condition: '累计发行≥10首', active: true },
 ]
 
-function CommissionTab({ showToast, initialData }: { showToast: (msg: string) => void; initialData: SettingsData | null }) {
-  const rules = initialData?.commissionRules ?? COMMISSION_DATA
+function CommissionTab({
+  showToast,
+  onSave,
+  initialData,
+}: {
+  showToast: (msg: string) => void
+  onSave: (s: Partial<SettingsData>) => void
+  initialData: SettingsData | null
+}) {
+  const [rules, setRules] = useState<CommissionRule[]>(initialData?.commissionRules ?? COMMISSION_DATA)
+  const [editing, setEditing] = useState<{ rule: CommissionRule; index: number } | null>(null)
+
+  useEffect(() => {
+    if (initialData) setRules(initialData.commissionRules ?? COMMISSION_DATA)
+  }, [initialData])
+
+  function openNew() {
+    setEditing({
+      rule: { name: '', student: '70%', platform: '30%', condition: '', active: true },
+      index: -1,
+    })
+  }
+
+  function openEdit(rule: CommissionRule, index: number) {
+    setEditing({ rule: { ...rule }, index })
+  }
+
+  function persist(next: CommissionRule[]) {
+    setRules(next)
+    onSave({ commissionRules: next })
+  }
+
+  function saveRule() {
+    if (!editing) return
+    const r = editing.rule
+    if (!r.name.trim()) {
+      showToast('规则名称不能为空')
+      return
+    }
+    const next = [...rules]
+    if (editing.index >= 0) next[editing.index] = r
+    else {
+      if (next.some((x) => x.name === r.name)) {
+        showToast('规则名已存在')
+        return
+      }
+      next.push(r)
+    }
+    persist(next)
+    setEditing(null)
+  }
+
+  function removeRule(index: number) {
+    if (!confirm('确认删除此规则？')) return
+    persist(rules.filter((_, i) => i !== index))
+  }
+
   const columns: Column<CommissionRule>[] = [
     {
       key: 'name',
@@ -244,6 +330,30 @@ function CommissionTab({ showToast, initialData }: { showToast: (msg: string) =>
           <span style={{ color: 'var(--text3)' }}>停用</span>
         ),
     },
+    {
+      key: 'name',
+      title: '操作',
+      render: (_v, row) => {
+        const rule = row as CommissionRule
+        const index = rules.findIndex((r) => r.name === rule.name)
+        return (
+          <div className="flex gap-2">
+            <button
+              className="text-xs text-[var(--accent)] bg-transparent border-0 cursor-pointer"
+              onClick={() => openEdit(rule, index)}
+            >
+              编辑
+            </button>
+            <button
+              className="text-xs text-[var(--red)] bg-transparent border-0 cursor-pointer"
+              onClick={() => removeRule(index)}
+            >
+              删除
+            </button>
+          </div>
+        )
+      },
+    },
   ]
 
   return (
@@ -255,10 +365,70 @@ function CommissionTab({ showToast, initialData }: { showToast: (msg: string) =>
         rowKey={(r) => (r as unknown as CommissionRule).name}
       />
       <div className="mt-4">
-        <button className={btnPrimary} onClick={() => showToast('已添加新规则')}>
+        <button className={btnPrimary} onClick={openNew}>
           + 添加规则
         </button>
       </div>
+
+      <AdminModal
+        open={!!editing}
+        onClose={() => setEditing(null)}
+        title={editing && editing.index >= 0 ? '编辑规则' : '新增规则'}
+        width={460}
+      >
+        {editing && (
+          <div className="flex flex-col gap-3">
+            <div>
+              <label className={labelCls}>规则名称</label>
+              <input
+                className={inputCls}
+                value={editing.rule.name}
+                onChange={(e) => setEditing({ ...editing, rule: { ...editing.rule, name: e.target.value } })}
+                disabled={editing.index >= 0}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>创作者比例（如 70%）</label>
+                <input
+                  className={inputCls}
+                  value={editing.rule.student}
+                  onChange={(e) => setEditing({ ...editing, rule: { ...editing.rule, student: e.target.value } })}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>平台比例（如 30%）</label>
+                <input
+                  className={inputCls}
+                  value={editing.rule.platform}
+                  onChange={(e) => setEditing({ ...editing, rule: { ...editing.rule, platform: e.target.value } })}
+                />
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>触发条件</label>
+              <input
+                className={inputCls}
+                placeholder="如：评分≥90 或 所有创作者"
+                value={editing.rule.condition}
+                onChange={(e) => setEditing({ ...editing, rule: { ...editing.rule, condition: e.target.value } })}
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={editing.rule.active}
+                onChange={(e) => setEditing({ ...editing, rule: { ...editing.rule, active: e.target.checked } })}
+              />
+              启用此规则
+            </label>
+            <div className="flex gap-2 justify-end mt-2">
+              <button className={btnGhost} onClick={() => setEditing(null)}>取消</button>
+              <button className={btnPrimary} onClick={saveRule}>保存</button>
+            </div>
+          </div>
+        )}
+      </AdminModal>
     </div>
   )
 }
