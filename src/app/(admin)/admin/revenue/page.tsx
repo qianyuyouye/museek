@@ -1,0 +1,1038 @@
+'use client'
+
+import { useState } from 'react'
+import { PageHeader } from '@/components/admin/page-header'
+import { StatCard } from '@/components/admin/stat-card'
+import { DataTable, Column } from '@/components/admin/data-table'
+import { AdminTab } from '@/components/admin/admin-tab'
+import { AdminModal } from '@/components/admin/admin-modal'
+import { useApi, apiCall } from '@/lib/use-api'
+
+// ── Types ───────────────────────────────────────────────────────
+
+interface RevenueImport {
+  id: number
+  fileName: string
+  period: string
+  totalRows: number
+  idHit: number
+  nameMatch: number
+  unmatched: number
+  duplicates: number
+  totalRevenue: number
+}
+
+interface Mapping {
+  id: number
+  qishuiId: string
+  songName: string
+  creatorName: string | null
+  source: 'auto' | 'manual'
+  status: 'confirmed' | 'pending' | 'unbound'
+  confirmedAt: string | null
+}
+
+interface Settlement {
+  id: number
+  songTitle: string
+  platform: string
+  plays?: number
+  rawRevenue: number
+  creatorRatio: number
+  creatorAmount: number
+  status: 'pending' | 'confirmed' | 'exported' | 'paid'
+}
+
+interface QishuiDetail {
+  id: number
+  songName: string
+  month: string
+  douyinRevenue: number
+  qishuiRevenue: number
+  matchStatus: string
+}
+
+interface CreatorOption {
+  id: number
+  name: string
+  phone: string
+}
+
+interface RevenueStats {
+  grandTotal: number
+  grandDouyin: number
+  grandQishui: number
+  userStats: { name: string; songCount: number; douyin: number; qishui: number; total: number }[]
+  songStats: { name: string; user: string; periodCount: number; douyin: number; qishui: number; total: number }[]
+  periodStats: { period: string; songs: number; userCount: number; douyin: number; qishui: number; total: number }[]
+}
+
+interface OtherImport {
+  id: number
+  platform: string
+  fileName: string
+  totalRows: number
+  matchedRows: number
+  totalRevenue: number
+  status: string
+}
+
+// ── Style helpers ───────────────────────────────────────────────
+
+const btnPrimary =
+  'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0'
+const btnGhost =
+  'bg-transparent text-[var(--text2)] border border-[var(--border)] px-4 py-2 rounded-lg text-sm font-medium cursor-pointer'
+const btnDanger =
+  'bg-gradient-to-r from-[#e53e3e] to-[#c53030] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
+const btnSuccess =
+  'bg-gradient-to-r from-[#16a34a] to-[#0694a2] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
+const btnSmall = 'text-[11px] px-2.5 py-1'
+
+const inputCls =
+  'w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]'
+const labelCls = 'block text-[13px] text-[var(--text2)] mb-1.5 font-medium'
+const cardCls =
+  'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
+
+// ── Status maps ─────────────────────────────────────────────────
+
+const SETTLE_STATUS: Record<string, { l: string; c: string }> = {
+  pending: { l: '待确认', c: 'var(--orange)' },
+  confirmed: { l: '已确认', c: '#1a73e8' },
+  exported: { l: '已导出', c: 'var(--text2)' },
+  paid: { l: '已打款', c: 'var(--green2)' },
+}
+
+const MAP_STATUS: Record<string, { l: string; c: string }> = {
+  confirmed: { l: '✅ 已确认', c: 'var(--green2)' },
+  pending: { l: '⚠️ 待确认', c: 'var(--orange)' },
+  unbound: { l: '❓ 未绑定', c: 'var(--text3)' },
+}
+
+// ── Main component ──────────────────────────────────────────────
+
+export default function AdminRevenuePage() {
+  const [tab, setTab] = useState('qishui')
+  const [statsTab, setStatsTab] = useState('user')
+  const [mappingFilter, setMappingFilter] = useState('all')
+  const [matchDetail, setMatchDetail] = useState<RevenueImport | null>(null)
+  const [linkModal, setLinkModal] = useState<Mapping | null>(null)
+  const [toast, setToast] = useState('')
+
+  // API hooks
+  const { data: importsData, refetch: refetchImports } = useApi<{ list: RevenueImport[]; total: number }>('/api/admin/revenue/imports')
+  const { data: mappingsData, refetch: refetchMappings } = useApi<{ list: Mapping[]; total: number }>(`/api/admin/revenue/mappings?status=${mappingFilter}`, [mappingFilter])
+  const { data: statsData } = useApi<{
+    totalRevenue: number
+    douyinRevenue: number
+    qishuiRevenue: number
+    creatorCount: number
+    byCreator: { creatorId: number; creatorName: string | null; totalRevenue: number; douyinRevenue: number; qishuiRevenue: number }[]
+    bySong: { songName: string | null; qishuiSongId: string; totalRevenue: number; douyinRevenue: number; qishuiRevenue: number }[]
+    byMonth: { period: string; totalRevenue: number; douyinRevenue: number; qishuiRevenue: number }[]
+  }>('/api/admin/revenue/stats')
+  const { data: settleData, refetch: refetchSettlements } = useApi<{ list: Settlement[]; total: number }>('/api/admin/revenue/settlements?status=')
+
+  const imports = importsData?.list ?? []
+  const mappings = mappingsData?.list ?? []
+  const settlements = settleData?.list ?? []
+
+  const grandTotal = statsData?.totalRevenue ?? 0
+  const grandDouyin = statsData?.douyinRevenue ?? 0
+  const grandQishui = statsData?.qishuiRevenue ?? 0
+  const userStats = (statsData?.byCreator ?? []).map((c) => ({
+    name: c.creatorName ?? `用户${c.creatorId}`,
+    songCount: 0,
+    douyin: c.douyinRevenue,
+    qishui: c.qishuiRevenue,
+    total: c.totalRevenue,
+  }))
+  const songStats = (statsData?.bySong ?? []).map((s) => ({
+    name: s.songName ?? s.qishuiSongId,
+    user: '-',
+    periodCount: 0,
+    douyin: s.douyinRevenue,
+    qishui: s.qishuiRevenue,
+    total: s.totalRevenue,
+  }))
+  const periodStats = (statsData?.byMonth ?? []).map((m) => ({
+    period: m.period,
+    songs: 0,
+    userCount: 0,
+    douyin: m.douyinRevenue,
+    qishui: m.qishuiRevenue,
+    total: m.totalRevenue,
+  }))
+
+  function showToast(msg: string) {
+    setToast(msg)
+    setTimeout(() => setToast(''), 3000)
+  }
+
+  const pendingCount = mappings.filter(m => m.status === 'pending').length
+
+  const tabItems = [
+    { key: 'qishui', label: '🎵 汽水导入' },
+    { key: 'mapping', label: `🔗 匹配关系${pendingCount > 0 ? ` (${pendingCount})` : ''}` },
+    { key: 'stats', label: '📊 多维统计' },
+    { key: 'settle', label: '💰 结算管理' },
+    { key: 'imports', label: '📥 其他平台' },
+    { key: 'platform_settle', label: '🏦 平台分发结算' },
+  ]
+
+  return (
+    <div>
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
+          {toast}
+        </div>
+      )}
+
+      <PageHeader title="收益管理" subtitle="汽水音乐导入 · 歌曲ID映射 · 多维统计" />
+
+      <div className="mb-5">
+        <AdminTab tabs={tabItems} active={tab} onChange={setTab} />
+      </div>
+
+      {/* ═══ 汽水音乐导入 ═══ */}
+      {tab === 'qishui' && <QishuiTab showToast={showToast} grandTotal={grandTotal} imports={imports} mappings={mappings} onDetail={setMatchDetail} refetchImports={refetchImports} />}
+
+      {/* ═══ 匹配关系维护 ═══ */}
+      {tab === 'mapping' && (
+        <MappingTab
+          showToast={showToast}
+          mappings={mappings}
+          allMappingsCount={mappings.length}
+          mappingFilter={mappingFilter}
+          setMappingFilter={setMappingFilter}
+          onLink={setLinkModal}
+          refetch={refetchMappings}
+        />
+      )}
+
+      {/* ═══ 多维统计 ═══ */}
+      {tab === 'stats' && (
+        <StatsTab
+          statsTab={statsTab}
+          setStatsTab={setStatsTab}
+          grandTotal={grandTotal}
+          grandDouyin={grandDouyin}
+          grandQishui={grandQishui}
+          userStats={userStats}
+          songStats={songStats}
+          periodStats={periodStats}
+        />
+      )}
+
+      {/* ═══ 结算管理 ═══ */}
+      {tab === 'settle' && <SettleTab showToast={showToast} settlements={settlements} refetch={refetchSettlements} />}
+
+      {/* ═══ 其他平台 ═══ */}
+      {tab === 'imports' && <OtherPlatformTab showToast={showToast} />}
+
+      {/* ═══ 平台分发结算 ═══ */}
+      {tab === 'platform_settle' && <PlatformSettleTab showToast={showToast} />}
+
+      {/* ★ 匹配详情 Modal */}
+      <AdminModal
+        open={!!matchDetail}
+        onClose={() => setMatchDetail(null)}
+        title={`导入详情 · ${matchDetail?.fileName || ''}`}
+        width={780}
+      >
+        {matchDetail && <ImportDetailContent row={matchDetail} showToast={showToast} refetch={refetchImports} />}
+      </AdminModal>
+
+      {/* ★ 人工绑定创作者 Modal */}
+      <AdminModal
+        open={!!linkModal}
+        onClose={() => setLinkModal(null)}
+        title={`绑定创作者 · ${linkModal?.songName || ''}`}
+      >
+        {linkModal && (
+          <LinkCreatorForm
+            mapping={linkModal}
+            onSubmit={async (creatorId) => {
+              const res = await apiCall(`/api/admin/revenue/mappings/${linkModal.id}`, 'PUT', { action: 'bind', creatorId })
+              if (res.ok) {
+                setLinkModal(null)
+                showToast(`已绑定「${linkModal.songName}」的创作者`)
+                refetchMappings()
+              } else {
+                showToast(res.message ?? '绑定失败')
+              }
+            }}
+          />
+        )}
+      </AdminModal>
+    </div>
+  )
+}
+
+// ── Tab: 汽水导入 ───────────────────────────────────────────────
+
+function QishuiTab({
+  showToast,
+  grandTotal,
+  imports,
+  mappings,
+  onDetail,
+  refetchImports,
+}: {
+  showToast: (msg: string) => void
+  grandTotal: number
+  imports: RevenueImport[]
+  mappings: Mapping[]
+  onDetail: (r: RevenueImport) => void
+  refetchImports: () => void
+}) {
+  const importColumns: Column<Record<string, unknown>>[] = [
+    { key: 'fileName', title: '文件名', render: v => <span style={{ fontSize: 12 }}>{v as string}</span> },
+    { key: 'period', title: '数据区间' },
+    { key: 'totalRows', title: '总行数' },
+    { key: 'idHit', title: 'ID命中', render: v => <span style={{ color: 'var(--green2)', fontWeight: 600 }}>🔗 {v as number}</span> },
+    { key: 'nameMatch', title: '歌名待确认', render: v => (v as number) > 0 ? <span style={{ color: 'var(--orange)', fontWeight: 600 }}>⚠️ {v as number}</span> : <span>0</span> },
+    { key: 'unmatched', title: '未匹配', render: v => <span style={{ color: 'var(--text3)' }}>{v as number}</span> },
+    { key: 'duplicates', title: '重复跳过', render: v => (v as number) > 0 ? <span style={{ color: 'var(--red)' }}>⚠️ {v as number}</span> : <span>0</span> },
+    { key: 'totalRevenue', title: '总收益', render: v => `¥${(v as number).toFixed(2)}` },
+    {
+      key: 'id', title: '', render: (_v, row) => (
+        <button
+          className={`${btnGhost} ${btnSmall}`}
+          onClick={(e) => { e.stopPropagation(); onDetail(row as unknown as RevenueImport) }}
+        >
+          详情
+        </button>
+      ),
+    },
+  ]
+  void refetchImports
+
+  return (
+    <div>
+      {/* Upload area */}
+      <div className={cardCls} style={{ marginBottom: 20 }}>
+        <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>导入汽水音乐收益报表</h3>
+        <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 16 }}>
+          每月从汽水后台导出CSV → 系统按歌曲ID查映射表精确匹配 → 新歌曲按歌名匹配歌曲库待人工确认 → 确认后自动记入映射表
+        </p>
+        <div
+          style={{
+            border: '2px dashed var(--border)',
+            borderRadius: 10,
+            padding: '16px 20px',
+            cursor: 'pointer',
+            transition: 'all .2s',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+          }}
+          onClick={() => showToast('CSV 上传成功，正在解析...')}
+          onMouseOver={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+          onMouseOut={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+        >
+          <span style={{ fontSize: 28 }}>📎</span>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 500 }}>点击上传汽水音乐 CSV</div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>歌曲名称 · 歌曲ID · 抖音收入 · 汽水收入 · 总收入</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stat cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 14, marginBottom: 20 }}>
+        <StatCard icon="📥" label="导入批次" val={imports.length} color="#6c5ce7" iconBg="rgba(108,92,231,0.1)" />
+        <StatCard icon="🔗" label="映射表记录" val={mappings.length} color="#16a34a" iconBg="rgba(22,163,74,0.1)" />
+        <StatCard icon="✅" label="已确认" val={mappings.filter(m => m.status === 'confirmed').length} color="#0d9488" iconBg="rgba(13,148,136,0.1)" />
+        <StatCard icon="⚠️" label="待确认" val={mappings.filter(m => m.status === 'pending').length} color="#f59e0b" iconBg="rgba(245,158,11,0.1)" />
+        <StatCard icon="💰" label="已确认收益" val={`¥${grandTotal.toFixed(2)}`} color="#ec4899" iconBg="rgba(236,72,153,0.1)" />
+      </div>
+
+      {/* Import history */}
+      <div className={cardCls}>
+        <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>导入历史</h3>
+        <DataTable
+          columns={importColumns}
+          data={imports as unknown as Record<string, unknown>[]}
+          rowKey={r => (r as unknown as RevenueImport).id}
+        />
+      </div>
+    </div>
+  )
+}
+
+// ── Tab: 匹配关系维护 ──────────────────────────────────────────
+
+function MappingTab({
+  showToast,
+  mappings,
+  allMappingsCount,
+  mappingFilter,
+  setMappingFilter,
+  onLink,
+  refetch,
+}: {
+  showToast: (msg: string) => void
+  mappings: Mapping[]
+  allMappingsCount: number
+  mappingFilter: string
+  setMappingFilter: (v: string) => void
+  onLink: (m: Mapping) => void
+  refetch: () => void
+}) {
+  const filteredData = mappingFilter === 'all'
+    ? mappings
+    : mappings.filter(m => m.status === mappingFilter)
+
+  const mappingColumns: Column<Record<string, unknown>>[] = [
+    { key: 'qishuiId', title: '歌曲ID', render: v => <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text3)', userSelect: 'all' as const }}>{v as string}</span> },
+    { key: 'songName', title: '歌曲名称', render: v => <span style={{ fontWeight: 500 }}>{v as string}</span> },
+    {
+      key: 'creatorName', title: '绑定创作者', render: v =>
+        v ? <span style={{ color: 'var(--green2)', fontWeight: 500 }}>{v as string}</span> : <span style={{ color: 'var(--text3)' }}>未绑定</span>,
+    },
+    {
+      key: 'source', title: '匹配来源', render: v =>
+        v === 'auto' ? <span style={{ fontSize: 11, color: 'var(--accent2)' }}>🤖 自动</span> : <span style={{ fontSize: 11, color: 'var(--orange)' }}>👤 人工</span>,
+    },
+    {
+      key: 'status', title: '状态', render: v => {
+        const s = MAP_STATUS[v as string]
+        return <span style={{ fontSize: 12, color: s?.c }}>{s?.l}</span>
+      },
+    },
+    { key: 'confirmedAt', title: '确认时间', render: v => (v as string) || '—' },
+    {
+      key: 'id', title: '操作', render: (_v, row) => {
+        const r = row as unknown as Mapping
+        return (
+          <div style={{ display: 'flex', gap: 4 }}>
+            {r.status === 'pending' && (
+              <button className={`${btnSuccess} ${btnSmall}`} onClick={async e => {
+                e.stopPropagation()
+                const res = await apiCall(`/api/admin/revenue/mappings/${r.id}`, 'PUT', { action: 'confirm' })
+                if (res.ok) { showToast(`已确认「${r.songName}」的映射关系`); refetch() }
+                else showToast(res.message ?? '确认失败')
+              }}>
+                确认
+              </button>
+            )}
+            {r.status === 'pending' && (
+              <button className={`${btnDanger} ${btnSmall}`} onClick={async e => {
+                e.stopPropagation()
+                const res = await apiCall(`/api/admin/revenue/mappings/${r.id}`, 'PUT', { action: 'reject' })
+                if (res.ok) { showToast('已驳回，请重新绑定'); refetch() }
+                else showToast(res.message ?? '驳回失败')
+              }}>
+                驳回
+              </button>
+            )}
+            {(r.status === 'unbound' || r.status === 'pending') && (
+              <button className={`${btnGhost} ${btnSmall}`} onClick={e => { e.stopPropagation(); onLink(r) }}>
+                绑定创作者
+              </button>
+            )}
+            {r.status === 'confirmed' && (
+              <button className={`${btnGhost} ${btnSmall}`} onClick={e => { e.stopPropagation(); onLink(r) }}>
+                修改绑定
+              </button>
+            )}
+          </div>
+        )
+      },
+    },
+  ]
+
+  const filters = [
+    { k: 'all', l: '全部' },
+    { k: 'confirmed', l: '✅ 已确认' },
+    { k: 'pending', l: '⚠️ 待确认' },
+    { k: 'unbound', l: '❓ 未绑定' },
+  ]
+
+  return (
+    <div>
+      {/* Info banner */}
+      <div className={cardCls} style={{ padding: 16, marginBottom: 20, background: 'linear-gradient(135deg,rgba(108,92,231,.06),rgba(0,206,201,.04))' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 32 }}>🔗</span>
+          <div>
+            <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>歌曲ID映射关系表</h3>
+            <p style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.6 }}>
+              每首歌曲在汽水音乐有唯一的歌曲ID。首次导入时系统用歌曲名称自动匹配创作者，匹配结果需人工确认后写入本表。
+              <br />后续导入同一歌曲ID自动命中映射表，<strong style={{ color: 'var(--green2)' }}>无需再次确认</strong>。
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Stat cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 20 }}>
+        <StatCard icon="✅" label="已确认映射" val={mappings.filter(m => m.status === 'confirmed').length} sub="导入时自动命中" color="#0d9488" iconBg="rgba(13,148,136,0.1)" />
+        <StatCard icon="⚠️" label="待确认" val={mappings.filter(m => m.status === 'pending').length} sub="需人工审核" color="#f59e0b" iconBg="rgba(245,158,11,0.1)" />
+        <StatCard icon="❓" label="未绑定" val={mappings.filter(m => m.status === 'unbound').length} sub="暂无对应创作者" color="#94a3b8" iconBg="rgba(148,163,184,0.1)" />
+      </div>
+
+      {/* Quick filters */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
+        {filters.map(f => (
+          <button
+            key={f.k}
+            onClick={() => setMappingFilter(f.k)}
+            style={{
+              padding: '6px 14px',
+              borderRadius: 20,
+              border: 'none',
+              fontSize: 12,
+              cursor: 'pointer',
+              background: mappingFilter === f.k ? 'var(--accent)' : 'var(--bg4, #f0f4fb)',
+              color: mappingFilter === f.k ? '#fff' : 'var(--text2)',
+              transition: 'all .18s',
+            }}
+          >
+            {f.l} ({f.k === 'all' ? allMappingsCount : mappings.filter(m => m.status === f.k).length})
+          </button>
+        ))}
+        <div style={{ flex: 1 }} />
+        <button className={`${btnGhost} ${btnSmall}`} onClick={() => showToast('已导出映射关系表')}>📥 导出</button>
+      </div>
+
+      {/* Table */}
+      <div className={cardCls}>
+        <DataTable
+          columns={mappingColumns}
+          data={filteredData as unknown as Record<string, unknown>[]}
+          rowKey={r => (r as unknown as Mapping).id}
+        />
+      </div>
+    </div>
+  )
+}
+
+// ── Tab: 多维统计 ───────────────────────────────────────────────
+
+function StatsTab({
+  statsTab,
+  setStatsTab,
+  grandTotal,
+  grandDouyin,
+  grandQishui,
+  userStats,
+  songStats,
+  periodStats,
+}: {
+  statsTab: string
+  setStatsTab: (v: string) => void
+  grandTotal: number
+  grandDouyin: number
+  grandQishui: number
+  userStats: { name: string; songCount: number; douyin: number; qishui: number; total: number }[]
+  songStats: { name: string; user: string; periodCount: number; douyin: number; qishui: number; total: number }[]
+  periodStats: { period: string; songs: number; userCount: number; douyin: number; qishui: number; total: number }[]
+}) {
+  const maxPeriodTotal = Math.max(...periodStats.map(x => x.total), 1)
+
+  const userColumns: Column<Record<string, unknown>>[] = [
+    { key: 'name', title: '创作者', render: (v) => {
+      const idx = userStats.findIndex(u => u.name === (v as string))
+      return <span style={{ fontWeight: 600 }}>#{idx + 1} {v as string}</span>
+    }},
+    { key: 'songCount', title: '歌曲数' },
+    { key: 'douyin', title: '抖音', render: v => `¥${(v as number).toFixed(2)}` },
+    { key: 'qishui', title: '汽水', render: v => `¥${(v as number).toFixed(2)}` },
+    { key: 'total', title: '合计', render: v => <span style={{ fontWeight: 600, color: 'var(--green2)' }}>¥{(v as number).toFixed(2)}</span> },
+  ]
+
+  const songColumns: Column<Record<string, unknown>>[] = [
+    { key: 'name', title: '歌曲', render: (v, row) => (
+      <div>
+        <span style={{ fontWeight: 600 }}>{v as string}</span>
+        <div style={{ fontSize: 11, color: 'var(--text3)' }}>by {(row as unknown as { user: string }).user}</div>
+      </div>
+    )},
+    { key: 'periodCount', title: '月数' },
+    { key: 'douyin', title: '抖音', render: v => `¥${(v as number).toFixed(2)}` },
+    { key: 'qishui', title: '汽水', render: v => `¥${(v as number).toFixed(2)}` },
+    { key: 'total', title: '合计', render: v => <span style={{ fontWeight: 600, color: 'var(--green2)' }}>¥{(v as number).toFixed(2)}</span> },
+  ]
+
+  const periodColumns: Column<Record<string, unknown>>[] = [
+    { key: 'period', title: '月份', render: v => <span style={{ fontWeight: 600 }}>{v as string}</span> },
+    { key: 'songs', title: '歌曲数' },
+    { key: 'userCount', title: '创作者' },
+    { key: 'douyin', title: '抖音', render: v => `¥${(v as number).toFixed(2)}` },
+    { key: 'qishui', title: '汽水', render: v => `¥${(v as number).toFixed(2)}` },
+    { key: 'total', title: '合计', render: v => <span style={{ fontWeight: 600, color: 'var(--green2)' }}>¥{(v as number).toFixed(2)}</span> },
+  ]
+
+  const subTabs = [
+    { key: 'user', label: '👤 按创作者' },
+    { key: 'song', label: '🎵 按歌曲' },
+    { key: 'period', label: '📅 按月份' },
+    { key: 'source', label: '📊 按来源' },
+  ]
+
+  return (
+    <div>
+      {/* Hint */}
+      <div style={{ padding: 12, background: 'rgba(253,203,110,.06)', borderRadius: 8, marginBottom: 16, fontSize: 12, color: 'var(--orange)' }}>
+        📌 统计仅包含映射关系<strong>已确认</strong>的歌曲收益数据，「待确认」和「未绑定」的收益不计入统计，确保数据准确。
+      </div>
+
+      {/* Stat cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 20 }}>
+        <StatCard icon="💰" label="已确认总收益" val={`¥${grandTotal.toFixed(2)}`} color="#0d9488" iconBg="rgba(13,148,136,0.1)" />
+        <StatCard icon="📱" label="抖音收入" val={`¥${grandDouyin.toFixed(2)}`} sub={`${grandTotal > 0 ? Math.round(grandDouyin / grandTotal * 100) : 0}%`} color="#6c5ce7" iconBg="rgba(108,92,231,0.1)" />
+        <StatCard icon="🎵" label="汽水收入" val={`¥${grandQishui.toFixed(2)}`} sub={`${grandTotal > 0 ? Math.round(grandQishui / grandTotal * 100) : 0}%`} color="#ec4899" iconBg="rgba(236,72,153,0.1)" />
+        <StatCard icon="👥" label="有收益创作者" val={userStats.length} color="#f59e0b" iconBg="rgba(245,158,11,0.1)" />
+      </div>
+
+      {/* Sub tabs */}
+      <div className="mb-4">
+        <AdminTab tabs={subTabs} active={statsTab} onChange={setStatsTab} />
+      </div>
+
+      {/* By creator */}
+      {statsTab === 'user' && (
+        <div className={cardCls}>
+          <DataTable columns={userColumns} data={userStats as unknown as Record<string, unknown>[]} rowKey={r => (r as unknown as { name: string }).name} />
+        </div>
+      )}
+
+      {/* By song */}
+      {statsTab === 'song' && (
+        <div className={cardCls}>
+          <DataTable columns={songColumns} data={songStats as unknown as Record<string, unknown>[]} rowKey={r => (r as unknown as { name: string }).name} />
+        </div>
+      )}
+
+      {/* By period */}
+      {statsTab === 'period' && (
+        <div className={cardCls}>
+          {/* Bar chart */}
+          <div style={{ display: 'flex', alignItems: 'end', gap: 24, height: 140, padding: '0 20px', marginBottom: 20 }}>
+            {[...periodStats].reverse().map(p => (
+              <div key={p.period} style={{ flex: 1, textAlign: 'center' }}>
+                <div style={{ display: 'flex', gap: 2, justifyContent: 'center', alignItems: 'end', height: 100 }}>
+                  <div style={{ width: 20, background: 'var(--accent)', borderRadius: '4px 4px 0 0', height: `${Math.max(p.douyin / maxPeriodTotal * 80, 4)}px` }} />
+                  <div style={{ width: 20, background: 'var(--pink, #ec4899)', borderRadius: '4px 4px 0 0', height: `${Math.max(p.qishui / maxPeriodTotal * 80, 4)}px` }} />
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, marginTop: 6 }}>¥{p.total.toFixed(2)}</div>
+                <div style={{ fontSize: 11, color: 'var(--text3)' }}>{p.period}</div>
+              </div>
+            ))}
+          </div>
+          {/* Legend */}
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', fontSize: 12, marginBottom: 16 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: 'var(--accent)', display: 'inline-block' }} />抖音</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: 'var(--pink, #ec4899)', display: 'inline-block' }} />汽水</span>
+          </div>
+          <DataTable columns={periodColumns} data={periodStats as unknown as Record<string, unknown>[]} rowKey={r => (r as unknown as { period: string }).period} />
+        </div>
+      )}
+
+      {/* By source — donut chart */}
+      {statsTab === 'source' && (
+        <div className={cardCls}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 48, padding: '24px 0' }}>
+            {/* SVG Donut */}
+            <svg width="200" height="200" viewBox="0 0 200 200">
+              {(() => {
+                const cx = 100, cy = 100, r = 80, innerR = 52
+                const douyinPct = grandTotal > 0 ? grandDouyin / grandTotal : 0.5
+                const qishuiPct = grandTotal > 0 ? grandQishui / grandTotal : 0.5
+                // Donut arcs
+                const douyinAngle = douyinPct * 360
+                const douyinEnd = douyinAngle * (Math.PI / 180)
+                const qishuiStart = douyinAngle
+                void qishuiStart
+
+                function arcPath(startDeg: number, endDeg: number, outerR: number, iR: number) {
+                  const s = (startDeg - 90) * (Math.PI / 180)
+                  const e = (endDeg - 90) * (Math.PI / 180)
+                  const largeArc = endDeg - startDeg > 180 ? 1 : 0
+                  const x1 = cx + outerR * Math.cos(s)
+                  const y1 = cy + outerR * Math.sin(s)
+                  const x2 = cx + outerR * Math.cos(e)
+                  const y2 = cy + outerR * Math.sin(e)
+                  const x3 = cx + iR * Math.cos(e)
+                  const y3 = cy + iR * Math.sin(e)
+                  const x4 = cx + iR * Math.cos(s)
+                  const y4 = cy + iR * Math.sin(s)
+                  return `M${x1},${y1} A${outerR},${outerR} 0 ${largeArc} 1 ${x2},${y2} L${x3},${y3} A${iR},${iR} 0 ${largeArc} 0 ${x4},${y4} Z`
+                }
+
+                // Prevent exact 0 or 360 edge cases
+                const dEnd = Math.min(douyinAngle, 359.99)
+                const qEnd = Math.min(360, 359.99)
+
+                void douyinEnd
+                return (
+                  <>
+                    {douyinPct > 0 && <path d={arcPath(0, dEnd, r, innerR)} fill="#6366f1" />}
+                    {qishuiPct > 0 && <path d={arcPath(dEnd, qEnd, r, innerR)} fill="#ec4899" />}
+                    {/* Center text */}
+                    <text x={cx} y={cy - 6} textAnchor="middle" fontSize="11" fill="#94a3b8">总收益</text>
+                    <text x={cx} y={cy + 14} textAnchor="middle" fontSize="16" fontWeight="700" fill="#1e293b">
+                      ¥{grandTotal.toFixed(2)}
+                    </text>
+                  </>
+                )
+              })()}
+            </svg>
+            {/* Legend */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {[
+                { name: '抖音', val: grandDouyin, color: '#6366f1' },
+                { name: '汽水', val: grandQishui, color: '#ec4899' },
+              ].map(item => {
+                const pct = grandTotal > 0 ? Math.round(item.val / grandTotal * 100) : 0
+                return (
+                  <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 14, height: 14, borderRadius: 3, background: item.color, flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontSize: 13, color: '#64748b' }}>{item.name}收入</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: '#1e293b' }}>
+                        ¥{item.val.toFixed(2)}
+                        <span style={{ fontSize: 12, fontWeight: 500, color: item.color, marginLeft: 6 }}>{pct}%</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Tab: 结算管理 ───────────────────────────────────────────────
+
+function SettleTab({ showToast, settlements, refetch }: { showToast: (msg: string) => void; settlements: Settlement[]; refetch: () => void }) {
+  const settleColumns: Column<Record<string, unknown>>[] = [
+    { key: 'songTitle', title: '歌曲' },
+    { key: 'platform', title: '来源平台' },
+    { key: 'plays', title: '播放量', render: v => (v as number)?.toLocaleString() },
+    { key: 'rawRevenue', title: '原始收益', render: v => `¥${(v as number)?.toFixed(2)}` },
+    { key: 'creatorRatio', title: '创作者比例', render: v => `${v as number}%` },
+    { key: 'creatorAmount', title: '创作者应得', render: v => <span style={{ fontWeight: 600, color: 'var(--green2)' }}>¥{(v as number)?.toFixed(2)}</span> },
+    {
+      key: 'status', title: '状态', render: v => {
+        const s = SETTLE_STATUS[v as string]
+        return <span style={{ color: s?.c, fontSize: 12 }}>{s?.l}</span>
+      },
+    },
+    {
+      key: 'id', title: '', render: (_v, row) => {
+        const r = row as unknown as Settlement
+        const handleSettle = async (action: string) => {
+          const res = await apiCall('/api/admin/revenue/settlements', 'POST', { ids: [r.id], action })
+          if (res.ok) { showToast(`已${action === 'confirm' ? '确认' : action === 'export' ? '导出' : '标记打款'}`); refetch() }
+          else showToast(res.message ?? '操作失败')
+        }
+        if (r.status === 'pending') return <button className={`${btnSuccess} ${btnSmall}`} onClick={e => { e.stopPropagation(); handleSettle('confirm') }}>确认</button>
+        if (r.status === 'confirmed') return <button className={`${btnPrimary} ${btnSmall}`} onClick={e => { e.stopPropagation(); handleSettle('export') }}>导出</button>
+        if (r.status === 'exported') return <button className={`${btnGhost} ${btnSmall}`} onClick={e => { e.stopPropagation(); handleSettle('pay') }}>标记打款</button>
+        return <span style={{ fontSize: 11, color: 'var(--green2)' }}>✅</span>
+      },
+    },
+  ]
+
+  return (
+    <div className={cardCls}>
+      <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>结算明细 · 2026-Q1</h3>
+      <DataTable
+        columns={settleColumns}
+        data={settlements as unknown as Record<string, unknown>[]}
+        rowKey={r => (r as unknown as Settlement).id}
+      />
+      <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
+        <button className={btnPrimary} onClick={async () => { const ids = settlements.filter((s: { status: string; id: number }) => s.status === 'pending').map(s => s.id); if (!ids.length) { showToast('没有待确认的记录'); return }; const res = await apiCall('/api/admin/revenue/settlements', 'POST', { ids, action: 'confirm' }); if (res.ok) { showToast('已批量确认'); refetch() } else showToast(res.message ?? '操作失败') }}>批量确认</button>
+        <button className={btnGhost} onClick={async () => { const ids = settlements.filter((s: { status: string; id: number }) => s.status === 'confirmed').map(s => s.id); if (!ids.length) { showToast('没有待导出的记录'); return }; const res = await apiCall('/api/admin/revenue/settlements', 'POST', { ids, action: 'export' }); if (res.ok) { showToast('已导出'); refetch() } else showToast(res.message ?? '操作失败') }}>📥 导出</button>
+      </div>
+    </div>
+  )
+}
+
+// ── Tab: 其他平台 ───────────────────────────────────────────────
+
+function OtherPlatformTab({ showToast }: { showToast: (msg: string) => void }) {
+  const { data: otherData } = useApi<{ imports: OtherImport[] }>('/api/admin/revenue/other-imports')
+  const otherImports = otherData?.imports ?? []
+
+  const otherColumns: Column<Record<string, unknown>>[] = [
+    { key: 'platform', title: '平台' },
+    { key: 'fileName', title: '文件名', render: v => <span style={{ fontSize: 12 }}>{v as string}</span> },
+    { key: 'totalRows', title: '行数' },
+    { key: 'matchedRows', title: '匹配', render: v => <span style={{ color: 'var(--green2)' }}>{v as number}</span> },
+    { key: 'totalRevenue', title: '收益', render: v => `¥${(v as number).toLocaleString()}` },
+    {
+      key: 'status', title: '状态', render: v =>
+        v === 'completed' ? <span style={{ color: 'var(--green2)', fontSize: 12 }}>✅</span> : <span style={{ color: 'var(--orange)', fontSize: 12 }}>⏳</span>,
+    },
+  ]
+
+  return (
+    <div>
+      {/* Upload section */}
+      <div className={cardCls} style={{ marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <select className={inputCls} style={{ width: 200, flex: 'none' }}>
+            <option>QQ音乐</option>
+            <option>网易云音乐</option>
+            <option>Spotify</option>
+          </select>
+          <div
+            style={{
+              flex: 1,
+              border: '2px dashed var(--border)',
+              borderRadius: 8,
+              padding: '10px 16px',
+              textAlign: 'center',
+              cursor: 'pointer',
+              fontSize: 13,
+              color: 'var(--text2)',
+            }}
+            onClick={() => showToast('上传成功')}
+          >
+            📎 上传 Excel/CSV
+          </div>
+          <button className={btnPrimary} onClick={() => showToast('开始导入')}>导入</button>
+        </div>
+      </div>
+
+      {/* Import history */}
+      <div className={cardCls}>
+        <DataTable
+          columns={otherColumns}
+          data={otherImports as unknown as Record<string, unknown>[]}
+          rowKey={r => (r as unknown as { id: number }).id}
+        />
+      </div>
+    </div>
+  )
+}
+
+// ── Tab: 平台分发结算 ──────────────────────────────────────────
+
+function PlatformSettleTab({ showToast }: { showToast: (msg: string) => void }) {
+  const { data: psData, refetch: refetchPs } = useApi<{ settlements: Settlement[] }>('/api/admin/revenue/platform-settlements')
+  const platformSettlements = psData?.settlements ?? []
+
+  const psColumns: Column<Record<string, unknown>>[] = [
+    { key: 'songTitle', title: '歌曲' },
+    {
+      key: 'platform', title: '来源平台', render: v =>
+        <span style={{ background: '#e8f4fd', color: '#1a73e8', borderRadius: 4, padding: '2px 6px', fontSize: 12 }}>{v as string}</span>,
+    },
+    { key: 'period', title: '账期' },
+    { key: 'rawRevenue', title: '原始收益', render: v => `¥${(v as number).toFixed(2)}` },
+    { key: 'creatorRatio', title: '创作者比例', render: v => `${v as number}%` },
+    { key: 'creatorAmount', title: '创作者应得', render: v => <span style={{ fontWeight: 600, color: 'var(--green2)' }}>¥{(v as number).toFixed(2)}</span> },
+    {
+      key: 'status', title: '结算状态', render: v => {
+        const s = SETTLE_STATUS[v as string]
+        return <span style={{ color: s?.c, fontSize: 12, fontWeight: 500 }}>{s?.l}</span>
+      },
+    },
+    {
+      key: 'id', title: '', render: (_v, row) => {
+        const r = row as unknown as Settlement
+        const handlePsAction = async (action: string) => {
+          const res = await apiCall('/api/admin/revenue/settlements', 'POST', { ids: [r.id], action })
+          if (res.ok) { showToast(action === 'confirm' ? '已确认' : action === 'export' ? '已导出' : '已标记打款'); refetchPs() }
+          else showToast(res.message ?? '操作失败')
+        }
+        if (r.status === 'pending') return <button className={`${btnSuccess} ${btnSmall}`} onClick={e => { e.stopPropagation(); handlePsAction('confirm') }}>确认</button>
+        if (r.status === 'confirmed') return <button className={`${btnPrimary} ${btnSmall}`} onClick={e => { e.stopPropagation(); handlePsAction('export') }}>导出</button>
+        if (r.status === 'exported') return <button className={`${btnGhost} ${btnSmall}`} onClick={e => { e.stopPropagation(); handlePsAction('pay') }}>标记打款</button>
+        return null
+      },
+    },
+  ]
+
+  return (
+    <div className={cardCls}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h3 style={{ fontSize: 15, fontWeight: 600 }}>平台分发结算（非汽水平台）</h3>
+        <div style={{ fontSize: 12, color: 'var(--text3)' }}>来源：其他平台导入后生成的 settlements 记录</div>
+      </div>
+      <DataTable
+        columns={psColumns}
+        data={platformSettlements as unknown as Record<string, unknown>[]}
+        rowKey={r => (r as unknown as { id: number }).id}
+      />
+      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+        <button className={btnGhost} onClick={async () => { const ids = platformSettlements.filter((s: { status: string; id: number }) => s.status === 'pending').map(s => s.id); if (!ids.length) { showToast('没有待确认的记录'); return }; const res = await apiCall('/api/admin/revenue/settlements', 'POST', { ids, action: 'confirm' }); if (res.ok) { showToast('已批量确认'); refetchPs() } else showToast(res.message ?? '操作失败') }}>批量确认</button>
+        <button className={btnGhost} onClick={async () => { const ids = platformSettlements.filter((s: { status: string; id: number }) => s.status === 'confirmed').map(s => s.id); if (!ids.length) { showToast('没有待导出的记录'); return }; const res = await apiCall('/api/admin/revenue/settlements', 'POST', { ids, action: 'export' }); if (res.ok) { showToast('已批量导出'); refetchPs() } else showToast(res.message ?? '操作失败') }}>批量导出</button>
+      </div>
+    </div>
+  )
+}
+
+// ── Import detail modal content ─────────────────────────────────
+
+function ImportDetailContent({ row, showToast, refetch }: { row: RevenueImport; showToast: (msg: string) => void; refetch: () => void }) {
+  const { data: detailData } = useApi<{
+    idConfirmed: QishuiDetail[]
+    namePending: { id: number; songName: string; qishuiSongId: string; matchedUserName: string; douyinRevenue: number; qishuiRevenue: number; totalRevenue: number; matchStatus: string }[]
+    unmatched: { id: number; songName: string; qishuiSongId: string; totalRevenue: number; matchStatus: string }[]
+  }>(`/api/admin/revenue/imports/${row.id}/detail`)
+
+  const idConfirmed = detailData?.idConfirmed ?? []
+  const namePending = detailData?.namePending ?? []
+  const unmatched = detailData?.unmatched ?? []
+  void refetch
+
+  return (
+    <div>
+      {/* 4 stat boxes */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 16 }}>
+        {[
+          ['总行数', row.totalRows, 'var(--text)'],
+          ['🔗 ID命中', row.idHit, 'var(--green2)'],
+          ['⚠️ 歌名待确认', row.nameMatch, 'var(--orange)'],
+          ['重复跳过', row.duplicates, 'var(--red)'],
+        ].map(([l, v, c]) => (
+          <div key={l as string} style={{ textAlign: 'center', padding: 10, background: '#f0f4fb', borderRadius: 8 }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: c as string }}>{v as number}</div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{l as string}</div>
+          </div>
+        ))}
+      </div>
+
+      {row.duplicates > 0 && (
+        <div style={{ padding: 10, background: 'rgba(255,107,107,.08)', borderRadius: 8, marginBottom: 12, fontSize: 12, color: 'var(--red)' }}>
+          ⚠️ {row.duplicates}条重复数据（相同歌曲ID+月份已存在），已自动跳过。
+        </div>
+      )}
+
+      {/* Match flow */}
+      <div style={{ padding: 12, background: '#f0f4fb', borderRadius: 8, marginBottom: 16, fontSize: 12, lineHeight: 2, color: 'var(--text2)' }}>
+        <strong>匹配流程：</strong>
+        ① 歌曲ID查映射关系表 → <span style={{ color: 'var(--green2)' }}>ID命中（直接归属，最可靠）</span> →
+        ② 新歌曲ID走歌名匹配 → <span style={{ color: 'var(--orange)' }}>歌名待确认（需人工确认后写入映射表）</span> →
+        ③ 歌名也未匹配 → <span style={{ color: 'var(--text3)' }}>未匹配（可人工绑定）</span>
+      </div>
+
+      {/* ID confirmed */}
+      {idConfirmed.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, color: 'var(--green2)' }}>🔗 ID映射命中（已确认，自动归属）</h4>
+          <DataTable
+            columns={[
+              { key: 'songName', title: '歌曲', render: v => <span style={{ fontWeight: 500 }}>{v as string}</span> },
+              { key: 'month', title: '月份' },
+              { key: 'douyinRevenue', title: '抖音', render: v => `¥${(v as number).toFixed(2)}` },
+              { key: 'qishuiRevenue', title: '汽水', render: v => `¥${(v as number).toFixed(2)}` },
+              { key: 'id', title: '合计', render: (_v, r) => {
+                const d = r as unknown as QishuiDetail
+                return <span style={{ fontWeight: 600 }}>¥{(d.douyinRevenue + d.qishuiRevenue).toFixed(2)}</span>
+              }},
+            ]}
+            data={idConfirmed as unknown as Record<string, unknown>[]}
+            rowKey={r => (r as unknown as QishuiDetail).id}
+          />
+        </div>
+      )}
+
+      {/* Name pending */}
+      {namePending.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, color: 'var(--orange)' }}>⚠️ 歌名匹配待确认（确认后写入映射表）</h4>
+          <DataTable
+            columns={[
+              { key: 'songName', title: '歌曲', render: v => <span style={{ fontWeight: 500 }}>{v as string}</span> },
+              { key: 'qishuiSongId', title: '歌曲ID', render: v => <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text3)' }}>{v as string}</span> },
+              { key: 'matchedUserName', title: '建议创作者', render: v => v ? <span style={{ color: 'var(--orange)' }}>→ {v as string} ?</span> : <span>—</span> },
+              { key: 'totalRevenue', title: '收益', render: v => `¥${(v as number).toFixed(2)}` },
+              { key: 'id', title: '', render: (_v, r) => {
+                const d = r as unknown as { id: number; songName: string; matchedUserName: string }
+                return (
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {d.matchedUserName && (
+                      <button className={`${btnSuccess} ${btnSmall}`} onClick={async () => {
+                        const res = await apiCall(`/api/admin/revenue/mappings/${d.id}`, 'PUT', { action: 'confirm' })
+                        if (res.ok) showToast(`已确认「${d.songName}」→「${d.matchedUserName}」，已写入映射表`)
+                        else showToast(res.message ?? '确认失败')
+                      }}>
+                        确认绑定
+                      </button>
+                    )}
+                    <button className={`${btnGhost} ${btnSmall}`} onClick={() => showToast('请在匹配关系页签中手动绑定')}>手动绑定</button>
+                  </div>
+                )
+              }},
+            ]}
+            data={namePending as unknown as Record<string, unknown>[]}
+            rowKey={r => (r as unknown as { id: number }).id}
+          />
+        </div>
+      )}
+
+      {/* Unmatched */}
+      {unmatched.length > 0 && (
+        <div>
+          <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, color: 'var(--text3)' }}>❌ 未匹配（可手动绑定创作者）</h4>
+          <DataTable
+            columns={[
+              { key: 'songName', title: '歌曲' },
+              { key: 'qishuiSongId', title: '歌曲ID', render: v => <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text3)' }}>{v as string}</span> },
+              { key: 'totalRevenue', title: '收益', render: v => `¥${(v as number).toFixed(2)}` },
+              { key: 'id', title: '', render: () => <button className={`${btnGhost} ${btnSmall}`} onClick={() => showToast('请在匹配关系页签中绑定创作者')}>绑定创作者</button> },
+            ]}
+            data={unmatched as unknown as Record<string, unknown>[]}
+            rowKey={r => (r as unknown as { id: number }).id}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Link creator form ───────────────────────────────────────────
+
+function LinkCreatorForm({ mapping, onSubmit }: { mapping: Mapping; onSubmit: (creatorId: number) => void }) {
+  const { data: creatorsData } = useApi<{ creators: CreatorOption[] }>('/api/admin/revenue/creators')
+  const creators = creatorsData?.creators ?? []
+  const [selectedCreatorId, setSelectedCreatorId] = useState('')
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{ padding: 16, background: '#f0f4fb', borderRadius: 10 }}>
+        <div style={{ display: 'grid', gap: 8, fontSize: 13 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: 'var(--text3)' }}>歌曲名称</span>
+            <span>{mapping.songName}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: 'var(--text3)' }}>歌曲ID</span>
+            <span style={{ fontFamily: 'monospace', fontSize: 11 }}>{mapping.qishuiId}</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <label className={labelCls}>选择创作者</label>
+        <select className={inputCls} value={selectedCreatorId} onChange={e => setSelectedCreatorId(e.target.value)}>
+          <option value="">请选择创作者...</option>
+          {creators.map(s => (
+            <option key={s.id} value={s.id}>{s.name} ({s.phone})</option>
+          ))}
+        </select>
+      </div>
+      <div style={{ padding: 10, background: 'rgba(108,92,231,.06)', borderRadius: 8, fontSize: 12, color: 'var(--accent2)', lineHeight: 1.6 }}>
+        💡 确认绑定后，该歌曲ID的所有历史和未来收益将自动归属到选定的创作者。映射关系写入映射表后，后续导入无需再次确认。
+      </div>
+      <button
+        className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0 w-full flex justify-center"
+        onClick={() => { if (selectedCreatorId) onSubmit(Number(selectedCreatorId)) }}
+      >
+        确认绑定
+      </button>
+    </div>
+  )
+}

@@ -1,0 +1,561 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// 4.1 groups（用户组）
+model Group {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(200)
+  description String?   @db.VarChar(500)
+  inviteCode  String    @unique @map("invite_code") @db.VarChar(20)
+  inviteLink  String?   @map("invite_link") @db.VarChar(500)
+  adminUserId Int?      @map("admin_user_id")
+  status      GroupStatus @default(active)
+  createdBy   Int       @map("created_by")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  userGroups  UserGroup[]
+  assignments Assignment[]
+  formFieldConfigs FormFieldConfig[]
+
+  @@map("groups")
+}
+
+enum GroupStatus {
+  active
+  paused
+}
+
+// 4.2 users（平台用户，含创作者和评审）
+model User {
+  id              Int             @id @default(autoincrement())
+  name            String?         @db.VarChar(100)
+  realName        String?         @map("real_name") @db.VarChar(50)
+  idCard          String?         @map("id_card") @db.VarChar(18)
+  phone           String          @unique @db.VarChar(20)
+  email           String?         @db.VarChar(200)
+  passwordHash    String?         @map("password_hash") @db.VarChar(255)
+  avatarUrl       String?         @map("avatar_url") @db.VarChar(500)
+  type            UserType
+  adminLevel      AdminLevel?     @map("admin_level")
+  realNameStatus  RealNameStatus  @default(unverified) @map("real_name_status")
+  agencyContract  Boolean         @default(false) @map("agency_contract")
+  agencySignedAt  DateTime?       @map("agency_signed_at")
+  status          UserStatus      @default(active)
+  lastLoginAt     DateTime?       @map("last_login_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  userGroups      UserGroup[]
+  songs           PlatformSong[]
+  reviews         Review[]        @relation("ReviewerReviews")
+  submissions     AssignmentSubmission[]
+  settlements     Settlement[]
+  songMappings    SongMapping[]   @relation("MappingCreator")
+  confirmedMappings SongMapping[] @relation("MappingConfirmer")
+
+  @@index([type])
+  @@index([realNameStatus])
+  @@map("users")
+}
+
+enum UserType {
+  creator
+  reviewer
+}
+
+enum AdminLevel {
+  group_admin
+  system_admin
+}
+
+enum RealNameStatus {
+  unverified
+  pending
+  verified
+  rejected
+}
+
+enum UserStatus {
+  active
+  disabled
+}
+
+// 4.3 user_groups（用户-组关系）
+model UserGroup {
+  userId   Int      @map("user_id")
+  groupId  Int      @map("group_id")
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  user  User  @relation(fields: [userId], references: [id])
+  group Group @relation(fields: [groupId], references: [id])
+
+  @@id([userId, groupId])
+  @@map("user_groups")
+}
+
+// 4.4 platform_songs（平台作品）
+model PlatformSong {
+  id             Int          @id @default(autoincrement())
+  copyrightCode  String       @unique @map("copyright_code") @db.VarChar(20)
+  userId         Int          @map("user_id")
+  title          String       @db.VarChar(200)
+  aiTools        Json?        @map("ai_tools")
+  performer      String?      @db.VarChar(200)
+  lyricist       String?      @db.VarChar(200)
+  composer       String?      @db.VarChar(200)
+  lyrics         String?      @db.Text
+  styleDesc      String?      @map("style_desc") @db.VarChar(500)
+  genre          String?      @db.VarChar(50)
+  bpm            Int?         @db.SmallInt
+  albumName      String?      @map("album_name") @db.VarChar(200)
+  albumArtist    String?      @map("album_artist") @db.VarChar(200)
+  audioUrl       String?      @map("audio_url") @db.VarChar(500)
+  coverUrl       String?      @map("cover_url") @db.VarChar(500)
+  contribution   Contribution @default(lead)
+  creationDesc   String?      @map("creation_desc") @db.VarChar(500)
+  audioFeatures  Json?        @map("audio_features")
+  isrc           String?      @db.VarChar(20)
+  source         SongSource
+  assignmentId   Int?         @map("assignment_id")
+  status         SongStatus   @default(pending_review)
+  score          Int?         @db.TinyInt
+  reviewComment  String?      @map("review_comment") @db.Text
+  version        Int          @default(1) @db.TinyInt
+  likeCount      Int          @default(0) @map("like_count")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  user           User         @relation(fields: [userId], references: [id])
+  assignment     Assignment?  @relation(fields: [assignmentId], references: [id])
+  reviews        Review[]
+  submission     AssignmentSubmission?
+  distributions  Distribution[]
+  mappings       SongMapping[]
+
+  @@index([userId, status])
+  @@index([status, createdAt])
+  @@index([assignmentId])
+  @@map("platform_songs")
+}
+
+enum Contribution {
+  lead
+  participant
+}
+
+enum SongSource {
+  upload
+  assignment
+}
+
+enum SongStatus {
+  pending_review
+  needs_revision
+  reviewed
+  ready_to_publish
+  published
+  archived
+}
+
+// 4.5 assignments（作业任务）
+model Assignment {
+  id              Int              @id @default(autoincrement())
+  groupId         Int              @map("group_id")
+  title           String           @db.VarChar(200)
+  description     String?          @db.Text
+  deadline        DateTime         @db.Date
+  status          AssignmentStatus @default(active)
+  totalMembers    Int              @default(0) @map("total_members")
+  submissionCount Int              @default(0) @map("submission_count")
+  createdBy       Int              @map("created_by")
+  createdAt       DateTime         @default(now()) @map("created_at")
+
+  group           Group            @relation(fields: [groupId], references: [id])
+  submissions     AssignmentSubmission[]
+  songs           PlatformSong[]
+
+  @@map("assignments")
+}
+
+enum AssignmentStatus {
+  draft
+  active
+  closed
+}
+
+// 4.6 assignment_submissions（作业提交记录）
+model AssignmentSubmission {
+  id              Int                @id @default(autoincrement())
+  assignmentId    Int                @map("assignment_id")
+  userId          Int                @map("user_id")
+  platformSongId  Int?               @unique @map("platform_song_id")
+  status          SubmissionStatus   @default(pending_review)
+  score           Int?               @db.TinyInt
+  submittedAt     DateTime?          @map("submitted_at")
+  version         Int                @default(1) @db.TinyInt
+
+  assignment      Assignment         @relation(fields: [assignmentId], references: [id])
+  user            User               @relation(fields: [userId], references: [id])
+  platformSong    PlatformSong?      @relation(fields: [platformSongId], references: [id])
+
+  @@unique([assignmentId, userId])
+  @@index([assignmentId, status])
+  @@map("assignment_submissions")
+}
+
+enum SubmissionStatus {
+  pending_review
+  reviewed
+  needs_revision
+}
+
+// 4.7 reviews（评审记录）
+model Review {
+  id              Int                  @id @default(autoincrement())
+  songId          Int                  @map("song_id")
+  reviewerId      Int                  @map("reviewer_id")
+  version         Int                  @default(1) @db.TinyInt
+  technique       Int                  @db.TinyInt
+  creativity      Int                  @db.TinyInt
+  commercial      Int                  @db.TinyInt
+  totalScore      Int                  @map("total_score") @db.TinyInt
+  tags            Json?
+  comment         String               @db.Text
+  recommendation  Recommendation
+  durationSeconds Int?                 @map("duration_seconds") @db.SmallInt
+  reviewedAt      DateTime             @default(now()) @map("reviewed_at")
+
+  song            PlatformSong         @relation(fields: [songId], references: [id])
+  reviewer        User                 @relation("ReviewerReviews", fields: [reviewerId], references: [id])
+
+  @@index([songId, version])
+  @@index([reviewerId, reviewedAt])
+  @@map("reviews")
+}
+
+enum Recommendation {
+  strongly_recommend
+  recommend_after_revision
+  not_recommend
+}
+
+// 4.8 form_field_configs（表单字段配置）
+model FormFieldConfig {
+  id           Int        @id @default(autoincrement())
+  groupId      Int?       @map("group_id")
+  fieldKey     String     @map("field_key") @db.VarChar(50)
+  fieldLabel   String?    @map("field_label") @db.VarChar(100)
+  fieldType    FieldType  @map("field_type")
+  options      Json?
+  required     Boolean    @default(true)
+  defaultValue String?    @map("default_value") @db.VarChar(500)
+  displayOrder Int        @default(0) @map("display_order") @db.TinyInt
+
+  group        Group?     @relation(fields: [groupId], references: [id])
+
+  @@unique([groupId, fieldKey])
+  @@map("form_field_configs")
+}
+
+enum FieldType {
+  text
+  textarea
+  multi_select
+}
+
+// 4.9 song_mappings（汽水ID<->平台作品 映射表）
+model SongMapping {
+  id              Int           @id @default(autoincrement())
+  qishuiSongId    String        @unique @map("qishui_song_id") @db.VarChar(30)
+  qishuiSongName  String?       @map("qishui_song_name") @db.VarChar(200)
+  platformSongId  Int?          @map("platform_song_id")
+  creatorId       Int?          @map("creator_id")
+  matchType       MatchType     @map("match_type")
+  status          MappingStatus @default(pending)
+  confirmedAt     DateTime?     @map("confirmed_at")
+  confirmedBy     Int?          @map("confirmed_by")
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  platformSong    PlatformSong? @relation(fields: [platformSongId], references: [id])
+  creator         User?         @relation("MappingCreator", fields: [creatorId], references: [id])
+  confirmer       User?         @relation("MappingConfirmer", fields: [confirmedBy], references: [id])
+  revenueRows     RevenueRow[]
+
+  @@index([status])
+  @@index([creatorId])
+  @@map("song_mappings")
+}
+
+enum MatchType {
+  auto_exact
+  auto_fuzzy
+  manual
+  none
+}
+
+enum MappingStatus {
+  confirmed
+  suspect
+  pending
+  irrelevant
+}
+
+// 4.10 revenue_imports（收益导入批次）
+model RevenueImport {
+  id             Int           @id @default(autoincrement())
+  platform       RevenuePlatform @default(qishui)
+  fileName       String        @map("file_name") @db.VarChar(200)
+  period         String?       @db.VarChar(50)
+  totalRows      Int           @default(0) @map("total_rows")
+  matchedRows    Int           @default(0) @map("matched_rows")
+  suspectRows    Int           @default(0) @map("suspect_rows")
+  unmatchedRows  Int           @default(0) @map("unmatched_rows")
+  duplicateRows  Int           @default(0) @map("duplicate_rows")
+  totalRevenue   Decimal       @default(0) @map("total_revenue") @db.Decimal(14, 2)
+  status         ImportStatus  @default(processing)
+  importedBy     Int?          @map("imported_by")
+  importedAt     DateTime      @default(now()) @map("imported_at")
+
+  rows           RevenueRow[]
+
+  @@map("revenue_imports")
+}
+
+enum RevenuePlatform {
+  qishui
+  qq_music
+  netease
+  spotify
+  apple_music
+  kugou
+}
+
+enum ImportStatus {
+  processing
+  completed
+  failed
+}
+
+// 4.11 revenue_rows（导入明细行）
+model RevenueRow {
+  id             Int            @id @default(autoincrement())
+  importId       Int            @map("import_id")
+  qishuiSongId   String         @map("qishui_song_id") @db.VarChar(30)
+  songName       String?        @map("song_name") @db.VarChar(200)
+  period         String         @db.VarChar(50)
+  douyinRevenue  Decimal        @default(0) @map("douyin_revenue") @db.Decimal(12, 2)
+  qishuiRevenue  Decimal        @default(0) @map("qishui_revenue") @db.Decimal(12, 2)
+  totalRevenue   Decimal        @default(0) @map("total_revenue") @db.Decimal(12, 2)
+  mappingId      Int?           @map("mapping_id")
+  matchStatus    RowMatchStatus @map("match_status")
+
+  import         RevenueImport  @relation(fields: [importId], references: [id])
+  mapping        SongMapping?   @relation(fields: [mappingId], references: [id])
+  settlement     Settlement?
+
+  @@unique([qishuiSongId, period])
+  @@index([importId])
+  @@index([matchStatus])
+  @@map("revenue_rows")
+}
+
+enum RowMatchStatus {
+  matched
+  suspect
+  unmatched
+  duplicate
+  irrelevant
+}
+
+// 4.12 settlements（结算记录）
+model Settlement {
+  id             Int             @id @default(autoincrement())
+  revenueRowId   Int             @unique @map("revenue_row_id")
+  qishuiSongId   String?         @map("qishui_song_id") @db.VarChar(30)
+  songName       String?         @map("song_name") @db.VarChar(200)
+  period         String?         @db.VarChar(50)
+  douyinRevenue  Decimal?        @map("douyin_revenue") @db.Decimal(12, 2)
+  qishuiRevenue  Decimal?        @map("qishui_revenue") @db.Decimal(12, 2)
+  totalRevenue   Decimal?        @map("total_revenue") @db.Decimal(12, 2)
+  creatorId      Int             @map("creator_id")
+  platformRatio  Decimal         @default(0.30) @map("platform_ratio") @db.Decimal(4, 2)
+  creatorRatio   Decimal         @default(0.70) @map("creator_ratio") @db.Decimal(4, 2)
+  creatorAmount  Decimal?        @map("creator_amount") @db.Decimal(12, 2)
+  settleStatus   SettleStatus    @default(pending) @map("settle_status")
+  exportedAt     DateTime?       @map("exported_at")
+  paidAt         DateTime?       @map("paid_at")
+  paidBy         Int?            @map("paid_by")
+  createdAt      DateTime        @default(now()) @map("created_at")
+
+  revenueRow     RevenueRow      @relation(fields: [revenueRowId], references: [id])
+  creator        User            @relation(fields: [creatorId], references: [id])
+
+  @@index([creatorId, settleStatus])
+  @@index([qishuiSongId])
+  @@map("settlements")
+}
+
+enum SettleStatus {
+  pending
+  confirmed
+  exported
+  paid
+  exception
+}
+
+// 4.13 admin_roles（管理员角色）
+model AdminRole {
+  id          Int        @id @default(autoincrement())
+  name        String     @db.VarChar(50)
+  description String?    @db.VarChar(200)
+  permissions Json
+  isBuiltin   Boolean    @default(false) @map("is_builtin")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  createdBy   Int?       @map("created_by")
+
+  admins      AdminUser[]
+
+  @@map("admin_roles")
+}
+
+// 4.14 admin_users（平台管理员账号）
+model AdminUser {
+  id           Int       @id @default(autoincrement())
+  account      String    @unique @db.VarChar(50)
+  name         String    @db.VarChar(100)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  roleId       Int       @map("role_id")
+  avatarUrl    String?   @map("avatar_url") @db.VarChar(500)
+  status       Boolean   @default(true)
+  multiLogin   Boolean   @default(false) @map("multi_login")
+  lastLoginAt  DateTime? @map("last_login_at")
+  lastLoginIp  String?   @map("last_login_ip") @db.VarChar(45)
+  createdBy    Int?      @map("created_by")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  role         AdminRole @relation(fields: [roleId], references: [id])
+
+  @@map("admin_users")
+}
+
+// 4.15 distributions（发行渠道记录）
+model Distribution {
+  id          Int                @id @default(autoincrement())
+  songId      Int                @map("song_id")
+  platform    String             @db.VarChar(50)
+  status      DistributionStatus @default(pending)
+  submittedAt DateTime?          @map("submitted_at")
+  liveDate    DateTime?          @map("live_date") @db.Date
+  url         String?            @db.VarChar(500)
+
+  song        PlatformSong       @relation(fields: [songId], references: [id])
+
+  @@unique([songId, platform])
+  @@map("distributions")
+}
+
+enum DistributionStatus {
+  pending
+  submitted
+  live
+  failed
+}
+
+// 4.16 operation_logs（操作日志）
+model OperationLog {
+  id           Int      @id @default(autoincrement())
+  operatorId   Int?     @map("operator_id")
+  operatorName String?  @map("operator_name") @db.VarChar(100)
+  action       String   @db.VarChar(100)
+  targetType   String?  @map("target_type") @db.VarChar(50)
+  targetId     String?  @map("target_id") @db.VarChar(50)
+  detail       Json?
+  ip           String?  @db.VarChar(45)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([operatorId, createdAt])
+  @@map("operation_logs")
+}
+
+// 4.17 cms_contents（内容管理/课程）
+model CmsContent {
+  id        Int          @id @default(autoincrement())
+  title     String       @db.VarChar(200)
+  cover     String?      @db.VarChar(500)
+  category  String       @db.VarChar(50)
+  type      ContentType
+  content   String?      @db.Text
+  views     Int          @default(0)
+  status    ContentStatus @default(draft)
+  createdBy Int?         @map("created_by")
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  @@index([status, category])
+  @@map("cms_contents")
+}
+
+enum ContentType {
+  video
+  article
+}
+
+enum ContentStatus {
+  published
+  draft
+}
+
+// 4.18 system_settings（系统设置）
+model SystemSetting {
+  id    Int    @id @default(autoincrement())
+  key   String @unique @db.VarChar(100)
+  value Json
+
+  @@map("system_settings")
+}
+
+// 4.19 notifications（消息通知）
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  type      String   @db.VarChar(30)
+  title     String   @db.VarChar(500)
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, read])
+  @@map("notifications")
+}
+
+// 短信验证码（认证需要）
+model SmsCode {
+  id        Int      @id @default(autoincrement())
+  phone     String   @db.VarChar(20)
+  code      String   @db.VarChar(6)
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([phone, code])
+  @@map("sms_codes")
+}
+
+// 登录日志
+model LoginLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  portal    String   @db.VarChar(20)
+  ip        String?  @db.VarChar(45)
+  userAgent String?  @map("user_agent") @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@map("login_logs")
+}

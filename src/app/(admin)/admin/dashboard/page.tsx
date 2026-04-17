@@ -1,0 +1,521 @@
+'use client'
+
+import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
+import { PageHeader } from '@/components/admin/page-header'
+import { useApi } from '@/lib/use-api'
+
+interface DashboardData {
+  stats: {
+    totalCreators: number
+    totalSongs: number
+    pendingReview: number
+    published: number
+    totalRevenue: number
+    groupCount: number
+  }
+  trend: {
+    months: string[]
+    values: number[]
+  }
+  rates: { n: number; label: string; v: number; c: string }[]
+}
+
+const W = 560, H = 196, PL = 44, PR = 16, PT = 12, PB = 36
+
+const FALLBACK_TREND_MONTHS = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
+const FALLBACK_TREND_VALUES = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+const FALLBACK_RATES = [
+  { n: 1, label: '代理签约认证率', v: 0, c: '#6366f1' },
+  { n: 2, label: '签约企业认证率', v: 0, c: '#7c3aed' },
+  { n: 3, label: '内容创作活跃率', v: 0, c: '#818cf8' },
+  { n: 4, label: '实名认证完成率', v: 0, c: '#6366f1' },
+]
+
+// Smooth cubic bezier curve through points
+function smoothPath(points: { x: number; y: number }[]): string {
+  if (points.length < 2) return ''
+  let d = `M${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}`
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[Math.max(i - 1, 0)]
+    const p1 = points[i]
+    const p2 = points[i + 1]
+    const p3 = points[Math.min(i + 2, points.length - 1)]
+    const cp1x = p1.x + (p2.x - p0.x) / 6
+    const cp1y = p1.y + (p2.y - p0.y) / 6
+    const cp2x = p2.x - (p3.x - p1.x) / 6
+    const cp2y = p2.y - (p3.y - p1.y) / 6
+    d += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`
+  }
+  return d
+}
+
+/* SVG icons for stat cards */
+function CardIcon({ type, size = 22 }: { type: string; size?: number }) {
+  const s = size
+  const color = '#fff'
+  switch (type) {
+    case 'users':
+      return (
+        <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
+          <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="9" cy="7" r="4" stroke={color} strokeWidth="2"/>
+          <path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )
+    case 'music':
+      return (
+        <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
+          <path d="M9 18V5l12-2v13" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="6" cy="18" r="3" stroke={color} strokeWidth="2"/>
+          <circle cx="18" cy="16" r="3" stroke={color} strokeWidth="2"/>
+        </svg>
+      )
+    case 'clipboard':
+      return (
+        <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
+          <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <rect x="8" y="2" width="8" height="4" rx="1" ry="1" stroke={color} strokeWidth="2"/>
+          <path d="M9 12h6M9 16h6" stroke={color} strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+      )
+    case 'rocket':
+      return (
+        <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
+          <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11.95A22 22 0 0112 15z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )
+    case 'yen':
+      return (
+        <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L5 12h14L12 2z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M7 15h10M7 18h10M12 12v10" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )
+    case 'group':
+      return (
+        <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
+          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="9" cy="7" r="4" stroke={color} strokeWidth="2"/>
+          <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )
+    default:
+      return null
+  }
+}
+
+/* 3D chart illustration for banner */
+function BannerIllustration() {
+  return (
+    <svg width="180" height="120" viewBox="0 0 180 120" style={{ opacity: 0.85 }}>
+      {/* Bar chart bars */}
+      <rect x="20" y="70" width="16" height="40" rx="3" fill="rgba(255,255,255,0.35)" />
+      <rect x="42" y="50" width="16" height="60" rx="3" fill="rgba(255,255,255,0.45)" />
+      <rect x="64" y="60" width="16" height="50" rx="3" fill="rgba(255,255,255,0.35)" />
+      <rect x="86" y="35" width="16" height="75" rx="3" fill="rgba(255,255,255,0.5)" />
+      <rect x="108" y="45" width="16" height="65" rx="3" fill="rgba(255,255,255,0.4)" />
+      <rect x="130" y="25" width="16" height="85" rx="3" fill="rgba(255,255,255,0.55)" />
+      {/* Trend line */}
+      <path d="M28 65 Q50 42, 72 52 T108 30 T148 18" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2.5" strokeLinecap="round" />
+      {/* Dots on trend line */}
+      <circle cx="28" cy="65" r="3" fill="#fff" opacity="0.8" />
+      <circle cx="72" cy="52" r="3" fill="#fff" opacity="0.8" />
+      <circle cx="108" cy="30" r="3" fill="#fff" opacity="0.8" />
+      <circle cx="148" cy="18" r="4" fill="#fff" opacity="0.9" />
+      {/* Arrow indicator */}
+      <path d="M148 18 L155 12 L152 20 Z" fill="rgba(255,255,255,0.7)" />
+    </svg>
+  )
+}
+
+export default function AdminDashboard() {
+  const [hov, setHov] = useState<number | null>(null)
+  const router = useRouter()
+  const { data, loading } = useApi<DashboardData>('/api/admin/dashboard')
+
+  const trendMonths = data?.trend?.months?.length ? data.trend.months : FALLBACK_TREND_MONTHS
+  const trendValues = data?.trend?.values?.length ? data.trend.values : FALLBACK_TREND_VALUES
+  const rates = data?.rates?.length ? data.rates : FALLBACK_RATES
+
+  const maxV = useMemo(() => Math.max(...trendValues, 1), [trendValues])
+  const pts = useMemo(() => trendValues.map((v, i) => ({
+    x: PL + (i / Math.max(trendValues.length - 1, 1)) * (W - PL - PR),
+    y: PT + (1 - v / maxV) * (H - PT - PB),
+  })), [trendValues, maxV])
+
+  const linePath = useMemo(() => smoothPath(pts), [pts])
+  const areaPath = useMemo(() =>
+    pts.length >= 2
+      ? linePath + ` L${pts[pts.length - 1].x.toFixed(1)},${(H - PB)} L${pts[0].x.toFixed(1)},${(H - PB)} Z`
+      : '',
+    [linePath, pts])
+
+  const DASHBOARD_STATS = useMemo(() => {
+    const s = data?.stats
+    return [
+      { icon: 'users', label: '注册学生', val: s?.totalCreators ?? '-', sub: '', subc: '#16a34a', grad: 'linear-gradient(135deg, #6366f1, #818cf8)', pg: '/admin/students' },
+      { icon: 'music', label: '作品总数', val: s?.totalSongs ?? '-', sub: '', subc: '#16a34a', grad: 'linear-gradient(135deg, #ec4899, #f472b6)', pg: '/admin/songs' },
+      { icon: 'clipboard', label: '评审中', val: s?.pendingReview ?? '-', sub: '', subc: '#16a34a', grad: 'linear-gradient(135deg, #0694a2, #22d3ee)', pg: '/admin/songs' },
+      { icon: 'rocket', label: '已发行', val: s?.published ?? '-', sub: '', subc: '#16a34a', grad: 'linear-gradient(135deg, #3b82f6, #60a5fa)', pg: '/admin/songs' },
+      { icon: 'yen', label: '总收益', val: s ? `¥${s.totalRevenue.toLocaleString()}` : '-', sub: '', subc: '#16a34a', grad: 'linear-gradient(135deg, #f59e0b, #fbbf24)', pg: '/admin/revenue' },
+      { icon: 'group', label: '用户组', val: s?.groupCount ?? '-', sub: '', subc: '#16a34a', grad: 'linear-gradient(135deg, #14b8a6, #5eead4)', pg: '/admin/groups' },
+    ]
+  }, [data])
+
+  const hovPt = hov !== null ? pts[hov] : null
+  const tx = hovPt ? Math.min(Math.max(hovPt.x, 56), W - 56) : 0
+
+  if (loading) {
+    return (
+      <div>
+        <PageHeader title="运营看板" subtitle="数据总览" />
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300, color: '#94a3b8', fontSize: 14 }}>
+          加载中...
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <PageHeader title="运营看板" subtitle="数据总览" />
+
+      {/* Purple gradient banner */}
+      <div
+        style={{
+          borderRadius: 14,
+          marginBottom: 16,
+          overflow: 'hidden',
+          position: 'relative',
+          minHeight: 100,
+          background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 40%, #4338ca 70%, #6366f1 100%)',
+          boxShadow: '0 8px 32px rgba(99,102,241,.28)',
+        }}
+      >
+        {/* Decorative circles */}
+        <div
+          style={{
+            position: 'absolute',
+            right: -20,
+            top: -40,
+            width: 240,
+            height: 240,
+            background: 'rgba(255,255,255,.06)',
+            borderRadius: '50%',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            right: 70,
+            bottom: -50,
+            width: 180,
+            height: 180,
+            background: 'rgba(255,255,255,.04)',
+            borderRadius: '50%',
+          }}
+        />
+
+        {/* 3D chart illustration on right */}
+        <div style={{ position: 'absolute', right: 24, top: '50%', transform: 'translateY(-50%)' }}>
+          <BannerIllustration />
+        </div>
+
+        {/* Content */}
+        <div style={{ position: 'relative', padding: '24px 30px' }}>
+          <h2
+            style={{
+              fontSize: 19,
+              fontWeight: 700,
+              color: '#fff',
+              marginBottom: 5,
+              lineHeight: 1.35,
+            }}
+          >
+            运营数据全透视，寻找下一个增长奇点
+          </h2>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,.68)' }}>
+            实时掌握平台关键指标，驱动业务持续增长
+          </p>
+        </div>
+      </div>
+
+      {/* 5 stat cards */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(6, 1fr)',
+          gap: 12,
+          marginBottom: 16,
+        }}
+      >
+        {DASHBOARD_STATS.map((s, i) => (
+          <div
+            key={i}
+            onClick={() => s.pg && router.push(s.pg)}
+            style={{
+              background: '#fff',
+              border: '1px solid #e8edf5',
+              borderRadius: 12,
+              padding: '18px 16px',
+              cursor: 'pointer',
+              transition: 'all .2s',
+              boxShadow: '0 1px 4px rgba(99,102,241,.05)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+            }}
+            onMouseOver={e => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 8px 20px rgba(99,102,241,.12)'
+            }}
+            onMouseOut={e => {
+              e.currentTarget.style.transform = ''
+              e.currentTarget.style.boxShadow = '0 1px 4px rgba(99,102,241,.05)'
+            }}
+          >
+            {/* Circular gradient icon */}
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: '50%',
+                background: s.grad,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                boxShadow: '0 4px 12px rgba(99,102,241,.2)',
+              }}
+            >
+              <CardIcon type={s.icon} size={22} />
+            </div>
+
+            {/* Text content */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>{s.label}</div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: '#1e293b', lineHeight: 1, marginBottom: 3 }}>
+                {s.val}
+              </div>
+              <div style={{ fontSize: 11, color: s.subc, fontWeight: 500 }}>{s.sub}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Two-column grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 14 }}>
+
+        {/* Revenue trend line chart */}
+        <div
+          style={{
+            background: '#fff',
+            border: '1px solid #e8edf5',
+            borderRadius: 12,
+            padding: '18px 16px 10px',
+            boxShadow: '0 1px 4px rgba(99,102,241,.05)',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 12,
+            }}
+          >
+            <span style={{ fontSize: 13.5, fontWeight: 600, color: '#1e293b' }}>收益趋势</span>
+            <span
+              style={{
+                fontSize: 11,
+                color: '#94a3b8',
+                background: '#f4f7fe',
+                padding: '2px 10px',
+                borderRadius: 20,
+                border: '1px solid #e8edf5',
+              }}
+            >
+              收益趋势
+            </span>
+          </div>
+
+          <svg
+            width="100%"
+            viewBox={`0 0 ${W} ${H}`}
+            style={{ display: 'block', overflow: 'visible' }}
+          >
+            <defs>
+              <linearGradient id="dashAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#6366f1" stopOpacity=".22" />
+                <stop offset="100%" stopColor="#6366f1" stopOpacity=".02" />
+              </linearGradient>
+            </defs>
+
+            {/* Grid lines + Y-axis labels */}
+            {[0, 0.25, 0.5, 0.75, 1].map((r, i) => {
+              const y = PT + (1 - r) * (H - PT - PB)
+              return (
+                <g key={i}>
+                  <line x1={PL} y1={y} x2={W - PR} y2={y} stroke="#f1f5f9" strokeWidth="1" />
+                  <text x={PL - 5} y={y + 4} textAnchor="end" fontSize="10" fill="#c8d5e4">
+                    {Math.round((r * maxV) / 1000) + 'k'}
+                  </text>
+                </g>
+              )
+            })}
+
+            {/* X-axis month labels */}
+            {trendMonths.map((m, i) => {
+              const x = PL + (i / Math.max(trendValues.length - 1, 1)) * (W - PL - PR)
+              return (
+                <text key={i} x={x} y={H + 2} textAnchor="middle" fontSize="10" fill="#c8d5e4">
+                  {m}
+                </text>
+              )
+            })}
+
+            {/* Area fill */}
+            <path d={areaPath} fill="url(#dashAreaGrad)" />
+
+            {/* Smooth line */}
+            <path
+              d={linePath}
+              fill="none"
+              stroke="#6366f1"
+              strokeWidth="2.5"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+
+            {/* Interactive dots */}
+            {pts.map((p, i) => (
+              <g
+                key={i}
+                onMouseEnter={() => setHov(i)}
+                onMouseLeave={() => setHov(null)}
+                style={{ cursor: 'pointer' }}
+              >
+                <circle cx={p.x} cy={p.y} r="9" fill="transparent" />
+                <circle
+                  cx={p.x}
+                  cy={p.y}
+                  r={hov === i ? 5 : 2.5}
+                  fill={hov === i ? '#6366f1' : '#fff'}
+                  stroke="#6366f1"
+                  strokeWidth="2.5"
+                />
+              </g>
+            ))}
+
+            {/* Hover tooltip */}
+            {hovPt && hov !== null && (
+              <g>
+                <rect
+                  x={tx - 54}
+                  y={hovPt.y - 50}
+                  width="108"
+                  height="38"
+                  rx="8"
+                  fill="#fff"
+                  stroke="#e8edf5"
+                  strokeWidth="1"
+                  filter="drop-shadow(0 2px 6px rgba(0,0,0,.08))"
+                />
+                <text x={tx} y={hovPt.y - 32} textAnchor="middle" fontSize="10" fill="#94a3b8">
+                  {trendMonths[hov]}
+                </text>
+                <text
+                  x={tx}
+                  y={hovPt.y - 18}
+                  textAnchor="middle"
+                  fontSize="13"
+                  fontWeight="700"
+                  fill="#6366f1"
+                >
+                  {'¥' + trendValues[hov].toLocaleString()}
+                </text>
+              </g>
+            )}
+          </svg>
+        </div>
+
+        {/* Conversion rates */}
+        <div
+          style={{
+            background: '#fff',
+            border: '1px solid #e8edf5',
+            borderRadius: 12,
+            padding: '18px 16px',
+            boxShadow: '0 1px 4px rgba(99,102,241,.05)',
+          }}
+        >
+          <span
+            style={{
+              fontSize: 13.5,
+              fontWeight: 600,
+              color: '#1e293b',
+              display: 'block',
+              marginBottom: 16,
+            }}
+          >
+            关键转化率
+          </span>
+
+          {rates.map(r => (
+            <div key={r.n} style={{ marginBottom: 18 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  marginBottom: 6,
+                }}
+              >
+                <span
+                  style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: '50%',
+                    background: r.c + '18',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                    <path d="M3 8l4 4 6-7" stroke={r.c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+                <span style={{ flex: 1, fontSize: 12, color: '#475569' }}>{r.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: r.c }}>{r.v + '%'}</span>
+              </div>
+              <div
+                style={{
+                  height: 8,
+                  background: '#f4f7fe',
+                  borderRadius: 4,
+                  overflow: 'hidden',
+                }}
+              >
+                <div
+                  style={{
+                    height: '100%',
+                    width: r.v + '%',
+                    background: `linear-gradient(90deg, ${r.c}, ${r.c}aa)`,
+                    borderRadius: 4,
+                    transition: 'width 0.6s ease',
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}

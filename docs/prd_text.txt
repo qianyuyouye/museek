@@ -1,0 +1,1351 @@
+AI音乐教学与版权代理平台
+产品需求文档（PRD）
+版本：v5.2 · 原型对齐版
+基准原型：v18/v19 高保真原型
+状态：待开发评审
+日期：2026年4月
+1. 产品概述
+1.1 系统定位
+本平台是「AI音乐教学管理 + 版权代理发行」的一体化运营系统，服务于以AI工具（汽水创作实验室、Suno等）进行音乐创作的教育机构及个人创作者。
+关键区分：本平台 ≠ 汽水音乐。汽水音乐是字节旗下独立流媒体平台，拥有自身ID体系和收益数据。本平台维护内部独立编号体系（AIMU-YYYY-NNNNNN），通过「歌曲ID映射表」单向桥接汽水数据。平台不控制汽水的发布过程。
+1.2 角色体系（四类）
+角色
+权限范围
+账号来源
+备注
+创作者
+提交作品 / 查看评审结果 / 查看收益 / 作业提交
+邀请码注册，自动归组
+仅见自己数据
+评审
+查看待评审队列 / 打分评语 / 通过或退回
+管理员创建
+不可修改元数据
+平台管理员
+按角色权限范围操作平台各功能模块
+超级管理员创建，分配角色
+受权限树约束
+超级管理员
+全部权限，含角色管理 / 管理员管理
+系统预设，唯一
+不可删除
+1.3 用户组与注册机制
+系统不开放公开注册。管理员创建用户组，系统自动生成专属邀请码及注册链接。创作者凭邀请码注册后自动归属对应用户组。
+注册时填写：邀请码、手机号、密码，并同意用户协议。注册成功后，创作者须在个人中心单独完成实名认证（提交真实姓名、身份证号），通过审核后方可触发发行与打款流程。
+实名状态
+说明
+影响
+unverified
+未提交认证信息
+无法触发打款流程
+pending
+已提交，待管理员审核
+无法触发打款流程
+verified
+已通过实名认证
+可正常发行、结算打款
+rejected
+审核驳回，可修改重新提交
+无法触发打款流程
+1.4 平台管理员与角色权限体系
+平台管理员账号由超级管理员创建，每个管理员绑定一个角色，角色定义其可操作的菜单项及权限粒度。
+权限树共三端，操作粒度包含：查看、编辑、管理、操作、导出、结算。
+端
+可配置菜单项（共26项）
+创作者端
+首页、作品上传、我的作品库、作业提交、收益查询、课程学习、社区发现、个人中心（每项独立配置查看/操作权限）
+评审端
+工作台、待评审列表、评审操作、我的绩效、个人中心
+管理端
+运营看板、内容管理、用户组管理、作业管理、用户档案、合同台账、评审绩效、账号与权限、歌曲库管理、作品库批量下载、ISRC管理、发行渠道、发行状态确认、收益管理、系统设置、操作日志、角色管理、平台管理员（共18项）
+1.5 前端三端架构说明
+本平台前端由三个独立 Web 应用构成，分别对应三类角色，部署在不同 URL 路径下：
+创作者端（Creator App）：供创作者使用，支持邀请码注册入口。
+评审端（Reviewer App）：仅供评审人员使用，无注册入口，账号由管理员在管理端创建后下发。
+管理端（Admin App）：供平台管理员及超级管理员使用，无注册入口，账号由超级管理员创建。
+三端均为独立部署的单页应用（SPA），共享同一套后端 API，但登录入口、权限体系和路由结构互相独立。评审端与管理端不对外公开注册链接。
+2. 完整业务生命周期（三端双路闭环）
+平台存在两条平行的作品入库路径，最终汇入统一的评审→发行→收益闭环：
+路径
+触发方式
+作品来源标记
+作业关联
+自由上传路径
+创作者主动上传音频+元数据（3步骤）
+source = upload
+无
+作业提交路径
+管理员创建作业，创作者在截止日期前提交
+source = assignment
+assignment_id 关联
+Phase 1：创作（平台外部）
+创作者使用汽水创作实验室或Suno等AI工具在平台外创作歌曲
+歌曲自动发布到汽水音乐，产生汽水歌曲ID，在汽水/抖音产生播放量和收益
+此阶段完全在本平台外部发生，本平台不介入、不控制汽水的发布过程。
+Phase 2：作品入库（创作者端）
+自由上传（3步骤）
+Step 1 文件上传：拖拽或点击上传音频（WAV/MP3，≤50MB），完成后显示波形预览；可选上传封面图（JPG/PNG/WebP，≤5MB，建议 1:1 比例）
+Step 2 元数据填写：填写歌曲信息+AI声明+原创性声明（必须勾选）；额外字段：创作贡献（主导/参与，必填）+ 创作描述（选填，描述创作思路）
+Step 3 预览确认：展示完整元数据+音频信息，确认后提交
+系统自动生成版权编号（格式：AIMU-YYYY-NNNNNN，如 AIMU-2026-000001）
+作品进入 pending_review 状态，进入评审队列
+作业提交
+创作者在「作业提交」页面查看所在用户组的作业列表
+点击进入具体作业 → 上传音频 → 填写动态表单（字段由管理员按组配置）
+提交成功后系统同步将作品入库（source=assignment），状态 pending_review，进入评审队列
+一个用户对同一作业只允许提交一次；需修改时，在作业结果页重新提交覆盖旧记录（version++，旧评审记录保留可追溯）
+Phase 3：作品评审（评审端）
+评审在工作台查看待评审数量，进入待评审列表（支持按流派/创作者筛选）
+点击「开始评审」进入评审页面：试听（A-B循环、变速）+ 波形标记 + AI预分析报告 + 元数据 + 歌词
+填写评分表单：技术熟练度(30%) + 创意立意(40%) + 商业传播潜力(30%)，三维0-100滑块，系统自动计算加权总分
+选择快捷评语标签（可叠加），填写专业评语（≥20字必填）
+选择发行建议：强烈推荐发行 / 建议修改后发行 / 暂不推荐
+提交评审，系统根据推荐等级+分数自动流转状态（详见第3章状态机）
+Phase 4：作品发行（管理员端）
+「歌曲库管理」按 ready_to_publish 状态筛选待发行作品
+发行前系统校验三项条件（全满足方可点击确认发行）：
+① 创作者已签署代理发行协议
+② 创作者实名认证通过（verified）
+③ 作品已绑定ISRC码
+校验通过 → 管理员点击「确认发行」→ 状态变更为 published
+「作品库批量下载」：按状态/流派/AI工具/评分筛选，勾选批量打包下载（音频+元数据JSON+版权凭证PDF）
+「ISRC管理」：查看待申报列表 → 提交申报 → 上传回填文件批量更新ISRC
+「发行渠道管理」：歌曲×平台矩阵，记录各平台上架状态
+Phase 5：发行状态确认（双轨）
+轨道
+触发条件
+操作
+结果状态
+自动确认
+月度对账导入时，平台返回该歌曲的播放/收益数据
+系统自动置为已上架，无需人工
+live（data_confirmed）
+人工确认
+已提交平台但尚未产生数据，无需等到下月对账
+运营人员手动确认「已上架」
+live
+异常处理
+提交超30天仍无任何数据返回
+进入异常队列，人工排查或重新提交/联系平台
+exception
+Phase 6：收益导入（管理员端）
+从汽水音乐后台导出CSV报表，上传到本平台
+系统自动处理：解析 → 去重 → 查映射表 → 名称匹配 → 生成结算预览
+管理员处理存疑/未匹配条目（确认/修正/标记无关）
+确认导入 → 生成 settlement 记录 → 管理员触发导出/打款
+打款时自动检查创作者实名状态，未 verified 则阻断并提示
+Phase 7：创作者查收益（创作者端）
+「我的收益」展示两个 Tab：平台分发收益 + 汽水音乐收益
+平台分发收益：来自 settlements 表，展示歌曲/平台/原始收益/我的分成/结算状态
+汽水音乐收益：来自 qishui_details 中 matched_user_id=当前用户的记录，展示按月收益明细
+创作者不可见汽水歌曲ID、映射逻辑；收益与评审状态无强依赖关系
+3. 作品状态机（完整）
+当前状态
+触发条件
+操作人
+目标状态
+附加规则
+pending_review（待评审）
+评审提交，推荐=强烈推荐 且 总分≥80
+评审
+ready_to_publish
+同步记录评分到 platform_songs.score
+pending_review（待评审）
+评审提交，推荐=建议修改后发行
+评审
+needs_revision
+写入 review_comment；生成 reviews 记录
+pending_review（待评审）
+评审提交，推荐=暂不推荐
+评审
+reviewed
+入库候补，管理员可手动发行
+needs_revision（需修改）
+创作者修改后重新提交
+创作者
+pending_review
+清空 score，保留历史 reviews 记录，version++
+ready_to_publish（待发行）
+发行校验通过，管理员确认发行
+管理员
+published
+需：代理协议已签+实名verified+ISRC已绑
+ready_to_publish（待发行）
+管理员退回
+管理员
+needs_revision
+写入退回原因到 review_comment
+reviewed（已入库）
+管理员手动确认发行
+管理员
+published
+不要求强烈推荐等级，管理员自行判断
+published（已发行）
+平台下架（异常/版权问题）
+管理员
+reviewed
+记录操作日志
+published（已发行）
+管理员主动归档（下架 + 归入历史库）
+管理员
+archived
+记录操作日志；收益结算不受影响
+archived（已归档）
+管理员恢复归档作品
+管理员
+reviewed
+恢复至已入库候补状态，可重新安排发行
+注意：收益结算（settlement生成）与 platform_songs.status 完全无关。结算的唯一条件是 song_mappings.status=confirmed 且 creator_id 非空。一首歌可能评审未通过但汽水已产生收益，收益照常入账。
+4. 数据模型（15张表）
+4.1 groups（用户组）
+字段
+类型
+说明
+id
+INT PK AUTO_INCREMENT
+主键
+name
+VARCHAR(200) NOT NULL
+组名称
+description
+VARCHAR(500)
+组描述
+invite_code
+VARCHAR(20) UNIQUE NOT NULL
+专属邀请码（字母+数字）
+invite_link
+VARCHAR(500)
+完整注册URL
+admin_user_id
+INT FK→users
+组管理员（可空）
+status
+ENUM('active','paused') DEFAULT 'active'
+组状态
+created_by
+INT FK→users
+创建人（平台管理员）
+created_at
+DATETIME DEFAULT NOW()
+创建时间
+4.2 users（平台用户，含创作者和评审）
+字段
+类型
+说明
+id
+INT PK AUTO_INCREMENT
+主键
+name
+VARCHAR(100)
+昵称（非实名）
+real_name
+VARCHAR(50)
+实名
+id_card
+VARCHAR(18)
+身份证号（加密存储）
+phone
+VARCHAR(20) UNIQUE NOT NULL
+手机号（登录凭证）
+email
+VARCHAR(200)
+邮箱（选填）
+password_hash
+VARCHAR(255)
+密码哈希
+avatar_url
+VARCHAR(500)
+头像URL
+type
+ENUM('creator','reviewer') NOT NULL
+用户类型
+admin_level
+ENUM('group_admin','system_admin') NULLABLE
+管理权限等级
+real_name_status
+ENUM('unverified','pending','verified','rejected') DEFAULT 'unverified'
+实名认证状态
+agency_contract
+BOOLEAN DEFAULT FALSE
+是否已签代理发行协议
+agency_signed_at
+DATETIME
+协议签署时间
+status
+ENUM('active','disabled') DEFAULT 'active'
+账号状态
+last_login_at
+DATETIME
+最后登录时间
+created_at
+DATETIME DEFAULT NOW()
+注册时间
+索引：UNIQUE(phone)；INDEX(type)；INDEX(real_name_status)
+4.3 user_groups（用户-组关系，多对多）
+字段
+类型
+说明
+user_id
+INT FK→users
+group_id
+INT FK→groups
+joined_at
+DATETIME
+加入时间
+PRIMARY KEY
+(user_id, group_id)
+联合主键防重
+设计说明：将 v4 的 users.group_id 单外键改为多对多关联表，支持创作者同时属于多个用户组（原型已体现，如王强属于两个组）。
+4.4 platform_songs（平台作品）
+此表不存储任何汽水相关字段。内部编号与汽水ID完全独立。
+字段
+类型
+说明
+id
+INT PK AUTO_INCREMENT
+内部自增主键
+copyright_code
+VARCHAR(20) UNIQUE NOT NULL
+版权编号（AIMU-YYYY-NNNNNN，唯一）
+user_id
+INT FK→users NOT NULL
+创作者
+title
+VARCHAR(200) NOT NULL
+歌曲标题
+ai_tools
+JSON
+AI工具列表，如["汽水创作实验室","Suno"]
+performer
+VARCHAR(200)
+表演者（默认实名）
+lyricist
+VARCHAR(200)
+词作者（默认实名）
+composer
+VARCHAR(200)
+曲作者（默认实名）
+lyrics
+TEXT
+歌词正文
+style_desc
+VARCHAR(500)
+风格描述/Prompt
+genre
+VARCHAR(50)
+流派
+bpm
+SMALLINT
+BPM
+album_name
+VARCHAR(200)
+专辑名称（默认同标题）
+album_artist
+VARCHAR(200)
+专辑歌手（默认实名）
+audio_url
+VARCHAR(500)
+音频文件存储URL
+cover_url
+VARCHAR(500) NULLABLE
+封面图存储URL（选填，≤5MB，建议1:1）
+contribution
+ENUM(‘主导’,‘参与’) DEFAULT ‘主导’
+创作贡献类型（主导创作 / 参与创作）
+creation_desc
+VARCHAR(500) NULLABLE
+创作思路说明（选填）
+isrc
+VARCHAR(20)
+ISRC国际标准录音代码（申报后回填）
+source
+ENUM('upload','assignment') NOT NULL
+作品来源：自由上传/作业提交
+assignment_id
+INT FK→assignments NULLABLE
+来源作业ID（source=assignment时有值）
+status
+ENUM('pending_review','needs_revision','reviewed','ready_to_publish','published','archived') DEFAULT 'pending_review'
+作品状态
+score
+TINYINT UNSIGNED
+最新评审加权总分（0-100）
+review_comment
+TEXT
+最新评审评语（冗余，便于展示）
+version
+TINYINT DEFAULT 1
+提交版本号，重新提交递增
+like_count
+INT DEFAULT 0
+点赞数（作品广场）
+created_at
+DATETIME DEFAULT NOW()
+首次提交时间
+updated_at
+DATETIME ON UPDATE NOW()
+最后更新时间
+索引：UNIQUE(copyright_code)；INDEX(user_id, status)；INDEX(status)；INDEX(assignment_id)
+4.5 assignments（作业任务）
+字段
+类型
+说明
+id
+INT PK AUTO_INCREMENT
+group_id
+INT FK→groups NOT NULL
+所属用户组
+title
+VARCHAR(200) NOT NULL
+作业标题
+description
+TEXT
+作业描述/要求
+deadline
+DATE NOT NULL
+截止日期
+status
+ENUM('draft','active','closed') DEFAULT 'active'
+作业状态
+total_members
+INT DEFAULT 0
+目标人数（冗余，定期同步）
+submission_count
+INT DEFAULT 0
+提交人数（冗余，每次提交+1）
+created_by
+INT FK→users
+创建人（管理员）
+created_at
+DATETIME DEFAULT NOW()
+4.6 assignment_submissions（作业提交记录）
+字段
+类型
+说明
+id
+INT PK AUTO_INCREMENT
+assignment_id
+INT FK→assignments NOT NULL
+所属作业
+user_id
+INT FK→users NOT NULL
+提交者
+platform_song_id
+INT FK→platform_songs
+对应歌曲（提交时创建）
+status
+ENUM('pending_review','reviewed','needs_revision') NOT NULL
+当前状态（与歌曲状态同步）
+score
+TINYINT
+评审分数（评审后回填）
+submitted_at
+DATETIME
+提交时间
+version
+TINYINT DEFAULT 1
+提交版本
+UNIQUE
+(assignment_id, user_id)
+同一作业每人只能有一条有效记录
+assignment_submissions 与 platform_songs 是一对一关系（每次提交对应一首作品）。重新提交时更新现有 submission 记录，并更新对应 platform_songs 记录（version++，清空旧评分）。
+4.7 reviews（评审记录，可多条）
+一首作品退回后重新提交可多次评审，每次产生新的 reviews 记录，history可追溯。
+字段
+类型
+说明
+id
+INT PK AUTO_INCREMENT
+song_id
+INT FK→platform_songs NOT NULL
+被评审作品
+reviewer_id
+INT FK→users NOT NULL
+评审人
+version
+TINYINT DEFAULT 1
+对应作品哪个版本的评审
+technique
+TINYINT NOT NULL
+技术熟练度（0-100，权重30%）
+creativity
+TINYINT NOT NULL
+创意立意（0-100，权重40%）
+commercial
+TINYINT NOT NULL
+商业传播潜力（0-100，权重30%）
+total_score
+TINYINT NOT NULL
+加权总分，存储端计算：ROUND(T*0.3+C*0.4+M*0.3)
+tags
+JSON
+选用的快捷评语标签数组
+comment
+TEXT NOT NULL
+专业评语（≥20字）
+recommendation
+ENUM('strongly_recommend','recommend_after_revision','not_recommend') NOT NULL
+发行建议
+duration_seconds
+SMALLINT
+评审耗时（秒）
+reviewed_at
+DATETIME DEFAULT NOW()
+评审提交时间
+4.8 form_field_configs（表单字段配置）
+每个用户组可独立配置提交表单字段。查询时优先用组级配置，无则 fallback 到 group_id IS NULL 的全局默认。
+字段
+类型
+说明
+id
+INT PK AUTO_INCREMENT
+group_id
+INT FK→groups NULLABLE
+NULL=全局默认配置
+field_key
+VARCHAR(50) NOT NULL
+字段标识，如：ai_tool/song_title/performer/lyricist/composer/lyrics/style_desc/album_name/album_artist/contribution/creation_desc
+field_label
+VARCHAR(100)
+显示名称
+field_type
+ENUM('text','textarea','multi_select') NOT NULL
+字段类型
+options
+JSON NULLABLE
+multi_select 的选项列表
+required
+BOOLEAN DEFAULT TRUE
+是否必填
+default_value
+VARCHAR(500)
+{realName} / {songTitle} / 固定值 / NULL
+display_order
+TINYINT DEFAULT 0
+表单展示顺序
+UNIQUE
+(group_id, field_key)
+同组同字段唯一
+4.9 song_mappings（汽水ID↔平台作品 映射表）
+这是唯一的跨系统桥接表。platform_songs 和 revenue_rows 无直接外键关联，所有关联通过本表中转。
+字段
+类型
+说明
+id
+INT PK AUTO_INCREMENT
+qishui_song_id
+VARCHAR(30) UNIQUE NOT NULL
+汽水歌曲ID（纯数字字符串）
+qishui_song_name
+VARCHAR(200)
+首次导入时记录的歌名
+platform_song_id
+INT FK→platform_songs NULLABLE
+对应的平台作品（可空）
+creator_id
+INT FK→users NULLABLE
+对应的创作者（可与平台作品解耦直接指定）
+match_type
+ENUM('auto_exact','auto_fuzzy','manual','none')
+匹配方式
+status
+ENUM('confirmed','suspect','pending','irrelevant') DEFAULT 'pending'
+映射状态
+confirmed_at
+DATETIME
+确认时间
+confirmed_by
+INT FK→users
+确认人（管理员）
+created_at
+DATETIME DEFAULT NOW()
+首次记录时间
+4.10 revenue_imports（收益导入批次）
+字段
+类型
+说明
+id
+INT PK AUTO_INCREMENT
+platform
+ENUM('qishui','qq_music','netease','spotify','apple_music','kugou') DEFAULT 'qishui'
+来源平台
+file_name
+VARCHAR(200)
+上传文件名
+period
+VARCHAR(50)
+账期（原始字符串，如 2026/02/01 - 2026/02/28）
+total_rows
+INT DEFAULT 0
+CSV总行数
+matched_rows
+INT DEFAULT 0
+成功匹配行数
+suspect_rows
+INT DEFAULT 0
+存疑行数
+unmatched_rows
+INT DEFAULT 0
+未匹配行数
+duplicate_rows
+INT DEFAULT 0
+重复跳过行数
+total_revenue
+DECIMAL(14,2) DEFAULT 0
+本次导入总收益
+status
+ENUM('processing','completed','failed')
+导入状态
+imported_by
+INT FK→users
+操作人
+imported_at
+DATETIME DEFAULT NOW()
+导入时间
+4.11 revenue_rows（导入明细行）
+去重规则：(qishui_song_id, period) 全局唯一，跨批次去重。
+字段
+类型
+说明
+id
+INT PK AUTO_INCREMENT
+import_id
+INT FK→revenue_imports NOT NULL
+所属批次
+qishui_song_id
+VARCHAR(30) NOT NULL
+汽水歌曲ID（去除Excel包装后的纯数字）
+song_name
+VARCHAR(200)
+CSV原始歌名
+period
+VARCHAR(50) NOT NULL
+起止日期（原始字符串）
+douyin_revenue
+DECIMAL(12,2) DEFAULT 0
+抖音收入
+qishui_revenue
+DECIMAL(12,2) DEFAULT 0
+汽水收入
+total_revenue
+DECIMAL(12,2) DEFAULT 0
+总收入
+mapping_id
+INT FK→song_mappings NULLABLE
+匹配后关联的映射记录
+match_status
+ENUM('matched','suspect','unmatched','duplicate','irrelevant')
+匹配状态
+UNIQUE
+(qishui_song_id, period)
+全局去重约束
+4.12 settlements（结算记录）
+仅当 song_mappings.status=confirmed 且 creator_id 非空时生成。
+字段
+类型
+说明
+id
+INT PK AUTO_INCREMENT
+revenue_row_id
+INT FK→revenue_rows UNIQUE
+一条导入行只生成一条结算
+qishui_song_id
+VARCHAR(30)
+冗余，便于查询
+song_name
+VARCHAR(200)
+冗余
+period
+VARCHAR(50)
+账期
+douyin_revenue
+DECIMAL(12,2)
+抖音收入
+qishui_revenue
+DECIMAL(12,2)
+汽水收入
+total_revenue
+DECIMAL(12,2)
+总收入
+creator_id
+INT FK→users NOT NULL
+创作者（从映射表获得）
+platform_ratio
+DECIMAL(4,2) DEFAULT 0.30
+平台分成比例
+creator_ratio
+DECIMAL(4,2) DEFAULT 0.70
+创作者分成比例
+creator_amount
+DECIMAL(12,2)
+创作者应得金额 = total_revenue × creator_ratio
+settle_status
+ENUM('pending','confirmed','exported','paid') DEFAULT 'pending'
+结算状态
+exported_at
+DATETIME
+导出时间
+paid_at
+DATETIME
+打款时间
+paid_by
+INT FK→users
+打款操作人
+created_at
+DATETIME DEFAULT NOW()
+生成时间
+4.13 admin_roles（管理员角色）
+字段
+类型
+说明
+id
+INT PK AUTO_INCREMENT
+name
+VARCHAR(50) NOT NULL
+角色名称（≤8字）
+description
+VARCHAR(200)
+角色描述
+permissions
+JSON NOT NULL
+权限字典，key=`portal.menu.action`，value=Boolean。如：{"admin.revenue.view":true,"admin.revenue.settle":true}
+is_builtin
+BOOLEAN DEFAULT FALSE
+是否内置角色（超级管理员，不可删除）
+created_at
+DATETIME DEFAULT NOW()
+created_by
+INT FK→admin_users
+4.14 admin_users（平台管理员账号）
+字段
+类型
+说明
+id
+INT PK AUTO_INCREMENT
+account
+VARCHAR(50) UNIQUE NOT NULL
+登录账号（字母+数字）
+name
+VARCHAR(100) NOT NULL
+显示名称
+password_hash
+VARCHAR(255) NOT NULL
+密码哈希（BCrypt）
+role_id
+INT FK→admin_roles NOT NULL
+绑定角色
+avatar_url
+VARCHAR(500)
+头像URL
+status
+BOOLEAN DEFAULT TRUE
+是否启用
+multi_login
+BOOLEAN DEFAULT FALSE
+是否允许多处同时登录
+last_login_at
+DATETIME
+最后登录时间
+last_login_ip
+VARCHAR(45)
+最后登录IP（支持IPv6）
+created_by
+INT FK→admin_users
+创建人
+created_at
+DATETIME DEFAULT NOW()
+4.15 distributions（发行渠道记录）
+字段
+类型
+说明
+id
+INT PK AUTO_INCREMENT
+song_id
+INT FK→platform_songs NOT NULL
+platform
+VARCHAR(50) NOT NULL
+平台名称
+status
+ENUM('pending','submitted','live','failed') DEFAULT 'pending'
+上架状态
+submitted_at
+DATETIME
+提交发行时间
+live_date
+DATE
+上架日期
+url
+VARCHAR(500)
+上架后平台链接
+UNIQUE
+(song_id, platform)
+同歌曲同平台唯一
+4.16 operation_logs（操作日志）
+字段
+类型
+说明
+id
+BIGINT PK AUTO_INCREMENT
+operator_id
+INT FK→admin_users
+操作人
+operator_name
+VARCHAR(100)
+冗余，防止账号被删后查询丢失
+action
+VARCHAR(100) NOT NULL
+操作类型，如：song.publish / settlement.export / user.disable
+target_type
+VARCHAR(50)
+操作对象类型：song/user/settlement/mapping...
+target_id
+VARCHAR(50)
+操作对象ID
+detail
+JSON
+操作详情快照
+ip
+VARCHAR(45)
+操作IP
+created_at
+DATETIME DEFAULT NOW()
+操作时间
+5. CSV 解析规范（汽水音乐收益报表）
+5.1 原始格式特征
+第一列「歌曲抖音跟拍收入」固定值"-"，无业务含义，解析时跳过
+歌曲ID被Excel公式包装：="7604694..."，需去除包装提取纯数字字符串
+起止日期为范围格式：2026/02/01 - 2026/02/28（直接存储原始字符串，不做日期解析）
+文件编码通常为UTF-8或GBK，服务端自动检测编码
+5.2 字段解析映射
+列序
+CSV列名
+处理规则
+目标字段
+1
+歌曲抖音跟拍收入
+跳过
+—
+2
+起止日期
+直接存储
+revenue_rows.period
+3
+歌曲名称
+直接存储，trim空白
+revenue_rows.song_name
+4
+歌曲ID
+去除 =" 前缀和 " 后缀，取纯数字字符串
+revenue_rows.qishui_song_id
+5
+抖音收入
+去逗号，转DECIMAL(12,2)
+revenue_rows.douyin_revenue
+6
+汽水收入
+去逗号，转DECIMAL(12,2)
+revenue_rows.qishui_revenue
+7
+总收入
+去逗号，转DECIMAL(12,2)，校验=col5+col6
+revenue_rows.total_revenue
+6. 收益导入匹配算法
+6.1 逐行处理流程（4步骤）
+步骤
+操作
+结果
+Step 1
+去重
+检查 (qishui_song_id, period) 是否已存在于 revenue_rows
+存在 → match_status=duplicate，跳过；不存在 → 继续
+Step 2
+查映射表
+用 qishui_song_id 查 song_mappings
+confirmed → 直接使用，生成 settlement
+suspect → 不生成结算，标记存疑
+pending → 不生成结算，待处理
+irrelevant → 跳过
+未找到 → 进入Step 3
+Step 3
+名称匹配
+仅当Step 2未找到映射记录时执行。用 song_name 在 platform_songs 中查询
+精确匹配唯一 → 建映射(auto_exact,confirmed)，生成settlement
+精确匹配多条 → 建映射(auto_fuzzy,suspect)
+模糊匹配命中 → 建映射(auto_fuzzy,suspect)
+无匹配 → 建映射(none,pending)
+Step 4
+写入
+写入 revenue_rows，更新 revenue_imports 统计计数
+—
+6.2 分成比例计算规则
+规则名
+创作者比例
+平台比例
+触发条件
+优先级
+高分激励
+80%
+20%
+该作品最新评审 total_score ≥ 90
+最高
+量产奖励
+75%
+25%
+创作者累计已发行作品 ≥ 10 首
+次高
+默认规则
+70%
+30%
+以上均不满足
+兜底
+结算生成时，系统在创建 settlement 记录前自动评估三条规则并取优先级最高者填入 creator_ratio/platform_ratio。规则参数可在「系统设置→分成比例」中调整，调整仅对新生成结算生效，不追溯已有记录。
+6.3 回溯生成逻辑
+当映射状态从 suspect/pending 变更为 confirmed 时，系统自动执行回溯：
+查找该 qishui_song_id 的所有历史 revenue_rows 记录
+筛选出 match_status ≠ duplicate/irrelevant 且尚未关联 settlement 的行
+为每行调用结算生成逻辑（含分成比例计算），批量创建 settlement 记录
+更新相关 revenue_rows.match_status → matched
+6.4 映射表维护操作矩阵
+当前状态
+操作
+系统行为
+suspect
+确认
+status→confirmed，触发回溯生成结算
+suspect
+修正（选择正确作品/创作者）
+更新关联字段，status→confirmed，触发回溯
+pending
+关联平台作品
+填 platform_song_id，自动绑 creator_id，触发回溯
+pending
+直接指定创作者
+仅填 creator_id（不关联具体作品），触发回溯
+pending/suspect
+标记无关
+status→irrelevant，后续导入自动跳过此ID
+confirmed
+修改关联
+更新关联，同步更新未打款的 settlement 记录
+confirmed
+解除映射
+映射记录软删除，settlement 标记 status=exception，人工处理
+—（不存在）
+手动新增
+直接 confirmed，下次导入自动命中，触发回溯历史行
+7. 功能规格详述
+7.1 创作者端
+7.1.1 首页（Dashboard）
+实时统计：我的作品数 / 平均评分 / 累计收益 / 学习进度
+未完成作业提示卡（有待提交作业时置顶展示，点击跳转作业提交页）
+最新动态列表（来自消息中心 notifications 表，按时间倒序3条）
+热门课程推荐（按 views 倒序3条，仅展示 published 状态）
+7.1.2 自由上传（3步骤）
+Step 1 文件上传：支持拖拽/点击，格式WAV/MP3，≤50MB，上传后展示波形和时长
+Step 2 填写信息：
+- 作品基础信息：标题、词作者、曲作者、AI工具（多选）、Prompt/描述、流派、BPM、歌词
+- AI内容声明：必须勾选「本作品使用AI辅助创作，已标注AI使用情况」
+- 原创性声明：必须勾选「本作品由本人创作，不侵权」，否则无法提交
+Step 3 预览确认：展示完整信息供确认，支持返回修改；提交后显示动态生成的版权编号
+重新提交（needs_revision）：回到此表单，预填旧数据，提交后 version++，旧评审记录保留
+7.1.3 作业提交
+作业列表：按用户组分组展示，标注进行中/已截止状态和截止日期
+「已提交」的作业卡片显示提交时间和查看详情入口，「未提交」显示提交按钮
+作业提交表单：上传音频 + 动态字段（字段和必填规则由管理员按组配置）
+提交后同步入库歌曲，toast提示版权编号，进入评审队列
+查看已提交详情：展示提交的元数据、评审结果（实时从歌曲状态读取）、评审评语
+7.1.4 我的作品库
+Tab：全部 / 待评分 / 需修改 / 已入库 / 已发行，各Tab显示对应状态数量。其中「已入库」Tab 实际合并展示三种状态：reviewed（评审暂不推荐）、ready_to_publish（待发行）、archived（已归档），统称"已入库"以简化创作者视角，但各作品仍以独立状态角标区分。
+作品卡片：封面Emoji + 状态角标 + 流派 + 评分
+详情页：波形播放器 + 完整元数据 + 评分成绩单 + 波形标记 + 评审评语 + 发行渠道状态
+needs_revision 作品显示「修改并重新提交」按钮
+7.1.5 我的收益
+Tab 1 平台分发收益：来自 settlements，展示歌曲/来源平台/原始收益/我的分成/状态
+Tab 2 汽水音乐收益：展示该用户在汽水平台的直接收益数据（抖音+汽水分栏）
+数据更新说明：显示最后一次导入的时间和下次更新预期
+创作者不可见汽水歌曲ID和映射逻辑
+7.1.6 其他模块
+课程中心：按分类筛选，视频课程支持播放，图文科普正文展示
+作品广场：仅展示 status=published 的作品，支持点赞/分享，3个Tab（热门/精选/全部）；archived 和未发行作品不出现在广场
+我的学习：学习进度追踪（课程完成度）
+消息中心：分类Tab（全部/作品动态/收益通知/系统消息），已读/未读标记，一键全读
+个人中心：基本信息编辑/头像/密码/实名认证/代理协议签署/登录日志
+7.2 评审端
+7.2.1 工作台
+统计卡片：待评审数（实时，评审后减少）/ 本月已完成 / 平均用时 / 平均评分
+评审趋势图：近30天每日评审数量柱状图
+快速入口：「进入评审列表」按钮直达待评审队列
+7.2.2 待评审列表
+按 platform_songs.status=pending_review 查询，按创建时间升序（先进先出）
+筛选：流派 / 创作者姓名关键词
+列展示：封面 / 歌曲名 / 创作者 / 来源标签（作业/自由上传）/ 流派 / AI工具 / 提交时间
+操作：点击「开始评审」→ 将该歌曲存入评审上下文，跳转评审页面
+7.2.3 评审页面
+左侧：歌曲信息 + 波形播放器（支持A-B循环、0.5x/0.75x/1.0x/1.25x/1.5x变速）+ AI预分析报告（BPM/调性/响度/频谱/段落结构）+ 歌词全文 + 时间轴标记工具
+右侧：评分表单
+- 三维滑块（0-100）：技术熟练度×30% / 创意立意×40% / 商业传播潜力×30%
+- 加权总分实时计算展示
+- 快捷评语标签（点击插入到评语文本框）
+- 专业评语文本框（≥20字强制校验）
+- 发行建议单选：强烈推荐发行 / 建议修改后发行 / 暂不推荐
+提交后按状态机规则流转，清除评审上下文，返回待评审列表
+7.2.4 我的绩效
+本月统计：批改数量 / 平均用时 / 平均评分 / 推荐率
+历史趋势：月度评审量折线图
+个人中心：基本信息编辑/密码修改
+7.3 管理端
+7.3.1 运营看板
+实时统计卡片（全部从数据库实时查询）：
+- 注册用户数（创作者+评审分栏）/ 总作品数（自由上传+作业分栏）/ 待评审数
+- 已发行/发行率 / 用户组数 / 总收益
+各卡片点击跳转对应管理页面
+收益趋势折线/柱状图（按月）
+关键转化率：注册→首次上传 / 评审通过率 / 协议签署率 / 实名认证率
+7.3.2 用户组管理
+列表：组名/描述/邀请码/成员数/状态/操作
+创建：填写组名+描述+自定义邀请码（留空自动生成8位大写字母+数字）
+邀请码管理：弹窗展示邀请码/注册链接（一键复制）/ 重新生成 / 启用停用
+详情页：组信息编辑 + 成员列表（含实名状态/角色/移出操作）+ 设置/取消组管理员
+7.3.3 作业管理
+作业列表：按用户组筛选，展示标题/所属组/截止时间/提交率/状态
+创建作业：选组+填标题+描述+截止日期，默认使用全局表单模板
+「⚙️ 表单配置」：可配置每个字段的必填/选填/默认值（支持动态变量 {realName} / {songTitle}）
+详情页：统计卡片（总成员/已提交/待评审）+ 提交列表（含状态/评分/操作）+ 作业信息
+7.3.4 用户档案
+创作者列表：搜索（姓名/手机/邮箱）+ 实名状态筛选
+详情页：基本信息 + 实名认证操作（通过/驳回/提醒）+ 作品列表 + 账号禁用
+7.3.5 合同台账
+Tab 1 代理发行协议：已签署创作者列表（姓名/手机/签署时间/版本/操作）
+Tab 2/3 用户服务协议 / 隐私政策：全量创作者列表，默认显示签署状态
+导出：导出已签协议名单 Excel
+7.3.6 歌曲库管理
+Tab：待评审 / 待发行 / 已入库 / 已归档 / 已发行 / 需修改 / 全部（各Tab含数量）
+待评审 Tab：展示队列，提示去评审端处理
+待发行 Tab：校验三条件（代理协议+实名+ISRC），一键确认发行/退回/绑ISRC
+已入库 Tab（reviewed）：评审暂不推荐、或评分未达自动入库线的候补作品。管理员可自行判断，点击「手动发行」触发相同三条件校验后直接发行，无需经过 ready_to_publish 中间态
+已归档 Tab（archived）：已发行后被管理员手动归档的作品，仅展示状态，支持「恢复至已入库」操作
+发行校验逻辑：
+- 未签代理协议 → toast: 「发行失败：未签署代理发行协议」
+- 实名未通过 → toast: 「发行失败：未完成实名认证」
+- 未绑ISRC → toast: 「请先绑定ISRC码」
+已发行 Tab：展示发行作品，查看渠道分布
+7.3.7 作品库批量下载
+筛选器：作品状态 / 流派 / AI工具 / 评分区间（≥90分/80-89分）/ 关键词
+表格支持多选/全选，跨筛选条件保留选择（附注：当前筛选外已选项数量提示）
+批量打包下载：音频文件（WAV/FLAC/MP3）+ 歌词TXT + 元数据JSON（含ISRC/版权编号/BPM/风格/Prompt）+ 代理发行授权凭证PDF
+下载前自动校验：代理协议已签 + 实名verified + ISRC已绑；缺失项在下载报告中标红
+导出元数据表：仅导出元数据Excel，不含音频
+7.3.8 ISRC管理
+待申报列表：status=ready_to_publish 且 isrc IS NULL 的作品
+统计：待申报数 / 申报中数 / 已获取ISRC数
+操作：单条提交申报 / 全选批量提交申报
+回填：上传ISRC回填Excel（包含：版权编号 → ISRC码 映射），系统批量更新 platform_songs.isrc
+7.3.9 发行渠道管理
+歌曲×平台矩阵展示（已发行作品 × 合作平台）
+状态图例：✅已上架 / ⏳已提交 / 📋待提交 / —未安排
+点击单元格查看详情（提交日期/上架日期/URL）或触发提交操作
+7.3.10 发行状态确认（双轨）
+Tab：待提交 / 待确认上架 / 已发行 / 异常 / 全部（含各Tab数量）
+「触发对账同步」：调用汽水数据回填服务，有数据返回的自动确认为已发行
+「待确认上架」Tab：人工点击「确认上架」或「标记异常」
+「异常」Tab（超30天无数据）：「重新提交」或「联系平台」
+策略说明面板：在页面顶部展示三种处理策略的说明，降低操作错误率
+7.3.11 评审绩效
+评审账号列表：姓名/评审数/平均用时/平均评分/推荐率/操作
+跳转「管理评审账号」按钮（指向账号与权限管理页）
+7.3.12 账号与权限管理
+Tab 1 评审账号：列表+创建（姓名/手机/邮箱/用户组/初始密码）+ 重置密码/禁用/启用 + 权限变更弹窗
+Tab 2 创作者账号管控：全量列表+实名状态+作品数 + 重置密码/禁用/权限变更
+右上角快捷跳转「平台管理员」页面
+权限变更弹窗：当前角色/属性展示 + 修改用户属性 + 管理权限等级 + 所属用户组（多选）
+7.3.13 平台管理员管理
+列表：头像/账号/名称/角色/创建时间/最后登录时间/最后登录IP/状态Toggle/编辑
+搜索：账号 + 名称关键词筛选；支持导出列表
+添加：账号/名称/角色（下拉，来自角色管理）/密码+确认/状态/多处登录/头像上传
+编辑：同添加，账号字段不可修改
+7.3.14 角色管理
+列表：ID/名称/权限数/说明/创建时间/操作（编辑/删除）
+内置角色（超级管理员）不可删除，标注「内置」徽章
+编辑/新建角色：名称（≤8字）+ 描述 + 权限树
+权限树三级结构：门户（创作者/评审/管理端）→ 菜单项 → 操作粒度（查看/编辑/管理/操作/导出/结算）
+支持全选/不全选 + 门户级/菜单级联勾选（含 indeterminate 中间态）
+7.3.15 收益管理（五大模块）
+模块一：汽水导入 / 其他平台导入
+汽水导入：选平台 → 上传CSV → 系统解析预览（总行/匹配/存疑/未匹配/重复）→ 确认导入
+其他平台导入：上传Excel/CSV + 选择平台；历史导入批次列表（状态/匹配率/收益额）
+模块二：汽水ID映射管理
+三Tab：已确认 / 存疑 / 待匹配
+各条目操作：确认/修正/标记无关/手动新增/查看历史结算
+存疑条目展示候选匹配结果，支持选择正确项
+模块三：收益统计（四维分析）
+Tab 按创作者：排名+歌曲数+抖音+汽水+合计
+Tab 按歌曲：月数+双来源收益+合计
+Tab 按月份：柱状图（抖音/汽水分色）+明细表格
+Tab 按来源：甜甜圈图，抖音/汽水占比
+模块四：结算管理
+结算明细：歌曲/平台/播放量/原始收益/创作者比例/创作者应得/状态
+状态流转按钮：待确认→确认 / 已确认→导出 / 已导出→标记打款
+批量操作：批量确认 / 批量导出
+打款前校验创作者实名状态，未 verified 则阻断，提示管理员先完成实名审核
+模块五：平台分发结算（非汽水平台）
+来自 settlements 中 platform≠qishui 的记录，逻辑与汽水一致
+7.3.16 内容管理（CMS）
+Tab：教学视频 / 音乐科普 / 全部（含数量）
+操作：编辑/发布/下架；「+ 新建内容」入口
+展示：封面/标题/栏目/类型/浏览量/状态
+7.3.17 系统设置（5个子模块）
+子模块
+可配置项
+评分规则
+三维权重百分比（技术/创意/商业）；自动入库阈值（最低分数+要求推荐等级）
+分成比例
+规则列表（名称/创作者比例/平台比例/触发条件/启用状态）；新增规则
+评语模板
+快捷评语标签列表；新增/删除标签
+平台管理
+合作流媒体平台列表（名称/地区/启用状态/报表字段映射配置状态）
+选项管理
+AI工具选项列表；流派选项列表
+7.3.18 操作日志
+列表：操作时间/操作人/操作类型/目标/操作IP
+筛选：操作类型下拉（歌曲评审/发行确认/收益结算/用户管理）+ 日期范围 + 操作人关键词
+日志不可删除，仅可查看
+8. 边界场景与异常处理
+场景
+处理规则
+先有收益后有提交
+导入时名称匹配失败 → pending。创作者后续提交 → 管理员手动关联 → 回溯生成历史结算
+汽水歌名与平台歌名不一致
+名称匹配失败 → pending。管理员手动匹配。映射保存后下次导入自动命中
+CSV包含不属于本平台的歌曲
+标记 irrelevant → 后续导入自动跳过，不再出现在待匹配队列
+一首歌多月收益
+不同 period 同一 qishui_song_id 不算重复，映射表只需一条，多条 revenue_rows 均生成结算
+同名歌曲不同创作者
+精确匹配多条 → suspect，不自动选择，等管理员确认正确归属
+创作者未实名
+收益可匹配到账号，但 settle_status 不可推进到 paid，系统前置校验阻断
+创作者账号被禁用
+结算正常生成，但状态停在 confirmed/exported，管理员人工处理后打款
+跨批次文件重复行
+全局 UNIQUE(qishui_song_id, period)，无论哪个批次先导入，重复行均标 duplicate 跳过
+评审端提交后歌曲状态异常
+总分≥80且强烈推荐 → ready_to_publish；建议修改 → needs_revision；暂不推荐 → reviewed。任意情况均生成 reviews 记录
+同一作业用户重复提交
+UNIQUE(assignment_id, user_id) 约束，重新提交为更新操作（version++），非新增
+发行时ISRC未绑定
+系统前置校验阻断，toast提示「请先绑定ISRC码」，不生成发行记录
+结算金额为0的行
+仍生成 settlement 记录（便于历史追溯），settle_status=confirmed，不触发打款流程
+映射表解除后重新关联
+软删除旧映射，重新建立新映射；旧 settlement 标记 exception，新 settlement 重新生成
+9. 实体关系
+9.1 核心关系链
+关系
+说明
+groups (1) ──< (N) user_groups (N) >── (1) users
+多对多，用户可属于多个组
+users (1) ──< (N) platform_songs
+一个创作者可有多首作品
+platform_songs (1) ──< (N) reviews
+一首作品可有多次评审（退回重审产生新记录）
+assignments (1) ──< (N) assignment_submissions (1) >── (1) platform_songs
+每条提交记录对应唯一一首作品
+groups (1) ──< (N) assignments
+每个作业属于一个用户组
+groups (1) ──< (N) form_field_configs
+每组可独立配置表单字段
+song_mappings.qishui_song_id ──> revenue_rows (N)
+映射表是唯一桥接，platform_songs与revenue_rows无直接外键
+song_mappings → settlements.creator_id
+结算中的创作者来源于映射表
+revenue_rows (1) ──> (1) settlements
+一条导入行最多生成一条结算
+admin_roles (1) ──< (N) admin_users
+角色与管理员账号绑定
+platform_songs (1) ──< (N) distributions
+一首作品可在多个平台发行
+9.2 数据隔离原则
+创作者只可读取自身关联的 platform_songs、assignment_submissions、settlements 数据
+评审只可读取分配给自己（或全平台）的待评审队列，不可修改作品元数据
+平台管理员只可操作其角色权限树中 value=true 的功能模块
+操作日志对全平台管理员只读，不可删改
+archived（已归档）作品对创作者端仍可见（作品库"已入库"Tab 显示），但不出现在作品广场；收益结算不受归档影响；作品卡片上状态角标仍显示「已归档」，以与 reviewed 状态区分，不会被覆盖显示为「已入库」
+汽水歌曲ID等映射字段对创作者端完全不可见
+10. 性能优化规范
+10.1 数据库索引策略
+表
+索引
+说明
+platform_songs
+INDEX(user_id, status)
+INDEX(status, created_at)
+INDEX(assignment_id)
+UNIQUE(copyright_code)
+创作者作品库查询；评审队列查询；作业来源查询
+reviews
+INDEX(song_id, version)
+INDEX(reviewer_id, reviewed_at)
+按作品查评审历史；评审端绩效统计
+revenue_rows
+UNIQUE(qishui_song_id, period)
+INDEX(import_id)
+INDEX(match_status)
+核心去重约束；按批次查明细；状态筛选
+settlements
+INDEX(creator_id, settle_status)
+INDEX(qishui_song_id)
+创作者收益查询；映射回溯查询
+song_mappings
+UNIQUE(qishui_song_id)
+INDEX(status)
+INDEX(creator_id)
+主要查询路径；状态筛选；创作者关联查询
+assignment_submissions
+UNIQUE(assignment_id, user_id)
+INDEX(assignment_id, status)
+防重；作业提交列表
+operation_logs
+INDEX(created_at)
+INDEX(operator_id, created_at)
+时间范围查询；操作人历史查询（建议分区）
+10.2 缓存策略
+数据类型
+缓存Key
+TTL
+失效触发
+运营看板统计数据
+dashboard:stats
+5分钟
+作品状态变更/用户注册/导入完成
+角色权限树
+role:permissions:{role_id}
+1小时
+角色权限更新
+表单字段配置
+form_config:{group_id}
+10分钟
+表单配置保存
+课程列表
+courses:published
+30分钟
+CMS发布/下架
+分成比例规则
+commission_rules
+1小时
+系统设置更新
+用户session（管理员）
+admin_session:{token}
+8小时
+主动退出/密码重置
+用户session（创作者/评审）
+user_session:{token}
+24小时
+主动退出/账号禁用
+10.3 分页规范
+所有列表接口必须支持分页；默认 page_size=20，最大 page_size=100
+使用游标分页（cursor-based）用于日志、收益明细等大数据量场景，避免 OFFSET 性能退化
+普通列表使用 LIMIT/OFFSET 分页，单页超100条时强制启用游标分页
+前端表格默认展示10条/页，可切换为20/50条/页
+10.4 异步处理规范
+场景
+方案
+说明
+CSV导入解析
+MQ异步任务队列
+文件大时（>1000行）异步处理，前端轮询或WebSocket推送进度
+回溯生成结算
+MQ异步任务
+确认映射后异步执行，不阻塞操作响应
+批量下载打包
+Background Job
+后台打包生成ZIP，完成后推送下载链接，不超时
+操作日志写入
+异步写入（非关键路径）
+日志写入失败不影响主业务，独立重试队列
+发行状态对账同步
+定时任务 + 手动触发
+每月自动执行，也支持管理员手动触发
+统计数据预计算
+定时任务（每小时）
+预计算看板数据写入缓存，降低实时查询压力
+10.5 文件存储规范
+音频文件统一存储至对象存储（OSS/S3），平台仅存储URL
+上传前在前端校验：格式（WAV/MP3）+ 大小（≤50MB）+ 时长（≤10分钟），减少无效流量
+音频文件访问需鉴权（签名URL，有效期1小时），防止盗链
+头像图片限制：≤2MB，JPEG/PNG/WebP，自动压缩至500px×500px
+批量下载ZIP：服务端生成后存储至OSS，URL有效期24小时，24小时后自动清理
+10.6 API规范
+采用 RESTful 设计；管理端 API 前缀 /api/admin/v1，用户端 /api/v1
+所有接口返回统一结构：{ code, message, data, pagination }
+认证：JWT Token，Header: Authorization: Bearer <token>
+权限中间件：管理端接口统一校验 admin_users.role → admin_roles.permissions[action_key] = true
+接口响应时间SLA：普通查询 < 200ms；复杂统计 < 1s；CSV导入异步任务完成 < 30s（1000行内）
+限流：同一IP每分钟最多60次API调用；登录接口每IP每分钟最多10次
+附录 A：版权编号生成规则
+格式：AIMU-{YYYY}-{NNNNNN}
+AIMU：平台固定前缀（AI Music Union）
+YYYY：四位年份（如2026）
+NNNNNN：6位零填充序号，全平台全年唯一自增（如000001, 000002...999999）
+示例：AIMU-2026-000001
+自增规则：每年1月1日序号从000001重新开始（UNIQUE约束为 UNIQUE(YYYY, NNNNNN)）。
+附录 B：ISRC绑定流程
+管理员在「ISRC管理」查看待申报队列（status=ready_to_publish 且 isrc IS NULL）
+勾选作品，点击「提交申报」→ 生成申报单（含版权编号、表演者、词曲作者等信息）
+向ISRC申报机构提交申报（平台外部流程）
+收到ISRC码后，在平台上传回填Excel（格式：copyright_code → isrc 两列）
+系统批量更新 platform_songs.isrc，完成绑定
+绑定完成后，对应作品发行前校验自动通过ISRC项
+附录 C：权限Key命名规范
+权限Key格式：{portal}.{menu}.{action}
+示例Key
+含义
+student.songs.view
+创作者端 - 我的作品库 - 查看
+teacher.review.operate
+评审端 - 评审操作 - 操作
+admin.revenue.settle
+管理端 - 收益管理 - 结算
+admin.roles.manage
+管理端 - 角色管理 - 管理
+admin.admins.manage
+管理端 - 平台管理员 - 管理
+admin.songs.manage
+管理端 - 歌曲库管理 - 管理
+admin.logs.view
+管理端 - 操作日志 - 查看
+附录 D：状态枚举速查
+表
+字段
+枚举值
+platform_songs
+status
+pending_review → needs_revision → reviewed → ready_to_publish → published → archived
+platform_songs
+source
+upload / assignment
+users
+real_name_status
+unverified / pending / verified / rejected
+song_mappings
+status
+confirmed / suspect / pending / irrelevant
+song_mappings
+match_type
+auto_exact / auto_fuzzy / manual / none
+settlements
+settle_status
+pending / confirmed / exported / paid / exception
+distributions
+status
+pending / submitted / live / failed
+assignments
+status
+draft / active / closed
+revenue_rows
+match_status
+matched / suspect / unmatched / duplicate / irrelevant
+admin_roles
+is_builtin
+true（内置，不可删）/ false
+— 文档完 · AI音乐教学与版权代理平台 PRD v5.2 —

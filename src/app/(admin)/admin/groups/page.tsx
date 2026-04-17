@@ -1,0 +1,615 @@
+'use client'
+
+import { useState } from 'react'
+import { useConfirm } from '@/components/admin/confirm-dialog'
+import { PageHeader } from '@/components/admin/page-header'
+import { StatCard } from '@/components/admin/stat-card'
+import { DataTable, Column } from '@/components/admin/data-table'
+import { AdminModal } from '@/components/admin/admin-modal'
+import { useApi, apiCall } from '@/lib/use-api'
+
+// ── Types ────────────────────────────────────────────────────────
+
+interface Group {
+  id: number
+  name: string
+  description: string | null
+  inviteCode: string
+  inviteLink: string
+  memberCount: number
+  status: 'active' | 'paused'
+  createdAt: string
+}
+
+interface GroupDetail extends Group {
+  members: GroupMember[]
+}
+
+interface GroupMember {
+  id: number
+  name: string
+  phone: string
+  avatarUrl: string | null
+  realNameStatus: string
+  status: string
+  joinedAt: string
+}
+
+// ── Button helpers ───────────────────────────────────────────────
+
+const btnPrimary =
+  'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0'
+const btnGhost =
+  'bg-transparent text-[var(--text2)] border border-[var(--border)] px-4 py-2 rounded-lg text-sm font-medium cursor-pointer'
+const btnDanger =
+  'bg-gradient-to-r from-[#e53e3e] to-[#c53030] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
+const btnSuccess =
+  'bg-gradient-to-r from-[#16a34a] to-[#0694a2] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
+const btnSmall = 'text-[11px] px-2.5 py-1'
+
+const inputCls =
+  'w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]'
+const labelCls = 'block text-[13px] text-[var(--text2)] mb-1.5 font-medium'
+
+const cardCls =
+  'bg-white border border-[#e8edf5] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
+
+// ── Main component ───────────────────────────────────────────────
+
+export default function AdminGroupsPage() {
+  const confirm = useConfirm()
+  const [detail, setDetail] = useState<number | null>(null)
+  const [createModal, setCreateModal] = useState(false)
+  const [inviteModal, setInviteModal] = useState<Group | null>(null)
+  const [toast, setToast] = useState('')
+
+  const { data: groupsData, loading, refetch } = useApi<{ list: Group[]; total: number }>('/api/admin/groups?pageSize=100')
+  const groups = groupsData?.list ?? []
+
+  const { data: detailData, loading: detailLoading, refetch: refetchDetail } = useApi<GroupDetail>(
+    detail !== null ? `/api/admin/groups/${detail}` : null
+  )
+
+  function showToast(msg: string) {
+    setToast(msg)
+    setTimeout(() => setToast(''), 3000)
+  }
+
+  // ── Detail view ──────────────────────────────────────────────
+  if (detail !== null) {
+    if (detailLoading) {
+      return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>加载中...</div>
+    }
+
+    if (!detailData) {
+      return (
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>
+          用户组不存在
+          <br />
+          <button className={btnGhost} style={{ marginTop: 12 }} onClick={() => setDetail(null)}>
+            ← 返回列表
+          </button>
+        </div>
+      )
+    }
+
+    const g = detailData
+    const members = g.members ?? []
+
+    const memberColumns: Column<GroupMember>[] = [
+      {
+        key: 'avatarUrl',
+        title: '',
+        render: (v) => <span style={{ fontSize: 18 }}>{(v as string) || '👤'}</span>,
+      },
+      {
+        key: 'name',
+        title: '姓名',
+        render: (v) => <span style={{ fontWeight: 600 }}>{v as string}</span>,
+      },
+      {
+        key: 'realNameStatus',
+        title: '实名',
+        render: (v) => {
+          const m: Record<string, { l: string; c: string }> = {
+            verified: { l: '已认证', c: 'var(--green2)' },
+            pending: { l: '待审核', c: 'var(--orange)' },
+            rejected: { l: '已驳回', c: 'var(--red)' },
+          }
+          const s = m[v as string]
+          return s ? (
+            <span style={{ fontSize: 12, color: s.c }}>{s.l}</span>
+          ) : (
+            <span style={{ fontSize: 12, color: 'var(--text3)' }}>未认证</span>
+          )
+        },
+      },
+      { key: 'phone', title: '手机号' },
+      {
+        key: 'id',
+        title: '操作',
+        render: (_v, row) => {
+          const r = row as GroupMember
+          return (
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button
+                className={`${btnDanger} ${btnSmall}`}
+                onClick={async (e) => {
+                  e.stopPropagation()
+                  if (await confirm({ message: `确认将「${r.name}」移出该组？`, danger: true })) {
+                    const res = await apiCall(`/api/admin/groups/${detail}/members`, 'DELETE', { userId: r.id })
+                    if (res.ok) {
+                      showToast(`已将 ${r.name} 移出该组`)
+                      refetchDetail()
+                    } else {
+                      showToast(res.message || '操作失败')
+                    }
+                  }
+                }}
+              >
+                移出
+              </button>
+            </div>
+          )
+        },
+      },
+    ]
+
+    return (
+      <div>
+        {/* Toast */}
+        {toast && (
+          <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
+            {toast}
+          </div>
+        )}
+
+        <PageHeader
+          title={`用户组 · ${g.name}`}
+          actions={
+            <button className={btnGhost} onClick={() => setDetail(null)}>
+              ← 返回列表
+            </button>
+          }
+        />
+
+        {/* 2-column info grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+          {/* 组信息 */}
+          <div className={cardCls}>
+            <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>📋 组信息</h3>
+            {(
+              [
+                ['组名', g.name],
+                ['描述', g.description || '—'],
+                ['状态', g.status === 'active' ? '✅ 启用' : '⏸️ 暂停'],
+                ['创建时间', g.createdAt],
+                ['成员数', `${g.memberCount} 人`],
+              ] as [string, string][]
+            ).map(([k, v]) => (
+              <div
+                key={k}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '8px 12px',
+                  background: '#f0f4fb',
+                  borderRadius: 6,
+                  marginBottom: 6,
+                  fontSize: 13,
+                }}
+              >
+                <span style={{ color: 'var(--text3)' }}>{k}</span>
+                <span>{v}</span>
+              </div>
+            ))}
+            <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+              <button
+                className={btnGhost}
+                onClick={() => showToast('组信息已更新')}
+              >
+                ✏️ 编辑
+              </button>
+              <button
+                className={g.status === 'active' ? `${btnDanger} ${btnSmall}` : `${btnSuccess} ${btnSmall}`}
+                onClick={async () => {
+                  const newStatus = g.status === 'active' ? 'paused' : 'active'
+                  const res = await apiCall(`/api/admin/groups/${g.id}`, 'PUT', { status: newStatus })
+                  if (res.ok) {
+                    showToast(g.status === 'active' ? '已暂停该用户组' : '已启用该用户组')
+                    refetchDetail()
+                    refetch()
+                  } else {
+                    showToast(res.message || '操作失败')
+                  }
+                }}
+              >
+                {g.status === 'active' ? '⏸️ 暂停' : '▶️ 启用'}
+              </button>
+            </div>
+          </div>
+
+          {/* 专属邀请 */}
+          <div className={cardCls}>
+            <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>🔗 专属邀请</h3>
+            <div style={{ marginBottom: 12 }}>
+              <label className={labelCls}>邀请码</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  className={inputCls}
+                  style={{ fontFamily: 'monospace', fontSize: 18, fontWeight: 700, letterSpacing: 3, textAlign: 'center' }}
+                  readOnly
+                  value={g.inviteCode}
+                />
+                <button
+                  className={btnGhost}
+                  onClick={() => {
+                    navigator.clipboard?.writeText(g.inviteCode)
+                    showToast('✅ 邀请码已复制到剪贴板')
+                  }}
+                >
+                  📋 复制
+                </button>
+              </div>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label className={labelCls}>注册链接</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input className={inputCls} readOnly value={g.inviteLink} />
+                <button
+                  className={btnGhost}
+                  onClick={() => {
+                    navigator.clipboard?.writeText(g.inviteLink)
+                    showToast('✅ 注册链接已复制到剪贴板')
+                  }}
+                >
+                  📋 复制
+                </button>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                className={`${btnGhost} ${btnSmall}`}
+                onClick={() => showToast('✅ 已重新生成邀请码')}
+              >
+                🔄 重新生成邀请码
+              </button>
+              <button
+                className={`${btnGhost} ${btnSmall}`}
+                onClick={() => showToast('✅ 已重新生成链接')}
+              >
+                🔄 重新生成链接
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 组成员 */}
+        <div className={cardCls}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 600 }}>👥 组成员（{members.length}人）</h3>
+            <button
+              className={btnGhost}
+              onClick={() => showToast('已复制邀请链接，可发送给新成员')}
+            >
+              + 邀请成员
+            </button>
+          </div>
+          {members.length > 0 ? (
+            <DataTable
+              columns={memberColumns as unknown as Column<Record<string, unknown>>[]}
+              data={members as unknown as Record<string, unknown>[]}
+              rowKey={(r) => (r as unknown as GroupMember).id}
+            />
+          ) : (
+            <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text3)', fontSize: 14 }}>
+              📭 该组暂无成员
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // ── List view ────────────────────────────────────────────────
+
+  if (loading) {
+    return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>加载中...</div>
+  }
+
+  const activeCount = groups.filter((g) => g.status === 'active').length
+  const pausedCount = groups.filter((g) => g.status === 'paused').length
+
+  const listColumns: Column<Group>[] = [
+    {
+      key: 'name',
+      title: '组名',
+      render: (v, row) => (
+        <div>
+          <span style={{ fontWeight: 600 }}>{v as string}</span>
+          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+            {(row as Group).description}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'inviteCode',
+      title: '邀请码',
+      render: (v) => (
+        <span className="font-mono font-semibold text-[var(--accent2)] bg-[rgba(108,92,231,0.1)] px-2 py-0.5 rounded">
+          {v as string}
+        </span>
+      ),
+    },
+    { key: 'memberCount', title: '成员数' },
+    {
+      key: 'status',
+      title: '状态',
+      render: (v) =>
+        v === 'active' ? (
+          <span style={{ color: 'var(--green2)', fontSize: 12 }}>✅ 活跃</span>
+        ) : (
+          <span style={{ color: 'var(--orange)', fontSize: 12 }}>⏸️ 暂停</span>
+        ),
+    },
+    { key: 'createdAt', title: '创建时间' },
+    {
+      key: 'id',
+      title: '操作',
+      render: (v, row) => (
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button
+            className={`${btnGhost} ${btnSmall}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              setInviteModal(row as Group)
+            }}
+          >
+            🔗 邀请码
+          </button>
+          <button
+            className={`${btnGhost} ${btnSmall}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              setDetail(v as number)
+            }}
+          >
+            详情 →
+          </button>
+        </div>
+      ),
+    },
+  ]
+
+  return (
+    <div>
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
+          {toast}
+        </div>
+      )}
+
+      <PageHeader
+        title="用户组管理"
+        subtitle={`共 ${groups.length} 个用户组 · 系统管理员可创建和管理`}
+        actions={
+          <button className={btnPrimary} onClick={() => setCreateModal(true)}>
+            + 创建用户组
+          </button>
+        }
+      />
+
+      {/* StatCards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 24 }}>
+        <StatCard
+          icon="🏘️"
+          label="总用户组"
+          val={groups.length}
+          color="#6c5ce7"
+          iconBg="rgba(108,92,231,0.1)"
+        />
+        <StatCard
+          icon="✅"
+          label="活跃组"
+          val={activeCount}
+          color="#16a34a"
+          iconBg="rgba(22,163,74,0.1)"
+        />
+        <StatCard
+          icon="⏸️"
+          label="暂停组"
+          val={pausedCount}
+          color="#f59e0b"
+          iconBg="rgba(245,158,11,0.1)"
+        />
+      </div>
+
+      {/* DataTable card */}
+      <div className={cardCls}>
+        <DataTable
+          columns={listColumns as unknown as Column<Record<string, unknown>>[]}
+          data={groups as unknown as Record<string, unknown>[]}
+          rowKey={(r) => (r as unknown as Group).id}
+          onRowClick={(row) => setDetail((row as unknown as Group).id)}
+        />
+      </div>
+
+      {/* 创建用户组 Modal */}
+      <AdminModal
+        open={createModal}
+        onClose={() => setCreateModal(false)}
+        title="创建用户组"
+      >
+        <CreateGroupForm
+          onSubmit={async (data) => {
+            const res = await apiCall('/api/admin/groups', 'POST', data)
+            if (res.ok) {
+              setCreateModal(false)
+              showToast('✅ 用户组创建成功！邀请码已自动生成')
+              refetch()
+            } else {
+              showToast(res.message || '创建失败')
+            }
+          }}
+        />
+      </AdminModal>
+
+      {/* 邀请码 Modal */}
+      <AdminModal
+        open={!!inviteModal}
+        onClose={() => setInviteModal(null)}
+        title={`邀请码 · ${inviteModal?.name ?? ''}`}
+      >
+        {inviteModal && (
+          <InviteCodePanel
+            group={inviteModal}
+            onClose={() => setInviteModal(null)}
+            showToast={showToast}
+          />
+        )}
+      </AdminModal>
+    </div>
+  )
+}
+
+// ── Sub-components ───────────────────────────────────────────────
+
+function CreateGroupForm({ onSubmit }: { onSubmit: (data: { name: string; description?: string; inviteCode?: string }) => void }) {
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
+
+  const inputCls =
+    'w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]'
+  const labelCls = 'block text-[13px] text-[var(--text2)] mb-1.5 font-medium'
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div>
+        <label className={labelCls}>组名 *</label>
+        <input className={inputCls} placeholder="如：2026秋季创作班" value={name} onChange={(e) => setName(e.target.value)} />
+      </div>
+      <div>
+        <label className={labelCls}>描述</label>
+        <textarea
+          className={inputCls}
+          style={{ height: 60, resize: 'vertical' }}
+          placeholder="简单描述该用户组的用途"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </div>
+      <div>
+        <label className={labelCls}>自定义邀请码（留空自动生成）</label>
+        <input className={inputCls} placeholder="如：FALL2026（仅英文数字）" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} />
+      </div>
+      <div
+        style={{
+          padding: 12,
+          background: 'rgba(108,92,231,.08)',
+          borderRadius: 8,
+          fontSize: 12,
+          color: 'var(--accent2)',
+          lineHeight: 1.6,
+        }}
+      >
+        💡 创建后系统将自动生成专属邀请码和注册链接。持有邀请码的用户可通过注册页面加入该组。
+        <br />
+        系统暂不开放公开注册，所有用户必须通过邀请码注册。
+      </div>
+      <button
+        className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-[0_2px_8px_rgba(99,102,241,0.25)] cursor-pointer border-0 w-full flex justify-center"
+        onClick={() => onSubmit({ name, description: description || undefined, inviteCode: inviteCode || undefined })}
+      >
+        创建用户组
+      </button>
+    </div>
+  )
+}
+
+function InviteCodePanel({
+  group,
+  onClose,
+  showToast,
+}: {
+  group: Group
+  onClose: () => void
+  showToast: (msg: string) => void
+}) {
+  const inputCls =
+    'w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[#e8edf5] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]'
+  const labelCls = 'block text-[13px] text-[var(--text2)] mb-1.5 font-medium'
+  const btnGhost =
+    'bg-transparent text-[var(--text2)] border border-[var(--border)] px-4 py-2 rounded-lg text-sm font-medium cursor-pointer'
+  const btnDanger =
+    'bg-gradient-to-r from-[#e53e3e] to-[#c53030] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
+  const btnSuccess =
+    'bg-gradient-to-r from-[#16a34a] to-[#0694a2] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Large code display */}
+      <div
+        style={{
+          textAlign: 'center',
+          padding: 24,
+          background: '#f0f4fb',
+          borderRadius: 12,
+        }}
+      >
+        <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 8 }}>邀请码</div>
+        <div
+          style={{
+            fontSize: 32,
+            fontWeight: 700,
+            fontFamily: 'monospace',
+            letterSpacing: 4,
+            color: 'var(--accent2)',
+          }}
+        >
+          {group.inviteCode}
+        </div>
+      </div>
+
+      {/* Registration link */}
+      <div>
+        <label className={labelCls}>注册链接</label>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input className={inputCls} readOnly value={group.inviteLink} />
+          <button
+            className={btnGhost}
+            onClick={() => {
+              navigator.clipboard?.writeText(group.inviteLink)
+              showToast('✅ 已复制')
+            }}
+          >
+            📋
+          </button>
+        </div>
+      </div>
+
+      {/* Action buttons */}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button
+          className={btnGhost}
+          style={{ flex: 1, justifyContent: 'center', display: 'flex' }}
+          onClick={() => showToast('✅ 已重新生成邀请码')}
+        >
+          🔄 重新生成
+        </button>
+        <button
+          className={group.status === 'active' ? btnDanger : btnSuccess}
+          style={{ flex: 1, justifyContent: 'center', display: 'flex' }}
+          onClick={() => {
+            onClose()
+            showToast(group.status === 'active' ? '已停用邀请码' : '已启用邀请码')
+          }}
+        >
+          {group.status === 'active' ? '⏸️ 停用邀请码' : '▶️ 启用邀请码'}
+        </button>
+      </div>
+    </div>
+  )
+}
