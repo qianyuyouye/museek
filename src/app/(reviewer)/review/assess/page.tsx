@@ -149,6 +149,14 @@ export default function ReviewAssessPage() {
   const [recommendation, setRecommendation] = useState('strongly_recommend')
   const [submitting, setSubmitting] = useState(false)
   const playerRef = useRef<AudioPlayerHandle>(null)
+  const startAtRef = useRef<number | null>(null)
+
+  // 歌曲加载完成后开始计时；同一条歌只记一次
+  useEffect(() => {
+    if (song?.id && startAtRef.current === null) {
+      startAtRef.current = Date.now()
+    }
+  }, [song?.id])
 
   // ── Loading ───────────────────────────────────────────────
   if (loading) {
@@ -216,6 +224,10 @@ export default function ReviewAssessPage() {
         ? { quick: quickTags, marks }
         : undefined
 
+    const durationSeconds = startAtRef.current
+      ? Math.max(0, Math.floor((Date.now() - startAtRef.current) / 1000))
+      : undefined
+
     setSubmitting(true)
     const res = await apiCall('/api/review/submit', 'POST', {
       songId: song.id,
@@ -225,6 +237,7 @@ export default function ReviewAssessPage() {
       tags: tagsPayload,
       comment,
       recommendation,
+      durationSeconds,
     })
     setSubmitting(false)
 

@@ -8,7 +8,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   if (!userId || portal !== 'reviewer') return err('无权限', 403)
 
   const body = await request.json()
-  const { songId, technique, creativity, commercial, tags, comment, recommendation } = body
+  const { songId, technique, creativity, commercial, tags, comment, recommendation, durationSeconds } = body
 
   if (!songId || technique == null || creativity == null || commercial == null || !comment || !recommendation) {
     return err('缺少必填字段')
@@ -17,6 +17,13 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   // 校验分数范围（必须为 0-100 的整数）
   if ([technique, creativity, commercial].some((v) => typeof v !== 'number' || !Number.isInteger(v) || v < 0 || v > 100)) {
     return err('评分必须为 0-100 的整数')
+  }
+
+  // 评审耗时（秒）：0 ~ 24h 之间，非法值直接忽略
+  let durationVal: number | null = null
+  if (typeof durationSeconds === 'number' && Number.isFinite(durationSeconds)) {
+    const v = Math.floor(durationSeconds)
+    if (v >= 0 && v <= 86400) durationVal = v
   }
 
   const validRecommendations = ['strongly_recommend', 'recommend_after_revision', 'not_recommend']
@@ -65,6 +72,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
           tags: tags ?? undefined,
           comment,
           recommendation,
+          durationSeconds: durationVal,
         },
       })
 

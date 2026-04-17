@@ -13,7 +13,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
       where,
       _count: true,
       _sum: { durationSeconds: true },
-      _avg: { totalScore: true },
+      _avg: { totalScore: true, durationSeconds: true },
     }),
     prisma.review.findMany({
       where,
@@ -40,6 +40,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
   const stats = {
     totalCount,
     totalDuration: aggregate._sum.durationSeconds ?? 0,
+    avgDuration: aggregate._avg.durationSeconds ? Math.round(aggregate._avg.durationSeconds) : 0,
     avgScore: aggregate._avg.totalScore ? Math.round(aggregate._avg.totalScore * 10) / 10 : 0,
     recommendRate,
   }
