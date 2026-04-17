@@ -136,7 +136,7 @@
 | .5 合同台账 | `admin/contracts` | ✅ | 本次 B1 补详情 Modal |
 | .6 歌曲库管理 | `admin/songs` | ✅ | 本次 Phase A + B1 修复 |
 | .7 批量下载 | `admin/batch-download` | ✅ | 本次 B5 JSZip 音频+封面 |
-| .7 下载前校验三项 | 同上 | 🔴 | **PRD §7.3.7 要求协议+实名+ISRC 写入报告红标，代码未校验** |
+| .7 下载前校验三项 | 同上 | ✅ | P2-3 已修：下载前 Modal 预览不合规项，ZIP 内生成 validation-report.txt；操作日志记录 batch_download_songs |
 | .8 ISRC 管理 | `admin/isrc` | ✅ | 本次 Phase A + B5/B7 |
 | .9 发行渠道 | `admin/distributions` | ✅ | 本次 B2 编辑 Modal |
 | .10 发行状态确认 | `admin/publish-confirm` | 🟡 | 本次 Phase A 修 action；`sync` 外部对账数据源未接入 |
@@ -255,7 +255,7 @@
 12. ✅ **创作者头像上传**（P1-7）：`POST /api/profile/avatar` + upload token 直传
 
 ### 🟡 P2 - 遗漏或硬编码
-13. **批量下载三条件校验报告**：下载按钮对选中集合校验，报告文件标红缺失项
+13. ✅ **批量下载三条件校验报告**（P2-3）：预览 Modal + ZIP 内 validation-report.txt + batch_download_songs 日志
 14. **OSS 生产签名 URL**：用阿里云 SDK `ali-oss`
 15. ✅ **operation_logs 写入覆盖**（P2-2）：删除/禁用/结算/发行/角色变更 均调 `logAdminAction`
 16. ✅ **学习进度表 LearningRecord**（P2-1）：schema + /api/learning CRUD + achievements + creator 两页接入

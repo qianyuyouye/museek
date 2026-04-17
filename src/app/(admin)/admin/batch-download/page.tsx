@@ -3,7 +3,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import JSZip from 'jszip'
 import { PageHeader } from '@/components/admin/page-header'
-import { useApi } from '@/lib/use-api'
+import { useApi, apiCall } from '@/lib/use-api'
 import { SONG_STATUS_MAP } from '@/lib/constants'
 import { pageWrap, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'
 
@@ -23,6 +23,56 @@ interface SongItem {
   creatorName?: string
   audioUrl?: string | null
   coverUrl?: string | null
+  agencyContract?: boolean
+  realNameStatus?: 'unverified' | 'pending' | 'verified' | 'rejected'
+}
+
+interface ValidationIssue {
+  song: SongItem
+  missingAgency: boolean
+  missingRealName: boolean
+  missingIsrc: boolean
+}
+
+function validateSong(s: SongItem): ValidationIssue {
+  return {
+    song: s,
+    missingAgency: s.agencyContract !== true,
+    missingRealName: s.realNameStatus !== 'verified',
+    missingIsrc: !s.isrc || !s.isrc.trim(),
+  }
+}
+
+function hasAnyIssue(v: ValidationIssue) {
+  return v.missingAgency || v.missingRealName || v.missingIsrc
+}
+
+function buildValidationReport(issues: ValidationIssue[]): string {
+  const passed = issues.filter(v => !hasAnyIssue(v))
+  const failed = issues.filter(v => hasAnyIssue(v))
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const ts = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`
+
+  const lines: string[] = []
+  lines.push('Museek 批量下载校验报告')
+  lines.push(`生成时间：${ts}`)
+  lines.push('')
+  lines.push(`==== 通过 (${passed.length}) ====`)
+  for (const v of passed) {
+    const creator = v.song.creatorName ?? `用户${v.song.userId}`
+    lines.push(`[${v.song.copyrightCode}] ${v.song.title} — ${creator}`)
+  }
+  lines.push('')
+  lines.push(`==== 不合规 (${failed.length}) ====`)
+  for (const v of failed) {
+    const creator = v.song.creatorName ?? `用户${v.song.userId}`
+    lines.push(`[${v.song.copyrightCode}] ${v.song.title} — ${creator}`)
+    if (v.missingAgency) lines.push('  ❌ 未签代理协议')
+    if (v.missingRealName) lines.push('  ❌ 未实名认证')
+    if (v.missingIsrc) lines.push('  ⚠️ ISRC 未申报')
+  }
+  return lines.join('\n') + '\n'
 }
 
 // ── Button / style helpers ──────────────────────────────────────
@@ -76,6 +126,8 @@ export default function BatchDownloadPage() {
   // ZIP packing state
   const [zipping, setZipping] = useState(false)
   const [zipProgress, setZipProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 })
+  // 下载前校验预览
+  const [previewIssues, setPreviewIssues] = useState<ValidationIssue[] | null>(null)
 
   async function packAndDownload(selected: SongItem[]) {
     setZipping(true)
@@ -84,12 +136,19 @@ export default function BatchDownloadPage() {
     const safe = (s: string) => s.replace(/[\\/:*?"<>|]/g, '_').trim()
     const errors: string[] = []
 
+    // 三条件校验报告（签约 + 实名 + ISRC）
+    const issues = selected.map(validateSong)
+    const unverifiedCount = issues.filter(hasAnyIssue).length
+    zip.file('validation-report.txt', buildValidationReport(issues))
+
     // 元数据 JSON 一并打包
     zip.file('metadata.json', JSON.stringify(
       selected.map((s) => ({
         id: s.id, title: s.title, creator: s.creatorName ?? `用户${s.userId}`,
         genre: s.genre, bpm: s.bpm, aiTool: s.aiTool, score: s.score,
         copyrightCode: s.copyrightCode, isrc: s.isrc, status: s.status,
+        agencyContract: s.agencyContract ?? false,
+        realNameStatus: s.realNameStatus ?? 'unverified',
       })),
       null, 2,
     ))
@@ -133,6 +192,17 @@ export default function BatchDownloadPage() {
       a.click()
       URL.revokeObjectURL(url)
       showToast(`✅ 打包完成 · 成功 ${selected.length - errors.length} · 失败 ${errors.length}`)
+      // 记录操作日志
+      apiCall('/api/admin/logs/record', 'POST', {
+        action: 'batch_download_songs',
+        targetType: 'platform_song',
+        detail: {
+          count: selected.length,
+          unverifiedCount,
+          downloadErrors: errors.length,
+          songIds: selected.map(s => s.id),
+        },
+      }).catch(() => {})
     } catch {
       showToast('打包失败，文件可能过大')
     } finally {
@@ -355,19 +425,32 @@ export default function BatchDownloadPage() {
           <button
             className={`${btnPrimary} ${btnSmall}`}
             disabled={zipping}
-            onClick={async () => {
+            onClick={() => {
               if (selectedIds.size === 0) {
                 showToast('请先选择歌曲')
                 return
               }
               const selected = allSongs.filter((s) => selectedIds.has(s.id))
-              await packAndDownload(selected)
+              setPreviewIssues(selected.map(validateSong))
             }}
           >
             {zipping ? `📦 打包中 ${zipProgress.current}/${zipProgress.total}` : `📦 批量打包${selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}`}
           </button>
         </div>
       </div>
+
+      {/* 下载前校验预览 Modal */}
+      {previewIssues && (
+        <ValidationPreviewModal
+          issues={previewIssues}
+          onCancel={() => setPreviewIssues(null)}
+          onConfirm={async () => {
+            const selected = previewIssues.map(v => v.song)
+            setPreviewIssues(null)
+            await packAndDownload(selected)
+          }}
+        />
+      )}
 
       {/* Table */}
       <div className={cardCls}>
@@ -419,6 +502,96 @@ export default function BatchDownloadPage() {
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Validation Preview Modal ────────────────────────────────────
+
+function ValidationPreviewModal({
+  issues,
+  onCancel,
+  onConfirm,
+}: {
+  issues: ValidationIssue[]
+  onCancel: () => void
+  onConfirm: () => void
+}) {
+  const passed = issues.filter(v => !hasAnyIssue(v))
+  const failed = issues.filter(v => hasAnyIssue(v))
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-[2px]"
+      onClick={onCancel}
+    >
+      <div
+        className="bg-white rounded-xl shadow-2xl w-[640px] max-h-[80vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-5 border-b border-[var(--border)]">
+          <h2 className="text-lg font-semibold text-[var(--text)]">下载前校验预览</h2>
+          <p className="mt-1 text-xs text-[var(--text3)]">
+            共 {issues.length} 首 · <span className="text-[var(--green2)] font-semibold">通过 {passed.length}</span>
+            {failed.length > 0 && (
+              <> · <span className="text-[var(--red)] font-semibold">不合规 {failed.length}</span></>
+            )}
+          </p>
+          {failed.length > 0 && (
+            <p className="mt-2 text-xs text-[var(--orange)]">
+              ⚠️ 继续下载时，不合规项仍会入包，但 ZIP 内 `validation-report.txt` 会标红具体缺失项。
+            </p>
+          )}
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          {failed.length > 0 && (
+            <div>
+              <h3 className="text-xs font-semibold text-[var(--red)] mb-2">不合规列表</h3>
+              <div className="space-y-2">
+                {failed.map((v) => (
+                  <div key={v.song.id} className="p-2.5 rounded-lg bg-[#fef2f2] border border-[#fecaca]">
+                    <div className="text-sm font-medium text-[var(--text)]">
+                      [{v.song.copyrightCode}] {v.song.title}
+                    </div>
+                    <div className="text-xs text-[var(--text3)] mt-0.5">
+                      {v.song.creatorName ?? `用户${v.song.userId}`}
+                    </div>
+                    <div className="mt-1 flex flex-wrap gap-2 text-xs">
+                      {v.missingAgency && <span className="px-1.5 py-0.5 rounded bg-[var(--red)] text-white">未签代理协议</span>}
+                      {v.missingRealName && <span className="px-1.5 py-0.5 rounded bg-[var(--red)] text-white">未实名认证</span>}
+                      {v.missingIsrc && <span className="px-1.5 py-0.5 rounded bg-[var(--orange)] text-white">ISRC 未申报</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {passed.length > 0 && (
+            <div>
+              <h3 className="text-xs font-semibold text-[var(--green2)] mb-2">通过列表</h3>
+              <div className="space-y-1 text-xs text-[var(--text2)]">
+                {passed.slice(0, 50).map((v) => (
+                  <div key={v.song.id}>
+                    [{v.song.copyrightCode}] {v.song.title} — {v.song.creatorName ?? `用户${v.song.userId}`}
+                  </div>
+                ))}
+                {passed.length > 50 && (
+                  <div className="text-[var(--text3)]">……还有 {passed.length - 50} 首（完整清单见 ZIP 内报告）</div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="p-4 border-t border-[var(--border)] flex justify-end gap-2">
+          <button className={`${btnGhost} ${btnSmall}`} onClick={onCancel}>取消</button>
+          <button className={`${btnPrimary} ${btnSmall}`} onClick={onConfirm}>
+            继续下载
+          </button>
         </div>
       </div>
     </div>
