@@ -43,3 +43,8 @@ next-env.d.ts
 
 /src/generated/prisma
 README.zip
+
+# Claude Code 本地设置（用户个人权限/偏好，不入版本库）
+/.claude/settings.local.json
+# Playwright MCP 运行缓存
+/.playwright-mcp/
