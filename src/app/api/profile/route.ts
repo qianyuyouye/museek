@@ -9,7 +9,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
   if (portal === 'admin') {
     const admin = await prisma.adminUser.findUnique({
       where: { id: userId },
-      include: { role: { select: { id: true, name: true } } },
+      include: { role: { select: { id: true, name: true, isBuiltin: true, permissions: true } } },
     })
     if (!admin) return err('用户不存在', 404)
 
@@ -23,7 +23,13 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
       lastLoginAt: admin.lastLoginAt,
       lastLoginIp: admin.lastLoginIp,
       createdAt: admin.createdAt,
-      role: admin.role,
+      role: {
+        id: admin.role.id,
+        name: admin.role.name,
+        isBuiltin: admin.role.isBuiltin,
+      },
+      permissions: admin.role.permissions ?? {},
+      isSuperAdmin: admin.role.isBuiltin,
     })
   }
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from './prisma'
 
 /** 从 middleware 注入的 header 获取当前用户信息 */
 export function getCurrentUser(request: NextRequest) {
@@ -15,6 +16,48 @@ export function requireAdmin(request: NextRequest) {
   const { userId, portal } = getCurrentUser(request)
   if (!userId || portal !== 'admin') {
     return { error: NextResponse.json({ code: 403, message: '无权限' }, { status: 403 }) }
+  }
+  return { userId, portal }
+}
+
+/**
+ * 按 URL 与 HTTP method 推断权限 key。
+ * 约定 /api/admin/{module}/... → admin.{module}.{view|operate|manage}
+ * GET → view；DELETE → manage；其他写操作 → operate
+ */
+function inferPermissionKey(request: NextRequest): string {
+  const path = request.nextUrl.pathname
+  const method = request.method.toUpperCase()
+  const m = path.match(/^\/api\/admin\/([^\/]+)/)
+  if (!m) return 'admin.unknown.view'
+  const moduleName = m[1]
+  const action = method === 'GET' ? 'view' : method === 'DELETE' ? 'manage' : 'operate'
+  return `admin.${moduleName}.${action}`
+}
+
+/**
+ * 管理端权限粒度鉴权：portal='admin' + role.permissions[key]=true
+ * 内置角色（is_builtin=true，即超级管理员）自动放行。
+ * 权限 key 格式：{portal}.{menu}.{action}，如 admin.revenue.settle
+ * key 省略时按 URL + HTTP method 自动推断。
+ */
+export async function requirePermission(request: NextRequest, key?: string) {
+  const { userId, portal } = getCurrentUser(request)
+  if (!userId || portal !== 'admin') {
+    return { error: NextResponse.json({ code: 403, message: '无权限' }, { status: 403 }) }
+  }
+  const admin = await prisma.adminUser.findUnique({
+    where: { id: userId },
+    include: { role: { select: { isBuiltin: true, permissions: true } } },
+  })
+  if (!admin || !admin.status) {
+    return { error: NextResponse.json({ code: 403, message: '账号已禁用' }, { status: 403 }) }
+  }
+  if (admin.role.isBuiltin) return { userId, portal }
+  const resolved = key ?? inferPermissionKey(request)
+  const perms = (admin.role.permissions ?? {}) as Record<string, boolean>
+  if (perms[resolved] !== true) {
+    return { error: NextResponse.json({ code: 403, message: `无权限：${resolved}` }, { status: 403 }) }
   }
   return { userId, portal }
 }

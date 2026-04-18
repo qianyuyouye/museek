@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin, ok, parsePagination, safeHandler} from '@/lib/api-utils'
+import { requirePermission, ok, parsePagination, safeHandler} from '@/lib/api-utils'
 import { Prisma } from '@prisma/client'
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
-  const auth = requireAdmin(request)
+  const auth = await requirePermission(request)
   if ('error' in auth) return auth.error
 
   const { searchParams } = request.nextUrl

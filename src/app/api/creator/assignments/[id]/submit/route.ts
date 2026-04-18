@@ -44,12 +44,60 @@ export const POST = safeHandler(async function POST(
   const existing = await prisma.assignmentSubmission.findUnique({
     where: { assignmentId_userId: { assignmentId, userId } },
   })
-  if (existing) return err('不允许重复提交')
+  // 仅 needs_revision 状态允许重新提交（version++，保留旧 reviews）
+  // 其余已提交状态一律阻断
+  if (existing && existing.status !== 'needs_revision') {
+    return err('不允许重复提交')
+  }
 
   const body = await request.json()
   const { title, aiTools, performer, lyricist, composer, lyrics, styleDesc, genre, bpm, albumName, albumArtist } = body
 
   if (!title) return err('标题不能为空')
+
+  // 重新提交分支：复用旧 platform_song（version+1，清空评分/评语），更新 submission
+  if (existing && existing.platformSongId) {
+    const result = await prisma.$transaction(async (tx) => {
+      const updatedSong = await tx.platformSong.update({
+        where: { id: existing.platformSongId! },
+        data: {
+          title,
+          aiTools: aiTools ?? undefined,
+          performer,
+          lyricist,
+          composer,
+          lyrics,
+          styleDesc,
+          genre,
+          bpm: bpm ? parseInt(bpm, 10) : undefined,
+          albumName,
+          albumArtist,
+          status: 'pending_review',
+          score: null,
+          reviewComment: null,
+          version: { increment: 1 },
+        },
+      })
+      const updatedSubmission = await tx.assignmentSubmission.update({
+        where: { id: existing.id },
+        data: {
+          status: 'pending_review',
+          submittedAt: new Date(),
+          score: null,
+          version: { increment: 1 },
+        },
+      })
+      return { song: updatedSong, submission: updatedSubmission }
+    })
+
+    return ok({
+      songId: result.song.id,
+      copyrightCode: result.song.copyrightCode,
+      submissionId: result.submission.id,
+      version: result.song.version,
+      resubmitted: true,
+    })
+  }
 
   const copyrightCode = await generateCopyrightCode()
 

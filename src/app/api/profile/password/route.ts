@@ -11,7 +11,10 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   const { oldPassword, newPassword } = body as { oldPassword: string; newPassword: string }
 
   if (!oldPassword || !newPassword) return err('请填写旧密码和新密码')
-  if (newPassword.length < 8) return err('新密码长度不能少于8位')
+  if (newPassword.length < 8) return err('新密码长度不能少于 8 位')
+  if (!/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) {
+    return err('新密码必须同时包含字母与数字')
+  }
 
   if (portal === 'admin') {
     const admin = await prisma.adminUser.findUnique({

@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
+import { requirePermission, ok, err, safeHandler} from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
 import { DistributionStatus } from '@prisma/client'
 
@@ -11,7 +11,7 @@ export const GET = safeHandler(async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ songId: string }> },
 ) {
-  const auth = requireAdmin(request)
+  const auth = await requirePermission(request)
   if ('error' in auth) return auth.error
 
   const { songId } = await params
@@ -30,7 +30,7 @@ export const POST = safeHandler(async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ songId: string }> },
 ) {
-  const auth = requireAdmin(request)
+  const auth = await requirePermission(request)
   if ('error' in auth) return auth.error
 
   const { songId } = await params

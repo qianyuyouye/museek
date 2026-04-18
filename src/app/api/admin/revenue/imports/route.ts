@@ -1,13 +1,13 @@
 import { NextRequest } from 'next/server'
 import { Prisma, RevenuePlatform } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin, ok, err, parsePagination, safeHandler } from '@/lib/api-utils'
+import { requirePermission, ok, err, parsePagination, safeHandler } from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
 import { parseCSV } from '@/lib/csv'
 import { loadRevenueRules, resolveCommissionRatio } from '@/lib/commission'
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
-  const auth = requireAdmin(request)
+  const auth = await requirePermission(request)
   if ('error' in auth) return auth.error
 
   const { searchParams } = request.nextUrl
@@ -83,9 +83,11 @@ function parseQishuiCsv(text: string): { rows: ParsedRow[]; errors: string[] } {
     // 保留 CSV 原始起止日期（如 "2026/02/01 - 2026/02/28"），避免丢失天级粒度
     const period = dateRange
 
-    const d = parseFloat(douyin) || 0
-    const q = parseFloat(qishui) || 0
-    const t = parseFloat(total) || d + q
+    // 去除千分位分隔符（Excel 导出常带逗号 "1,234.56"）与两端引号
+    const toNum = (s: string) => parseFloat(s.replace(/[,"']/g, '')) || 0
+    const d = toNum(douyin)
+    const q = toNum(qishui)
+    const t = toNum(total) || d + q
 
     rows.push({ qishuiSongId, songName, period, douyinRevenue: d, qishuiRevenue: q, totalRevenue: t })
   }
@@ -93,7 +95,7 @@ function parseQishuiCsv(text: string): { rows: ParsedRow[]; errors: string[] } {
 }
 
 export const POST = safeHandler(async function POST(request: NextRequest) {
-  const auth = requireAdmin(request)
+  const auth = await requirePermission(request)
   if ('error' in auth) return auth.error
 
   const contentType = request.headers.get('content-type') ?? ''
@@ -234,18 +236,23 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   let matched = 0
   let suspect = 0
   let unmatched = 0
+  let irrelevant = 0
 
   const rowsToCreate = parsed.map((p) => {
     const mapping = mappingMap.get(p.qishuiSongId)
-    let matchStatus: 'matched' | 'suspect' | 'unmatched'
+    let matchStatus: 'matched' | 'suspect' | 'unmatched' | 'irrelevant'
     if (mapping && mapping.status === 'confirmed') {
       matchStatus = 'matched'
       matched++
     } else if (mapping && mapping.status === 'suspect') {
       matchStatus = 'suspect'
       suspect++
+    } else if (mapping && mapping.status === 'irrelevant') {
+      // 已标记无关：自动跳过，不算入未匹配队列（PRD §6.4）
+      matchStatus = 'irrelevant'
+      irrelevant++
     } else {
-      // 无映射，或 pending / irrelevant 映射 → 仍算 unmatched（但保留 mappingId 便于审计）
+      // 无映射 或 pending 映射 → 未匹配
       matchStatus = 'unmatched'
       unmatched++
     }

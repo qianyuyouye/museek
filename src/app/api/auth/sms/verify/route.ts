@@ -22,7 +22,11 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
 
   if (!user) {
     if (!password || password.length < 8) {
-      return NextResponse.json({ code: 400, message: '密码至少8位' }, { status: 400 })
+      return NextResponse.json({ code: 400, message: '密码至少 8 位' }, { status: 400 })
+    }
+    // 强度：必须同时包含字母与数字
+    if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      return NextResponse.json({ code: 400, message: '密码必须同时包含字母与数字' }, { status: 400 })
     }
 
     if (!inviteCode) {

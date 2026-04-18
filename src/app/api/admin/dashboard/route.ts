@@ -1,9 +1,9 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin, ok, safeHandler} from '@/lib/api-utils'
+import { requirePermission, ok, safeHandler} from '@/lib/api-utils'
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
-  const auth = requireAdmin(request)
+  const auth = await requirePermission(request)
   if ('error' in auth) return auth.error
 
   const [

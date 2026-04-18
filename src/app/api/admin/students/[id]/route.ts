@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
+import { requirePermission, ok, err, safeHandler} from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
 import { decryptIdCard } from '@/lib/encrypt'
 
@@ -26,7 +26,7 @@ function revealIdCard(stored: string | null): string | null {
 type RouteContext = { params: Promise<{ id: string }> }
 
 export const GET = safeHandler(async function GET(request: NextRequest, context: RouteContext) {
-  const auth = requireAdmin(request)
+  const auth = await requirePermission(request)
   if ('error' in auth) return auth.error
 
   const { id } = await context.params
@@ -74,7 +74,7 @@ export const GET = safeHandler(async function GET(request: NextRequest, context:
 })
 
 export const PUT = safeHandler(async function PUT(request: NextRequest, context: RouteContext) {
-  const auth = requireAdmin(request)
+  const auth = await requirePermission(request)
   if ('error' in auth) return auth.error
 
   const { id } = await context.params

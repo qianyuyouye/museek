@@ -1,12 +1,12 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
+import { requirePermission, ok, err, safeHandler} from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
 
 type Params = { params: Promise<{ id: string }> }
 
 export const GET = safeHandler(async function GET(request: NextRequest, { params }: Params) {
-  const auth = requireAdmin(request)
+  const auth = await requirePermission(request)
   if ('error' in auth) return auth.error
 
   const { id } = await params
@@ -25,7 +25,7 @@ export const GET = safeHandler(async function GET(request: NextRequest, { params
 })
 
 export const PUT = safeHandler(async function PUT(request: NextRequest, { params }: Params) {
-  const auth = requireAdmin(request)
+  const auth = await requirePermission(request)
   if ('error' in auth) return auth.error
 
   const { id } = await params
@@ -57,7 +57,7 @@ export const PUT = safeHandler(async function PUT(request: NextRequest, { params
 })
 
 export const DELETE = safeHandler(async function DELETE(request: NextRequest, { params }: Params) {
-  const auth = requireAdmin(request)
+  const auth = await requirePermission(request)
   if ('error' in auth) return auth.error
 
   const { id } = await params

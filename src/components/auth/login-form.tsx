@@ -115,7 +115,7 @@ export function LoginForm({ portal }: { portal: string }) {
       const res = await fetch('/api/auth/sms/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: account.trim() }),
+        body: JSON.stringify({ phone: account.trim(), purpose: 'register' }),
       })
       const data = await res.json()
       if (data.code === 200) {
@@ -513,7 +513,7 @@ export function LoginForm({ portal }: { portal: string }) {
                         const res = await fetch('/api/auth/sms/send', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ phone: forgotAccount }),
+                          body: JSON.stringify({ phone: forgotAccount, purpose: 'reset_password' }),
                         })
                         const json = await res.json()
                         if (json.code === 200) {

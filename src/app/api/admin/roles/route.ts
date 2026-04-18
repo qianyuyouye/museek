@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin, ok, err, parsePagination, safeHandler} from '@/lib/api-utils'
+import { requirePermission, ok, err, parsePagination, safeHandler} from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
-  const auth = requireAdmin(request)
+  const auth = await requirePermission(request)
   if ('error' in auth) return auth.error
 
   const { searchParams } = request.nextUrl
@@ -29,7 +29,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
 })
 
 export const POST = safeHandler(async function POST(request: NextRequest) {
-  const auth = requireAdmin(request)
+  const auth = await requirePermission(request)
   if ('error' in auth) return auth.error
 
   const body = await request.json()

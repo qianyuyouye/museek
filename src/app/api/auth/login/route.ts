@@ -3,7 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { verifyPassword } from '@/lib/password'
 import { signAccessToken, signRefreshToken } from '@/lib/auth'
 import type { UserJwtPayload, AdminJwtPayload } from '@/types/auth'
-import { safeHandler } from '@/lib/api-utils'
+import { safeHandler, getClientIp } from '@/lib/api-utils'
+import { ipRateLimit, recordLoginFailure, isAccountLocked, clearLoginFailure } from '@/lib/rate-limit'
 
 function setResponseCookies(response: NextResponse, accessToken: string, refreshToken: string, portal?: string) {
   const accessMaxAge = portal === 'admin' ? 60 * 60 * 8 : 60 * 60 * 24
@@ -30,6 +31,17 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     return NextResponse.json({ code: 400, message: '账号、密码和端类型不能为空' }, { status: 400 })
   }
 
+  // IP 限流：每分钟最多 10 次登录尝试（PRD §10.6）
+  const ip = getClientIp(request)
+  if (ip && ipRateLimit(ip, 'login', 10, 60 * 1000)) {
+    return NextResponse.json({ code: 429, message: '登录过于频繁，请稍后再试' }, { status: 429 })
+  }
+  // 账号锁定：连续失败 5 次锁定 5 分钟
+  const lockedFor = isAccountLocked(account)
+  if (lockedFor > 0) {
+    return NextResponse.json({ code: 423, message: `账号已暂时锁定，请 ${lockedFor} 秒后重试` }, { status: 423 })
+  }
+
   if (portal === 'admin') {
     const admin = await prisma.adminUser.findUnique({
       where: { account },
@@ -37,6 +49,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     })
 
     if (!admin || !(await verifyPassword(password, admin.passwordHash))) {
+      recordLoginFailure(account)
       return NextResponse.json({ code: 401, message: '账号或密码错误' }, { status: 401 })
     }
 
@@ -44,14 +57,16 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
       return NextResponse.json({ code: 403, message: '账号已被禁用' }, { status: 403 })
     }
 
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    clearLoginFailure(account)
+
+    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
       || request.headers.get('x-real-ip') || ''
 
     await prisma.adminUser.update({
       where: { id: admin.id },
       data: {
         lastLoginAt: new Date(),
-        lastLoginIp: ip,
+        lastLoginIp: clientIp,
       },
     })
 
@@ -59,7 +74,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
       data: {
         userId: admin.id,
         portal: 'admin',
-        ip,
+        ip: clientIp,
         userAgent: request.headers.get('user-agent') || null,
       },
     })
@@ -97,12 +112,15 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     })
 
     if (!user || !user.passwordHash || !(await verifyPassword(password, user.passwordHash))) {
+      recordLoginFailure(account)
       return NextResponse.json({ code: 401, message: '账号或密码错误' }, { status: 401 })
     }
 
     if (user.status === 'disabled') {
       return NextResponse.json({ code: 403, message: '账号已被禁用' }, { status: 403 })
     }
+
+    clearLoginFailure(account)
 
     await prisma.user.update({
       where: { id: user.id },
@@ -153,12 +171,15 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     })
 
     if (!user || !user.passwordHash || !(await verifyPassword(password, user.passwordHash))) {
+      recordLoginFailure(account)
       return NextResponse.json({ code: 401, message: '账号或密码错误' }, { status: 401 })
     }
 
     if (user.status === 'disabled') {
       return NextResponse.json({ code: 403, message: '账号已被禁用' }, { status: 403 })
     }
+
+    clearLoginFailure(account)
 
     await prisma.user.update({
       where: { id: user.id },

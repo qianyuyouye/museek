@@ -29,6 +29,23 @@ export async function middleware(request: NextRequest) {
 
   const isApiRoute = pathname.startsWith('/api/')
 
+  // CSRF 防护：对所有写方法 API 校验 Origin/Referer 是否同源
+  // 同源规则：Origin 或 Referer 必须以 host 开头
+  if (isApiRoute && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) {
+    const origin = request.headers.get('origin')
+    const referer = request.headers.get('referer')
+    const host = request.headers.get('host')
+    const allowedOrigins = [
+      `http://${host}`,
+      `https://${host}`,
+    ]
+    const originOk = !origin || allowedOrigins.includes(origin)
+    const refererOk = !referer || allowedOrigins.some(a => referer.startsWith(a))
+    if ((origin && !originOk) || (!origin && referer && !refererOk)) {
+      return NextResponse.json({ code: 403, message: 'CSRF 检查失败：来源不可信' }, { status: 403 })
+    }
+  }
+
   const token = request.cookies.get('access_token')?.value
   if (!token) {
     if (isApiRoute) {

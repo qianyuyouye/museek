@@ -40,6 +40,7 @@ export default function AdminContentPage() {
   const [formCategory, setFormCategory] = useState(CATEGORIES[0])
   const [formType, setFormType] = useState<'video' | 'article'>('article')
   const [formContent, setFormContent] = useState('')
+  const [formCover, setFormCover] = useState('')
   const [saving, setSaving] = useState(false)
 
   const typeParam = tab === 'all' ? '' : `&type=${tab}`
@@ -64,6 +65,7 @@ export default function AdminContentPage() {
     setFormCategory(CATEGORIES[0])
     setFormType('article')
     setFormContent('')
+    setFormCover('')
     setModalOpen(true)
   }
 
@@ -73,6 +75,7 @@ export default function AdminContentPage() {
     setFormCategory(item.category)
     setFormType(item.type)
     setFormContent(item.content || '')
+    setFormCover(item.cover || '')
     setModalOpen(true)
   }
 
@@ -89,6 +92,7 @@ export default function AdminContentPage() {
         category: formCategory,
         type: formType,
         content: formContent,
+        cover: formCover || null,
       })
     } else {
       res = await apiCall('/api/admin/content', 'POST', {
@@ -96,6 +100,7 @@ export default function AdminContentPage() {
         category: formCategory,
         type: formType,
         content: formContent,
+        cover: formCover || null,
         status: 'draft',
       })
     }
@@ -349,6 +354,15 @@ export default function AdminContentPage() {
               value={formTitle}
               onChange={(e) => setFormTitle(e.target.value)}
               placeholder="请输入标题"
+            />
+          </div>
+          <div>
+            <label className={labelCls}>封面（URL 或 Emoji）</label>
+            <input
+              className={inputCls}
+              value={formCover}
+              onChange={(e) => setFormCover(e.target.value)}
+              placeholder="支持图片 URL 或 emoji（如 🎵），留空默认 📄"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">

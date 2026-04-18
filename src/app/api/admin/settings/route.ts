@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin, ok, err, safeHandler} from '@/lib/api-utils'
+import { requirePermission, ok, err, safeHandler} from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
 import { DEFAULT_REVENUE_RULES } from '@/lib/commission'
 
@@ -16,7 +16,7 @@ const PRESET_KEYS: Record<string, unknown> = {
 }
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
-  const auth = requireAdmin(request)
+  const auth = await requirePermission(request)
   if ('error' in auth) return auth.error
 
   const rows = await prisma.systemSetting.findMany()
@@ -32,7 +32,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
 })
 
 export const PUT = safeHandler(async function PUT(request: NextRequest) {
-  const auth = requireAdmin(request)
+  const auth = await requirePermission(request)
   if ('error' in auth) return auth.error
 
   const body = await request.json()

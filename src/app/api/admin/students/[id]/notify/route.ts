@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin, ok, err, safeHandler } from '@/lib/api-utils'
+import { requirePermission, ok, err, safeHandler } from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
 
 const PRESET_TITLES: Record<string, string> = {
@@ -13,7 +13,7 @@ export const POST = safeHandler(async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = requireAdmin(request)
+  const auth = await requirePermission(request)
   if ('error' in auth) return auth.error
 
   const { id } = await params

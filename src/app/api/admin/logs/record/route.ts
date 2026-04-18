@@ -1,9 +1,9 @@
 import { NextRequest } from 'next/server'
-import { requireAdmin, ok, err, getClientIp, safeHandler} from '@/lib/api-utils'
+import { requirePermission, ok, err, getClientIp, safeHandler} from '@/lib/api-utils'
 import { logAction } from '@/lib/log-action'
 
 export const POST = safeHandler(async function POST(request: NextRequest) {
-  const auth = requireAdmin(request)
+  const auth = await requirePermission(request)
   if ('error' in auth) return auth.error
 
   const body = await request.json()
