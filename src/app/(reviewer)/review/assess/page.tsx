@@ -137,11 +137,12 @@ export default function ReviewAssessPage() {
     creativity: 80,
     commercial: 70,
   })
-  const total = +(
+  // 与后端 ROUND 保持一致（PRD §4.7 total_score 存储为整数）
+  const total = Math.round(
     scores.technique * 0.3 +
     scores.creativity * 0.4 +
     scores.commercial * 0.3
-  ).toFixed(1)
+  )
 
   const [comment, setComment] = useState('')
   const [quickTags, setQuickTags] = useState<string[]>([])

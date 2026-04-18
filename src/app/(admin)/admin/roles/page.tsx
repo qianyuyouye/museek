@@ -7,6 +7,7 @@ import { DataTable, Column } from '@/components/admin/data-table'
 import { PermissionTree } from '@/components/admin/permission-tree'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
+import { formatDateTime } from '@/lib/format'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -224,11 +225,17 @@ export default function AdminRolesPage() {
     {
       key: 'permissions',
       title: '权限数',
-      render: (v) => (
-        <span className="text-xs text-[var(--accent2)]">
-          {countPerms(v as Record<string, boolean>)} 项
-        </span>
-      ),
+      render: (v, row) => {
+        const isBuiltin = (row as unknown as { isBuiltin?: boolean }).isBuiltin
+        if (isBuiltin) {
+          return <span className="text-xs text-[var(--accent2)] font-medium">全部</span>
+        }
+        return (
+          <span className="text-xs text-[var(--accent2)]">
+            {countPerms(v as Record<string, boolean>)} 项
+          </span>
+        )
+      },
     },
     {
       key: 'description',
@@ -238,7 +245,7 @@ export default function AdminRolesPage() {
     {
       key: 'createdAt',
       title: '创建时间',
-      render: (v) => <span className="text-xs text-[var(--text3)]">{v as string}</span>,
+      render: (v) => <span className="text-xs text-[var(--text3)]">{formatDateTime(v as string)}</span>,
     },
     {
       key: 'id',

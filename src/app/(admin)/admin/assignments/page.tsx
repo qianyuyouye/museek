@@ -7,6 +7,7 @@ import { DataTable, Column } from '@/components/admin/data-table'
 import { AdminModal } from '@/components/admin/admin-modal'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
+import { formatDate, formatDateTime } from '@/lib/format'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -146,7 +147,7 @@ export default function AdminAssignmentsPage() {
           return <span>{song?.aiTools ?? '—'}</span>
         },
       },
-      { key: 'submittedAt', title: '提交时间' },
+      { key: 'submittedAt', title: '提交时间', render: (v) => formatDateTime(v as string) },
       {
         key: 'platformSong',
         title: '状态',
@@ -362,7 +363,7 @@ export default function AdminAssignmentsPage() {
       title: '用户组',
       render: (v) => <span>{v as string}</span>,
     },
-    { key: 'deadline', title: '截止时间' },
+    { key: 'deadline', title: '截止时间', render: (v) => formatDate(v as string) },
     {
       key: 'submissionCount',
       title: '提交进度',

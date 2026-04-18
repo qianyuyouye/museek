@@ -6,6 +6,7 @@ import { DataTable, Column } from '@/components/admin/data-table'
 import { useApi, apiCall } from '@/lib/use-api'
 import { downloadCSV, today } from '@/lib/export'
 import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
+import { formatDateTime } from '@/lib/format'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -457,14 +458,14 @@ export default function AdminAdminsPage() {
       key: 'createdAt',
       title: '创建时间',
       render: (v) => (
-        <span className="text-xs text-[var(--text3)]">{v as string}</span>
+        <span className="text-xs text-[var(--text3)]">{formatDateTime(v as string)}</span>
       ),
     },
     {
       key: 'lastLoginAt',
       title: '最后登录时间',
       render: (v) => (
-        <span className="text-xs text-[var(--text3)]">{(v as string) || '—'}</span>
+        <span className="text-xs text-[var(--text3)]">{v ? formatDateTime(v as string) : '—'}</span>
       ),
     },
     {

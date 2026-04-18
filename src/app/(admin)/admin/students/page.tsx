@@ -495,7 +495,7 @@ export default function AdminStudentsPage() {
 
       <PageHeader
         title="用户档案库"
-        subtitle={`共 ${studentsData?.total ?? 0} 名创作者`}
+        subtitle={`共 ${studentsData?.total ?? 0} 名用户（含创作者与评审）`}
       />
 
       {/* Search bar row */}

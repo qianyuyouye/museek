@@ -14,11 +14,12 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
   const { page, pageSize, skip } = parsePagination(searchParams)
   const status = searchParams.get('status')
 
-  if (status && !VALID_STATUSES.has(status)) {
+  // 'all' 视为不过滤（兼容前端 Tab 全部）
+  if (status && status !== 'all' && !VALID_STATUSES.has(status)) {
     return err('无效的状态值')
   }
 
-  const where = status ? { status: status as MappingStatus } : {}
+  const where = status && status !== 'all' ? { status: status as MappingStatus } : {}
 
   const [mappings, total] = await Promise.all([
     prisma.songMapping.findMany({

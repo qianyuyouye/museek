@@ -8,6 +8,7 @@ import { DataTable, Column } from '@/components/admin/data-table'
 import { AdminModal } from '@/components/admin/admin-modal'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
+import { formatDateTime } from '@/lib/format'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -173,7 +174,7 @@ export default function AdminGroupsPage() {
                 ['组名', g.name],
                 ['描述', g.description || '—'],
                 ['状态', g.status === 'active' ? '✅ 启用' : '⏸️ 暂停'],
-                ['创建时间', g.createdAt],
+                ['创建时间', formatDateTime(g.createdAt)],
                 ['成员数', `${g.memberCount} 人`],
               ] as [string, string][]
             ).map(([k, v]) => (
@@ -365,7 +366,7 @@ export default function AdminGroupsPage() {
           <span style={{ color: 'var(--orange)', fontSize: 12 }}>⏸️ 暂停</span>
         ),
     },
-    { key: 'createdAt', title: '创建时间' },
+    { key: 'createdAt', title: '创建时间', render: (v) => formatDateTime(v as string) },
     {
       key: 'id',
       title: '操作',

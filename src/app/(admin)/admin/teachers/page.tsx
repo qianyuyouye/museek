@@ -21,7 +21,7 @@ interface Teacher {
 const columns: Column<Teacher>[] = [
   {
     key: 'name',
-    title: '老师姓名',
+    title: '评审姓名',
     render: (v, row) => {
       const r = row as unknown as Teacher
       return (
@@ -77,21 +77,21 @@ export default function AdminTeachersPage() {
   return (
     <div className={pageWrap}>
       <PageHeader
-        title="老师绩效"
+        title="评审绩效"
         subtitle="评审工作量统计"
         actions={
           <Link
             href="/admin/accounts"
             className="inline-flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] shadow-[0_2px_8px_rgba(99,102,241,0.25)] no-underline"
           >
-            👥 管理老师账号 →
+            👥 管理评审账号 →
           </Link>
         }
       />
 
       <div className={cardCls}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-semibold">老师绩效</h3>
+          <h3 className="text-base font-semibold">评审绩效</h3>
         </div>
         <DataTable
           columns={columns as unknown as Column<Record<string, unknown>>[]}

@@ -47,18 +47,30 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     reviewComment = comment
   }
 
-  // 事务：查歌曲+状态检查+创建评审+更新歌曲+同步作业（原子化防并发）
+  // 事务：乐观锁 updateMany 先占位（只有一个并发能 count=1），再创建 review
   let review: { id: number }
   try {
     review = await prisma.$transaction(async (tx) => {
-      // 在事务内查询歌曲，避免脏读
+      // 先读歌曲拿 version / source / submission
       const song = await tx.platformSong.findUnique({
         where: { id: songId },
         include: { submission: true },
       })
-
       if (!song) throw new Error('NOT_FOUND')
       if (song.status !== 'pending_review') throw new Error('NOT_PENDING')
+
+      // 乐观锁占位：仅当当前状态仍为 pending_review 才能推进
+      const songUpdate: Record<string, unknown> = {
+        status: newSongStatus,
+        score: totalScore,
+      }
+      if (reviewComment !== null) songUpdate.reviewComment = reviewComment
+
+      const locked = await tx.platformSong.updateMany({
+        where: { id: songId, status: 'pending_review' },
+        data: songUpdate,
+      })
+      if (locked.count === 0) throw new Error('NOT_PENDING')
 
       const created = await tx.review.create({
         data: {
@@ -76,20 +88,6 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
         },
       })
 
-      const songUpdate: Record<string, unknown> = {
-        status: newSongStatus,
-        score: totalScore,
-      }
-      if (reviewComment !== null) {
-        songUpdate.reviewComment = reviewComment
-      }
-
-      // update 加状态约束，防止并发覆盖
-      await tx.platformSong.updateMany({
-        where: { id: songId, status: 'pending_review' },
-        data: songUpdate,
-      })
-
       // 如果歌曲来源是 assignment，同步更新 AssignmentSubmission
       if (song.source === 'assignment' && song.submission) {
         const submissionStatus: SubmissionStatus =
@@ -105,8 +103,8 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     })
   } catch (e) {
     if (e instanceof Error) {
-      if (e.message === 'NOT_FOUND') return err('歌曲不存在')
-      if (e.message === 'NOT_PENDING') return err('该歌曲不在待评审状态')
+      if (e.message === 'NOT_FOUND') return err('歌曲不存在', 404)
+      if (e.message === 'NOT_PENDING') return err('该歌曲已被其他评审处理或状态已变更', 409)
     }
     throw e
   }

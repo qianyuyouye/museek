@@ -581,3 +581,14 @@ model LoginLog {
   @@index([userId, createdAt])
   @@map("login_logs")
 }
+
+// 作品点赞记录（user × song 唯一，幂等）
+model LikeRecord {
+  userId    Int      @map("user_id")
+  songId    Int      @map("song_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([userId, songId])
+  @@index([songId])
+  @@map("like_records")
+}

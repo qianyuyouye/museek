@@ -67,7 +67,8 @@ const TAB_DEFS: { key: TabKey; label: string }[] = [
 function WaveformPlayer() {
   const [playing, setPlaying] = useState(false)
   const [bars] = useState(() =>
-    Array.from({ length: 60 }, (_, i) => 12 + Math.sin(i * 0.5) * 18 + Math.random() * 14)
+    // Math.max 防止 sin 波谷 + random 低值导致负数（原公式最小 -6）
+    Array.from({ length: 60 }, (_, i) => Math.max(2, 18 + Math.sin(i * 0.5) * 12 + Math.random() * 14))
   )
 
   return (

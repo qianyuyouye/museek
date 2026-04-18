@@ -49,7 +49,12 @@ export const PUT = safeHandler(async function PUT(
     data.type = type
   }
   if (content !== undefined) data.content = content || null
-  if (status !== undefined) data.status = status
+  if (status !== undefined) {
+    if (!['draft', 'published'].includes(status)) {
+      return err('状态必须为 draft 或 published')
+    }
+    data.status = status
+  }
 
   const updated = await prisma.cmsContent.update({
     where: { id: contentId },
