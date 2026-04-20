@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useApi } from '@/lib/use-api'
 import { SONG_STATUS_MAP } from '@/lib/constants'
 import { pageWrap, textPageTitle, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'
+import { formatDateTime } from '@/lib/format'
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -196,7 +197,7 @@ export default function CreatorSongsPage() {
               <div>
                 <Badge status={song.status} />
                 <div className="text-lg font-semibold mt-1.5">{song.title}</div>
-                <div className="text-[13px] text-[var(--text3)]">上传于 {song.createdAt}</div>
+                <div className="text-[13px] text-[var(--text3)]">上传于 {formatDateTime(song.createdAt)}</div>
               </div>
             </div>
 

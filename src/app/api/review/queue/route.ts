@@ -44,6 +44,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     coverUrl: s.coverUrl,
     source: s.source,
     assignmentId: s.assignmentId,
+    aiTools: Array.isArray(s.aiTools) ? s.aiTools : (s.aiTools ? [s.aiTools] : []),
     createdAt: s.createdAt,
   }))
 

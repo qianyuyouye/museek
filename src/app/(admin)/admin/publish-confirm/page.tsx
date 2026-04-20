@@ -7,6 +7,7 @@ import { DataTable, Column } from '@/components/admin/data-table'
 import { AdminModal } from '@/components/admin/admin-modal'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'
+import { formatDate } from '@/lib/format'
 
 // ── Style helpers ────────────────────────────────────────────────
 const btnDanger =
@@ -153,7 +154,7 @@ export default function PublishConfirmPage() {
     {
       key: 'submittedAt',
       title: '\u63D0\u4EA4\u65E5\u671F',
-      render: (v) => <span>{(v as string) ?? '-'}</span>,
+      render: (v) => <span>{v ? formatDate(v as string) : '-'}</span>,
     },
     {
       key: 'daysSince',
@@ -172,7 +173,7 @@ export default function PublishConfirmPage() {
     {
       key: 'liveDate',
       title: '\u4E0A\u67B6\u65E5\u671F',
-      render: (v) => <span>{(v as string) ?? '-'}</span>,
+      render: (v) => <span>{v ? formatDate(v as string) : '-'}</span>,
     },
     {
       key: 'hasRevenue',

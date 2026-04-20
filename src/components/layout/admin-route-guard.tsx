@@ -77,9 +77,17 @@ export function AdminRouteGuard({ children }: { children: React.ReactNode }) {
   }, [pathname, router])
 
   if (!checked) {
+    // 骨架屏：占位 3 块矩形，避免"权限校验中"字样突兀
     return (
-      <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
-        权限校验中...
+      <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ height: 32, width: '40%', background: 'var(--bg2, #eef2f9)', borderRadius: 6, animation: 'sk-pulse 1.2s ease-in-out infinite' }} />
+        <div style={{ display: 'flex', gap: 16 }}>
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} style={{ flex: 1, height: 80, background: 'var(--bg2, #eef2f9)', borderRadius: 8, animation: 'sk-pulse 1.2s ease-in-out infinite', animationDelay: `${i * 0.08}s` }} />
+          ))}
+        </div>
+        <div style={{ height: 240, background: 'var(--bg2, #eef2f9)', borderRadius: 8, animation: 'sk-pulse 1.2s ease-in-out infinite', animationDelay: '0.3s' }} />
+        <style>{`@keyframes sk-pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.55 } }`}</style>
       </div>
     )
   }

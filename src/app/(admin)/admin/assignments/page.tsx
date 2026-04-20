@@ -288,7 +288,7 @@ export default function AdminAssignmentsPage() {
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <span style={{ color: 'var(--text2)', minWidth: 70 }}>提交时间：</span>
-                    <span style={{ color: 'var(--text)' }}>{sub.submittedAt}</span>
+                    <span style={{ color: 'var(--text)' }}>{formatDateTime(sub.submittedAt)}</span>
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <span style={{ color: 'var(--text2)', minWidth: 70 }}>评分：</span>

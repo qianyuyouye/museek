@@ -69,9 +69,12 @@ export default function ReviewQueuePage() {
       render: (v) => <span>{v as string}</span>,
     },
     {
-      key: 'aiTool',
+      key: 'aiTools',
       title: 'AI工具',
-      render: (v) => <span>{v as string}</span>,
+      render: (v) => {
+        const arr = Array.isArray(v) ? (v as string[]) : []
+        return <span>{arr.length > 0 ? arr.join(' / ') : '—'}</span>
+      },
     },
     {
       key: 'bpm',

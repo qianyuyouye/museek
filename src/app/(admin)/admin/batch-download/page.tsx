@@ -14,7 +14,7 @@ interface SongItem {
   cover: string
   genre: string
   bpm: number
-  aiTool: string
+  aiTools: string[] | string | null
   score: number | null
   copyrightCode: string
   isrc: string | null
@@ -25,6 +25,12 @@ interface SongItem {
   coverUrl?: string | null
   agencyContract?: boolean
   realNameStatus?: 'unverified' | 'pending' | 'verified' | 'rejected'
+}
+
+function aiToolsText(t: string[] | string | null | undefined): string {
+  if (Array.isArray(t)) return t.join(' / ')
+  if (typeof t === 'string' && t) return t
+  return '—'
 }
 
 interface ValidationIssue {
@@ -145,7 +151,7 @@ export default function BatchDownloadPage() {
     zip.file('metadata.json', JSON.stringify(
       selected.map((s) => ({
         id: s.id, title: s.title, creator: s.creatorName ?? `用户${s.userId}`,
-        genre: s.genre, bpm: s.bpm, aiTool: s.aiTool, score: s.score,
+        genre: s.genre, bpm: s.bpm, aiTools: Array.isArray(s.aiTools) ? s.aiTools : [], score: s.score,
         copyrightCode: s.copyrightCode, isrc: s.isrc, status: s.status,
         agencyContract: s.agencyContract ?? false,
         realNameStatus: s.realNameStatus ?? 'unverified',
@@ -224,7 +230,14 @@ export default function BatchDownloadPage() {
     [allSongs]
   )
   const aiTools = useMemo(
-    () => Array.from(new Set(allSongs.map((s) => s.aiTool))).sort(),
+    () => {
+      const set = new Set<string>()
+      for (const s of allSongs) {
+        if (Array.isArray(s.aiTools)) s.aiTools.forEach((t) => t && set.add(t))
+        else if (typeof s.aiTools === 'string' && s.aiTools) set.add(s.aiTools)
+      }
+      return Array.from(set).sort()
+    },
     [allSongs]
   )
 
@@ -235,8 +248,11 @@ export default function BatchDownloadPage() {
       if (statusFilter !== 'all' && song.status !== statusFilter) return false
       // genre
       if (genreFilter !== 'all' && song.genre !== genreFilter) return false
-      // aiTool
-      if (aiToolFilter !== 'all' && song.aiTool !== aiToolFilter) return false
+      // aiTool：歌曲 aiTools 数组中任一命中即保留
+      if (aiToolFilter !== 'all') {
+        const arr = Array.isArray(song.aiTools) ? song.aiTools : (song.aiTools ? [song.aiTools] : [])
+        if (!arr.includes(aiToolFilter)) return false
+      }
       // score
       if (scoreFilter === '90+' && (song.score === null || song.score < 90)) return false
       if (scoreFilter === '80-89' && (song.score === null || song.score < 80 || song.score >= 90)) return false
@@ -418,7 +434,7 @@ export default function BatchDownloadPage() {
                 '创作者': s.creatorName ?? `用户${s.userId}`,
                 '风格': s.genre,
                 'BPM': s.bpm,
-                'AI工具': s.aiTool,
+                'AI工具': aiToolsText(s.aiTools),
                 '评分': s.score ?? '',
                 '版权编号': s.copyrightCode,
                 'ISRC': s.isrc ?? '',
@@ -663,7 +679,7 @@ function SongRow({
         {song.bpm}
       </td>
       <td className="px-3 py-3 text-sm text-[var(--text)] border-b border-[var(--border)] whitespace-nowrap">
-        {song.aiTool}
+        {aiToolsText(song.aiTools)}
       </td>
       <td className="px-3 py-3 text-sm border-b border-[var(--border)] whitespace-nowrap">
         {scoreEl}

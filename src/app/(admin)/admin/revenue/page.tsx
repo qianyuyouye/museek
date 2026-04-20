@@ -9,6 +9,7 @@ import { AdminModal } from '@/components/admin/admin-modal'
 import { useApi, apiCall } from '@/lib/use-api'
 import { downloadCSV, today } from '@/lib/export'
 import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
+import { formatDateTime } from '@/lib/format'
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -445,7 +446,7 @@ function MappingTab({
         return <span style={{ fontSize: 12, color: s?.c }}>{s?.l}</span>
       },
     },
-    { key: 'confirmedAt', title: '确认时间', render: v => (v as string) || '—' },
+    { key: 'confirmedAt', title: '确认时间', render: v => v ? formatDateTime(v as string) : '—' },
     {
       key: 'id', title: '操作', render: (_v, row) => {
         const r = row as unknown as Mapping

@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle, cardCls, btnPrimary, btnGhost, btnSuccess, inputCls, labelCls } from '@/lib/ui-tokens'
+import { formatDate } from '@/lib/format'
 
 // ── Status Maps ────────────────────────────────────────────────
 
@@ -275,7 +276,7 @@ export default function CreatorAssignmentsPage() {
               提交作业 · {asn.title}
             </h1>
             <p className="mt-1 text-sm text-[var(--text2)]">
-              {grp?.group.name} · 截止 {asn.deadline}
+              {grp?.group.name} · 截止 {formatDate(asn.deadline)}
             </p>
           </div>
           <button className={btnGhost} onClick={resetForm}>
@@ -525,7 +526,7 @@ export default function CreatorAssignmentsPage() {
 
                     {/* Meta */}
                     <div className="flex justify-between items-center text-xs text-[var(--text3)] pt-2.5 border-t border-[var(--border)]">
-                      <span>截止：{asn.deadline}</span>
+                      <span>截止：{formatDate(asn.deadline)}</span>
                       <span>
                         {asn.submittedCount}/{asn.memberCount}人已提交
                       </span>

@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -23,14 +22,9 @@ interface SidebarProps {
 
 export function Sidebar({ items, portalLabel, portalColor, onLogout }: SidebarProps) {
   const pathname = usePathname()
-  const [confirmLogout, setConfirmLogout] = useState(false)
 
   const handleLogout = async () => {
-    if (!confirmLogout) {
-      setConfirmLogout(true)
-      setTimeout(() => setConfirmLogout(false), 3000)
-      return
-    }
+    if (!window.confirm('确定要退出登录吗？')) return
     await fetch('/api/auth/logout', { method: 'POST' })
     onLogout()
     const loginMap: Record<string, string> = {
@@ -98,7 +92,7 @@ export function Sidebar({ items, portalLabel, portalColor, onLogout }: SidebarPr
           onClick={handleLogout}
           className="flex w-full items-center justify-center gap-1 rounded-lg py-2 text-[12px] text-white/60 transition-colors hover:bg-white/10 hover:text-white"
         >
-          🚪 {confirmLogout ? '再次点击确认退出' : '退出登录'}
+          🚪 退出登录
         </button>
       </div>
     </aside>
