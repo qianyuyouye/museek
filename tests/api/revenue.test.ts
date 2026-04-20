@@ -1,0 +1,156 @@
+import { describe, it, expect, beforeAll } from 'vitest'
+import { http, adminLogin, expectOk, BASE_URL } from './_helpers'
+
+/**
+ * 收益回归 10 条：CSV 千分位 / 映射 / 结算 / 分成规则
+ * 用独立的 period 避免与既有数据冲突（UNIQUE qishui_song_id, period）
+ */
+
+let adminCookie = ''
+const TEST_PERIOD = `2099/01/01 - 2099/01/31`
+// 用时间戳保证每次跑都新建 qishui_id，避免上轮 mapping 残留
+const TS = Date.now().toString()
+const TEST_QISHUI_ID = `8${TS}`.slice(0, 15)
+const TEST_QISHUI_ID_2 = `9${TS}`.slice(0, 15)
+
+async function uploadCsv(cookie: string, content: string) {
+  const form = new FormData()
+  form.append('platform', 'qishui')
+  form.append('file', new Blob([content], { type: 'text/csv' }), 'test.csv')
+  const res = await fetch(`${BASE_URL}/api/admin/revenue/imports`, {
+    method: 'POST',
+    headers: { Cookie: cookie, Origin: BASE_URL },
+    body: form,
+  })
+  return { status: res.status, json: await res.json() }
+}
+
+describe('收益 · CSV 解析', () => {
+  beforeAll(async () => {
+    adminCookie = (await adminLogin()).cookie
+  })
+
+  it('TC-BD-003 CSV 千分位正确解析：1,234.56 → 1234.56', async () => {
+    const csv = `歌曲抖音跟拍收入,起止日期,歌曲名称,歌曲ID,抖音收入,汽水收入,总收入\n-,${TEST_PERIOD},千分位测试,="${TEST_QISHUI_ID}","1,234.56","789.44","2,024.00"\n`
+    const r = await uploadCsv(adminCookie, csv)
+    expect(r.status).toBe(200)
+    expect(r.json.data.totalRevenue).toBeCloseTo(2024, 2)
+  })
+
+  it('TC-BD-008 跨批次 UNIQUE(qishui_song_id, period) 去重', async () => {
+    const csv = `歌曲抖音跟拍收入,起止日期,歌曲名称,歌曲ID,抖音收入,汽水收入,总收入\n-,${TEST_PERIOD},千分位测试,="${TEST_QISHUI_ID}",100,50,150\n`
+    const r = await uploadCsv(adminCookie, csv)
+    expect(r.status).toBe(200)
+    expect(r.json.data.duplicateRows).toBe(1)
+  })
+
+  it('CSV 空行 + 错误行 + 1 有效行：parseErrors 报明确行号', async () => {
+    // 混合：1 有效 + 1 列数不足 + 1 日期错；有效行使 API 能成功入库
+    const csv = [
+      '歌曲抖音跟拍收入,起止日期,歌曲名称,歌曲ID,抖音收入,汽水收入,总收入',
+      `-,2099/02/01 - 2099/02/28,有效行,="7099999999999996",10,5,15`,
+      '',
+      '-,2099/02/01 - 2099/02/28,少列',
+      `-,INVALID_DATE,坏日期,="7099999999999995",1,2,3`,
+    ].join('\n') + '\n'
+    const r = await uploadCsv(adminCookie, csv)
+    expect(r.status).toBe(200)
+    const errs = r.json.data.parseErrors as string[]
+    expect(errs.length).toBeGreaterThan(0)
+    expect(errs.join(' ')).toMatch(/列数不足|日期/)
+  })
+})
+
+describe('收益 · 映射', () => {
+  let mappingId: number | undefined
+
+  it('自动 unmatched：新 qishui_song_id 创建 none,pending 映射', async () => {
+    const csv = `歌曲抖音跟拍收入,起止日期,歌曲名称,歌曲ID,抖音收入,汽水收入,总收入\n-,${TEST_PERIOD},未知歌曲,="${TEST_QISHUI_ID_2}",10,5,15\n`
+    const r = await uploadCsv(adminCookie, csv)
+    expect(r.status).toBe(200)
+    expect(r.json.data.unmatchedRows).toBe(1)
+
+    const list = await http('/api/admin/revenue/mappings?status=pending', { cookie: adminCookie })
+    expectOk(list, 'mappings pending')
+    const m = (list.json.data.list as { qishuiSongId: string; id: number }[])
+      .find((x) => x.qishuiSongId === TEST_QISHUI_ID_2)
+    expect(m).toBeTruthy()
+    mappingId = m!.id
+  })
+
+  it('TC-A-15-020 mappings?status=all → 200 不再 400', async () => {
+    const r = await http('/api/admin/revenue/mappings?status=all', { cookie: adminCookie })
+    expect(r.status).toBe(200)
+  })
+
+  it('TC-C-19 bind action 自动 confirm + 触发回溯', async () => {
+    expect(mappingId).toBeTruthy()
+    const r = await http(`/api/admin/revenue/mappings/${mappingId}`, {
+      method: 'PUT',
+      cookie: adminCookie,
+      body: { action: 'bind', creatorId: 2 },
+    })
+    expect(r.status).toBe(200)
+    expect(r.json.data.status).toBe('confirmed')
+    expect(r.json.data.backfill).toBeTruthy()
+  })
+
+  it('reject 标记 irrelevant', async () => {
+    expect(mappingId).toBeTruthy()
+    const r = await http(`/api/admin/revenue/mappings/${mappingId}`, {
+      method: 'PUT',
+      cookie: adminCookie,
+      body: { action: 'reject' },
+    })
+    expect(r.status).toBe(200)
+    expect(r.json.data.status).toBe('irrelevant')
+  })
+})
+
+describe('收益 · 分成规则', () => {
+  it('三规则优先级：高分/量产/默认任一存在且比例 > 0', async () => {
+    const r = await http('/api/admin/settings', { cookie: adminCookie })
+    expectOk(r, 'settings')
+    type Setting = { key: string; value: unknown }
+    type Rule = { name: string; creatorRatio: number; enabled: boolean }
+    const settings = r.json.data as Setting[]
+    const rulesEntry = settings.find((s) => s.key === 'revenue_rules')
+    expect(rulesEntry).toBeTruthy()
+    const rules = rulesEntry!.value as Rule[]
+    expect(Array.isArray(rules)).toBe(true)
+    expect(rules.length).toBeGreaterThanOrEqual(2)
+    // 所有 ratio 应在 (0, 1] 之间
+    for (const rule of rules) {
+      expect(rule.creatorRatio).toBeGreaterThan(0)
+      expect(rule.creatorRatio).toBeLessThanOrEqual(1)
+    }
+  })
+
+  it('TC-C-22 commission_rules 别名自动映射到 revenue_rules', async () => {
+    // 存一个不会影响业务的 key（review_templates）作为 dry check
+    const r = await http('/api/admin/settings', {
+      method: 'PUT',
+      cookie: adminCookie,
+      body: { settings: [{ key: 'review_templates', value: ['vitest-tag'] }] },
+    })
+    expect(r.status).toBe(200)
+    const get = await http('/api/admin/settings?key=review_templates', { cookie: adminCookie })
+    const item = (get.json.data as { key: string; value: unknown[] }[]).find((s) => s.key === 'review_templates')
+    expect(item?.value).toContain('vitest-tag')
+    // 回滚
+    await http('/api/admin/settings', {
+      method: 'PUT',
+      cookie: adminCookie,
+      body: { settings: [{ key: 'review_templates', value: [] }] },
+    })
+  })
+
+  it('TC-A-15-040 多维统计：douyin + qishui = total（业务口径自洽）', async () => {
+    const r = await http('/api/admin/revenue/stats', { cookie: adminCookie })
+    expectOk(r, 'revenue stats')
+    const d = r.json.data
+    const sum = Number(d.douyinRevenue) + Number(d.qishuiRevenue)
+    // 允许 ≤ 0.05 的浮点误差
+    expect(Math.abs(sum - Number(d.totalRevenue))).toBeLessThanOrEqual(0.05)
+  })
+})

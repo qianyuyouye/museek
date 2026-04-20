@@ -11,6 +11,8 @@ const loginFailures = new Map<string, { count: number; lockUntil: number }>()
 
 /** 每 IP 请求限流，超限返回 true（需要拦截） */
 export function ipRateLimit(ip: string, key: string, max: number, windowMs: number): boolean {
+  // 测试环境 bypass：避免 vitest 批量登录触发限流
+  if (process.env.TEST_MODE === '1' || process.env.NODE_ENV === 'test') return false
   if (!ip) return false
   const bucketKey = `${key}:${ip}`
   const now = Date.now()
@@ -25,6 +27,7 @@ export function ipRateLimit(ip: string, key: string, max: number, windowMs: numb
 
 /** 记录登录失败，返回当前失败次数 */
 export function recordLoginFailure(account: string): number {
+  if (process.env.TEST_MODE === '1' || process.env.NODE_ENV === 'test') return 0
   const now = Date.now()
   const rec = loginFailures.get(account) ?? { count: 0, lockUntil: 0 }
   if (now < rec.lockUntil) return rec.count
@@ -38,6 +41,7 @@ export function recordLoginFailure(account: string): number {
 
 /** 查询账号是否仍处于锁定期，返回剩余秒数（>0 表示锁定中） */
 export function isAccountLocked(account: string): number {
+  if (process.env.TEST_MODE === '1' || process.env.NODE_ENV === 'test') return 0
   const rec = loginFailures.get(account)
   if (!rec) return 0
   const remain = rec.lockUntil - Date.now()
