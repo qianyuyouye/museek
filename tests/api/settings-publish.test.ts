@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { http, adminLogin, creatorLogin, expectOk } from './_helpers'
+import { prisma } from '@/lib/prisma'
 
 /**
  * 系统设置 / 发行确认 / ISRC / 学习记录 / 公开内容 17 条
@@ -194,5 +195,70 @@ describe('公开内容 /content + /songs/published（未登录可访问）', () 
   it('TC-PUB-C-004 /api/admin/content 不受公开白名单影响（仍需登录）', async () => {
     const r = await http('/api/admin/content')
     expect(r.json.code).toBe(401)
+  })
+})
+
+describe('系统设置四类新 key（Batch 1A Task 2）', () => {
+  let localAdminCookie = ''
+  beforeAll(async () => {
+    localAdminCookie = (await adminLogin()).cookie
+    await prisma.systemSetting.deleteMany({
+      where: { key: { in: ['ai_config', 'sms_config', 'storage_config', 'notification_templates'] } },
+    })
+  })
+
+  it('PUT 后 GET 返回 ai_config 且 apiKey 脱敏', async () => {
+    const put = await http('/api/admin/settings', {
+      method: 'PUT',
+      cookie: localAdminCookie,
+      body: {
+        settings: [
+          { key: 'ai_config', value: { enabled: true, apiKey: 'sk-1234567890abc', model: 'gpt-4o-mini' } },
+        ],
+      },
+    })
+    expect(put.status).toBe(200)
+
+    const get = await http('/api/admin/settings', { cookie: localAdminCookie })
+    expect(get.status).toBe(200)
+    const list = get.json.data as { key: string; value: any }[]
+    const ai = list.find((s) => s.key === 'ai_config')
+    expect(ai?.value?.apiKey).toMatch(/^sk-\*+[a-z0-9]{4}$/)
+    expect(ai?.value?.model).toBe('gpt-4o-mini')
+    expect(ai?.value?.enabled).toBe(true)
+  })
+
+  it('PUT 加密字段传空字符串时不覆盖已有密钥', async () => {
+    await http('/api/admin/settings', {
+      method: 'PUT',
+      cookie: localAdminCookie,
+      body: { settings: [{ key: 'ai_config', value: { apiKey: 'sk-original' } }] },
+    })
+    await http('/api/admin/settings', {
+      method: 'PUT',
+      cookie: localAdminCookie,
+      body: { settings: [{ key: 'ai_config', value: { apiKey: '', model: 'gpt-5' } }] },
+    })
+    const raw = await prisma.systemSetting.findUnique({ where: { key: 'ai_config' } })
+    // DB 存的是加密后的 apiKey，明文 'sk-original' 不应出现；也不该被空值覆盖（rawvalue 里应有 apiKey 字段非空）
+    const rawValue = raw?.value as any
+    expect(rawValue?.apiKey).toBeTruthy()
+    expect(rawValue?.apiKey).not.toBe('')
+    expect(JSON.stringify(rawValue)).not.toContain('sk-original') // 加密后看不到明文
+    expect(rawValue?.model).toBe('gpt-5') // 其他字段正常更新
+  })
+
+  it('PUT notification_templates（非敏感 key）直接 upsert', async () => {
+    const r = await http('/api/admin/settings', {
+      method: 'PUT',
+      cookie: localAdminCookie,
+      body: {
+        settings: [{ key: 'notification_templates', value: { 'tpl.welcome': { type: 'system', title: 'Hi', content: 'x', linkUrl: '/' } } }],
+      },
+    })
+    expect(r.status).toBe(200)
+    const g = await http('/api/admin/settings', { cookie: localAdminCookie })
+    const tpls = (g.json.data as any[]).find((s) => s.key === 'notification_templates')?.value
+    expect(tpls?.['tpl.welcome']?.title).toBe('Hi')
   })
 })
