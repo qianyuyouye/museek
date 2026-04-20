@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, err, parsePagination, safeHandler} from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
 import { SettleStatus } from '@prisma/client'
+import { notify } from '@/lib/notifications'
 
 const VALID_STATUSES: Set<string> = new Set(Object.values(SettleStatus))
 
@@ -112,6 +113,24 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     where: { id: { in: ids }, settleStatus: from },
     data,
   })
+
+  if (action === 'pay') {
+    const paid = await prisma.settlement.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, creatorId: true, creatorAmount: true, period: true },
+    })
+    await Promise.all(
+      paid.map((s) =>
+        notify(
+          s.creatorId,
+          'tpl.settlement_paid',
+          { amount: parseFloat(s.creatorAmount.toString()), periodLabel: s.period },
+          'settlement',
+          s.id,
+        ).catch((e) => console.error('[notify] settlement_paid failed:', e)),
+      ),
+    )
+  }
 
   await logAdminAction(request, {
     action: `settlement_${action}`,

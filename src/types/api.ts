@@ -99,3 +99,33 @@ export interface VerifyRequest {
 export interface PublishConfirmRequest {
   action: 'submit' | 'confirm_live' | 'mark_exception' | 'resubmit'
 }
+
+// 站内通知（Theme-2）
+export type NotificationTypeKey = 'work' | 'revenue' | 'system' | 'assignment'
+
+export interface NotificationResponse {
+  id: number
+  type: NotificationTypeKey
+  title: string
+  content: string | null
+  targetType: string | null
+  targetId: string | null
+  linkUrl: string | null
+  read: boolean
+  createdAt: string
+}
+
+export interface NotificationsListResponse {
+  list: NotificationResponse[]
+  total: number
+  page: number
+  pageSize: number
+  unreadCount: number
+  typeCounts: {
+    all: number
+    work: number
+    revenue: number
+    system: number
+    assignment: number
+  }
+}

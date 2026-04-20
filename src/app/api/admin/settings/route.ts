@@ -34,15 +34,15 @@ const DEFAULT_SMS_CONFIG = {
 
 const DEFAULT_NOTIFICATION_TEMPLATES = {
   'tpl.review_done': { type: 'work', title: '评审完成：《{songTitle}》', content: '评审员已完成评审，综合评分 {score} 分。', linkUrl: '/creator/songs?id={songId}' },
-  'tpl.song_published': { type: 'work', title: '作品发行：《{songTitle}》', content: '您的作品已成功发行。', linkUrl: '/creator/songs?id={songId}' },
+  'tpl.song_published': { type: 'work', title: '作品发行：《{songTitle}》', content: '您的作品《{songTitle}》已成功发行。', linkUrl: '/creator/songs?id={songId}' },
   'tpl.song_needs_revision': { type: 'work', title: '作品需修改：《{songTitle}》', content: '评审员建议修改：{comment}。', linkUrl: '/creator/songs?id={songId}' },
   'tpl.song_archived': { type: 'work', title: '作品归档：《{songTitle}》', content: '您的作品已从发行状态归档。', linkUrl: '/creator/songs?id={songId}' },
   'tpl.settlement_created': { type: 'revenue', title: '结算生成：{periodLabel}', content: '您在 {periodLabel} 的结算金额 ¥{amount} 已生成。', linkUrl: '/creator/revenue' },
   'tpl.settlement_paid': { type: 'revenue', title: '打款到账：¥{amount}', content: '您在 {periodLabel} 的结算已打款到账。', linkUrl: '/creator/revenue' },
   'tpl.realname_approved': { type: 'system', title: '实名认证已通过', content: '您的实名认证审核通过，可正常发行和打款。', linkUrl: '/creator/profile' },
   'tpl.realname_rejected': { type: 'system', title: '实名认证被驳回', content: '驳回原因：{reason}。请修改后重新提交。', linkUrl: '/creator/profile' },
-  'tpl.assignment_created': { type: 'work', title: '新作业：《{assignmentTitle}》', content: '{assignmentDescription} 截止时间：{deadline}。', linkUrl: '/creator/assignments' },
-  'tpl.assignment_due_soon': { type: 'work', title: '作业即将截止：《{assignmentTitle}》', content: '距离截止还有 24 小时，尚未提交。', linkUrl: '/creator/assignments' },
+  'tpl.assignment_created': { type: 'assignment', title: '新作业：《{assignmentTitle}》', content: '{assignmentDescription} 截止时间：{deadline}。', linkUrl: '/creator/assignments' },
+  'tpl.assignment_due_soon': { type: 'assignment', title: '作业即将截止：《{assignmentTitle}》', content: '距离截止还有 24 小时，尚未提交。', linkUrl: '/creator/assignments' },
   'tpl.welcome': { type: 'system', title: '欢迎加入 Museek', content: '注册成功！请前往个人中心完成实名认证。', linkUrl: '/creator/profile' },
 }
 

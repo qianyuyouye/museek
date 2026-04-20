@@ -97,4 +97,38 @@ describe('评审端', () => {
     const r = await http('/api/review/queue', { cookie: adminCookie })
     expect([401, 403]).toContain(r.json.code)
   })
+
+  it('TC-RV-NOTIFY 评审完成后创作者收到 tpl.review_done 通知', async () => {
+    const { prisma } = await import('@/lib/prisma')
+    const creator = await prisma.user.findUnique({ where: { phone: '13800001234' }, select: { id: true } })
+    await prisma.notification.deleteMany({ where: { userId: creator!.id } })
+
+    const song = await prisma.platformSong.create({
+      data: {
+        title: '通知测试曲',
+        userId: creator!.id,
+        status: 'pending_review',
+        source: 'upload',
+        copyrightCode: `TN-${Date.now() % 100000000}`,
+      },
+    })
+
+    const { cookie: revCookie } = await reviewerLogin()
+    const r = await http('/api/review/submit', {
+      method: 'POST',
+      cookie: revCookie,
+      body: { songId: song.id, technique: 85, creativity: 85, commercial: 85, recommendation: 'not_recommend', comment: '不错不错不错不错不错' },
+    })
+    expectOk(r, 'review submit')
+
+    const notes = await prisma.notification.findMany({ where: { userId: creator!.id, targetType: 'song', targetId: String(song.id) } })
+    expect(notes.length).toBe(1)
+    expect(notes[0].title).toContain('通知测试曲')
+    expect(notes[0].type).toBe('work')
+    expect(notes[0].linkUrl).toBe(`/creator/songs?id=${song.id}`)
+
+    await prisma.notification.deleteMany({ where: { userId: creator!.id } })
+    await prisma.review.deleteMany({ where: { songId: song.id } })
+    await prisma.platformSong.delete({ where: { id: song.id } })
+  })
 })

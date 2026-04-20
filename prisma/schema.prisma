@@ -59,6 +59,7 @@ model User {
   songMappings    SongMapping[]   @relation("MappingCreator")
   confirmedMappings SongMapping[] @relation("MappingConfirmer")
   learningRecords LearningRecord[]
+  notifications   Notification[]
 
   @@index([type])
   @@index([realNameStatus])
@@ -547,16 +548,23 @@ model SystemSetting {
   @@map("system_settings")
 }
 
-// 4.19 notifications（消息通知）
+// 4.16 notifications（站内通知）
 model Notification {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
-  type      String   @db.VarChar(30)
-  title     String   @db.VarChar(500)
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now()) @map("created_at")
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  type       String   @db.VarChar(30)
+  title      String   @db.VarChar(500)
+  content    String?  @db.Text
+  targetType String?  @map("target_type") @db.VarChar(30)
+  targetId   String?  @map("target_id") @db.VarChar(64)
+  linkUrl    String?  @map("link_url") @db.VarChar(500)
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user       User     @relation(fields: [userId], references: [id])
 
   @@index([userId, read])
+  @@index([userId, type, createdAt])
   @@map("notifications")
 }
 

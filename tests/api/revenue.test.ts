@@ -195,3 +195,60 @@ describe('收益 · 前端字段 alias（/admin/revenue 页面直接消费）', 
     }
   })
 })
+
+describe('收益 · 结算打款通知', () => {
+  let adminCookie2 = ''
+  beforeAll(async () => {
+    adminCookie2 = (await adminLogin()).cookie
+  })
+
+  it('TC-SET-NOTIFY action=pay 后每条 settlement 对应 creator 收到 tpl.settlement_paid', async () => {
+    const { prisma } = await import('@/lib/prisma')
+    const creator = await prisma.user.findUnique({ where: { phone: '13800001234' }, select: { id: true } })
+    await prisma.notification.deleteMany({ where: { userId: creator!.id } })
+
+    // 造链路：RevenueImport → RevenueRow → Settlement
+    const imp = await prisma.revenueImport.create({
+      data: { platform: 'qishui', fileName: 'test-notify.csv', status: 'completed' },
+    })
+    const row = await prisma.revenueRow.create({
+      data: {
+        importId: imp.id,
+        qishuiSongId: `NOTIFY_TEST_${Date.now()}`,
+        period: '2026-04',
+        totalRevenue: 1000,
+        matchStatus: 'matched',
+      },
+    })
+    const s = await prisma.settlement.create({
+      data: {
+        revenueRowId: row.id,
+        period: '2026-04',
+        totalRevenue: 1000,
+        creatorAmount: 700,
+        creatorId: creator!.id,
+        settleStatus: 'exported',
+      },
+    })
+
+    const r = await http('/api/admin/revenue/settlements', {
+      method: 'POST',
+      cookie: adminCookie2,
+      body: { ids: [s.id], action: 'pay' },
+    })
+    expectOk(r, 'pay')
+
+    const notes = await prisma.notification.findMany({
+      where: { userId: creator!.id, targetType: 'settlement', targetId: String(s.id) },
+    })
+    expect(notes.length).toBe(1)
+    expect(notes[0].type).toBe('revenue')
+    expect(notes[0].title).toContain('700')
+
+    // 清理
+    await prisma.notification.deleteMany({ where: { userId: creator!.id } })
+    await prisma.settlement.delete({ where: { id: s.id } })
+    await prisma.revenueRow.delete({ where: { id: row.id } })
+    await prisma.revenueImport.delete({ where: { id: imp.id } })
+  })
+})

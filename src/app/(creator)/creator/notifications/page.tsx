@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle } from '@/lib/ui-tokens'
 
@@ -12,6 +13,8 @@ interface Notification {
   id: number
   type: NotificationType
   title: string
+  content: string | null
+  linkUrl: string | null
   time: string
   read: boolean
 }
@@ -34,6 +37,7 @@ const TABS: { key: 'all' | NotificationType; label: string }[] = [
 // ── Page Component ─────────────────────────────────────────────
 
 export default function NotificationsPage() {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<'all' | NotificationType>('all')
 
   const typeParam = activeTab === 'all' ? '' : activeTab
@@ -131,7 +135,10 @@ export default function NotificationsPage() {
               className={`flex items-start gap-3 px-5 py-4 border-b border-[var(--border)] last:border-b-0 cursor-pointer transition-colors hover:bg-[var(--bg4)] ${
                 !n.read ? 'bg-[var(--accent-glow)]' : ''
               }`}
-              onClick={() => markAsRead(n.id)}
+              onClick={() => {
+                void markAsRead(n.id)
+                if (n.linkUrl) router.push(n.linkUrl)
+              }}
             >
               {/* Unread dot */}
               <div className="pt-1.5 w-3 shrink-0 flex justify-center">
@@ -150,6 +157,9 @@ export default function NotificationsPage() {
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--red)] ml-1 align-middle" />
                   )}
                 </div>
+                {n.content && (
+                  <div className="text-xs text-[var(--text3)] mt-0.5 line-clamp-1">{n.content}</div>
+                )}
                 <div className="mt-1 text-xs text-[var(--text3)]">
                   {n.time} | {TYPE_LABEL[n.type]}
                 </div>

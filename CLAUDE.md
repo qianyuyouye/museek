@@ -135,3 +135,27 @@ OSS_BUCKET=                                  # 可选，配了走 OSS 上传
 **生产部署建议**：全部用 DB 配置；env 仅保留 `ENCRYPTION_KEY / JWT_SECRET / DATABASE_URL` 三项启动前置。
 
 **备注**：OSS SDK 实际的 signatureUrl 签名调用在 Batch 1B 实施；Batch 1A 只让配置可落库、lib 读取路径切到 DB 优先。
+
+## 通知触发（Theme 2 起）
+
+6 类业务动作在主事务结束后调 `notify(userId, templateKey, vars, targetType?, targetId?)`（`src/lib/notifications.ts`）自动给相关用户发站内通知：
+
+| 场景 | 触发点 | 模板 key | 接收人 |
+|---|---|---|---|
+| 评审提交 | `/api/review/submit` | `tpl.review_done` / `tpl.song_needs_revision` | 作品创作者 |
+| 歌曲发行 | `/api/admin/songs/:id/status` action=publish/archive | `tpl.song_published` / `tpl.song_archived` | 作品创作者 |
+| 结算打款 | `/api/admin/revenue/settlements` action=pay | `tpl.settlement_paid` | 每条 settlement 对应创作者 |
+| 实名审核 | `/api/admin/students/:id/verify` approve/reject | `tpl.realname_approved` / `tpl.realname_rejected` | 被审核用户 |
+| 新作业广播 | `/api/admin/assignments` POST | `tpl.assignment_created` | 组内全部 creator |
+| ISRC 绑定 | `/api/admin/songs/:id/isrc` POST | `tpl.isrc_bound` | 作品创作者 |
+
+**契约约定**：
+- 调用方**必须自己 try/catch**（`notify` 内部只对模板缺失降级为 null，`prisma.notification.create` 失败会上抛）
+- 各调用点 catch 打 `console.error('[notify] <场景> failed:', e)` 便于排障
+- 通知失败不回滚主业务（主事务已 commit）
+
+**模板渲染**：优先 DB `notification_templates` 配置（admin settings 可改），fallback `src/lib/notifications.ts` 的 `DEFAULT_TEMPLATES`。
+
+**Notification schema**：`id / userId / type / title / content / targetType / targetId / linkUrl / read / createdAt`。前端 `/creator/notifications` 点击卡片 `router.push(linkUrl)`（Task 10）。
+
+**未覆盖场景（后续 theme）**：作业截止定时提醒（需 cron）、作业提交 → reviewer 通知（缺 reviewer 分配机制）。

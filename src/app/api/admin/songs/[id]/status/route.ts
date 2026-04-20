@@ -4,6 +4,7 @@ import { requirePermission, ok, err, safeHandler} from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
 import { invalidate } from '@/lib/cache'
 import { SongStatus } from '@prisma/client'
+import { notify } from '@/lib/notifications'
 
 /** 每个 action 允许的来源状态 → 目标状态 */
 const ACTION_TRANSITIONS: Record<string, { from: SongStatus[]; to: SongStatus }> = {
@@ -74,6 +75,16 @@ export const POST = safeHandler(async function POST(
 
   // 看板统计依赖歌曲状态分布，写后立即失效
   invalidate('dashboard')
+
+  try {
+    if (action === 'publish') {
+      await notify(song.userId, 'tpl.song_published', { songTitle: song.title, songId: song.id }, 'song', song.id)
+    } else if (action === 'archive') {
+      await notify(song.userId, 'tpl.song_archived', { songTitle: song.title, songId: song.id }, 'song', song.id)
+    }
+  } catch (e) {
+    console.error('[notify] song status change failed:', e)
+  }
 
   await logAdminAction(request, {
     action: `song_${action}`,

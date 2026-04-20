@@ -113,4 +113,25 @@ describe('创作者端', () => {
     expect(r.status).toBe(400)
     expect(r.json.message).toMatch(/旧密码/)
   })
+
+  it('GET /api/notifications 返回包含 content/linkUrl/targetType/targetId', async () => {
+    const { prisma } = await import('@/lib/prisma')
+    const { notify } = await import('@/lib/notifications')
+    const u = await prisma.user.findUnique({ where: { phone: '13800001234' }, select: { id: true } })
+    await notify(u!.id, 'tpl.song_published', { songTitle: '契约测试', songId: 12345 }, 'song', 12345)
+
+    const { cookie } = await creatorLogin()
+    const r = await http('/api/creator/notifications', { cookie })
+    expectOk(r, 'notifications')
+    const n = (r.json.data.list as Array<{ title: string; linkUrl: string | null; targetType: string | null; targetId: string | null; content: string | null }>).find(
+      (x) => x.title?.includes('契约测试')
+    )
+    expect(n).toBeTruthy()
+    expect(n!.linkUrl).toBe('/creator/songs?id=12345')
+    expect(n!.targetType).toBe('song')
+    expect(n!.targetId).toBe('12345')
+    expect(n!.content).toContain('契约测试')
+
+    await prisma.notification.deleteMany({ where: { userId: u!.id, title: { contains: '契约测试' } } })
+  })
 })
