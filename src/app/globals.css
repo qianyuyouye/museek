@@ -76,6 +76,26 @@ body {
   border-radius: 3px;
 }
 
+/* range slider thumb 默认是 arrow，全站改为 grab / grabbing */
+input[type='range'] {
+  cursor: pointer;
+}
+input[type='range']::-webkit-slider-thumb {
+  cursor: grab;
+}
+input[type='range']::-moz-range-thumb {
+  cursor: grab;
+}
+input[type='range']:active {
+  cursor: grabbing;
+}
+input[type='range']:active::-webkit-slider-thumb {
+  cursor: grabbing;
+}
+input[type='range']:active::-moz-range-thumb {
+  cursor: grabbing;
+}
+
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: var(--font-sans);

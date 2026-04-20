@@ -6,6 +6,7 @@ import { AdminTab } from '@/components/admin/admin-tab'
 import { AdminModal } from '@/components/admin/admin-modal'
 import { DataTable, Column } from '@/components/admin/data-table'
 import { useApi, apiCall } from '@/lib/use-api'
+import { useConfirm } from '@/components/admin/confirm-dialog'
 import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
 
 // ── Tab definitions ──────────────────────────────────────────────
@@ -161,7 +162,7 @@ export default function AdminSettingsPage() {
 
 // ── ① 评分规则 ──────────────────────────────────────────────────
 
-function ScoresTab({ onSave, initialData }: { showToast: (msg: string) => void; onSave: (s: Partial<SettingsData>) => void; initialData: SettingsData | null }) {
+function ScoresTab({ showToast, onSave, initialData }: { showToast: (msg: string) => void; onSave: (s: Partial<SettingsData>) => void; initialData: SettingsData | null }) {
   const [weights, setWeights] = useState(
     initialData?.weights ?? [
       { label: '技术熟练度', value: 30 },
@@ -199,7 +200,8 @@ function ScoresTab({ onSave, initialData }: { showToast: (msg: string) => void; 
               next[i] = { ...next[i], value: Number(e.target.value) }
               setWeights(next)
             }}
-            style={{ flex: 1, accentColor: 'var(--accent)' }}
+            className="score-weight-slider"
+            style={{ flex: 1, accentColor: 'var(--accent)', cursor: 'pointer' }}
           />
           <span className="w-12 text-right font-semibold text-sm">
             {d.value}%
@@ -233,7 +235,7 @@ function ScoresTab({ onSave, initialData }: { showToast: (msg: string) => void; 
           onClick={() => {
             const total = weights.reduce((sum, w) => sum + w.value, 0)
             if (total !== 100) {
-              alert(`三个维度权重合计为 ${total}%，必须正好等于 100% 才能保存`)
+              showToast(`三个维度权重合计为 ${total}%，必须正好等于 100% 才能保存`)
               return
             }
             onSave({ weights, threshold: { minScore: thresholdMinScore, recommendLevel: thresholdRecommendLevel } })
@@ -293,6 +295,7 @@ function CommissionTab({
   onSave: (s: Partial<SettingsData>) => void
   initialData: SettingsData | null
 }) {
+  const confirm = useConfirm()
   const [rules, setRules] = useState<CommissionRule[]>(
     initialData?.commissionRules && initialData.commissionRules.length > 0
       ? initialData.commissionRules
@@ -369,8 +372,14 @@ function CommissionTab({
     setEditing(null)
   }
 
-  function removeRule(index: number) {
-    if (!confirm('确认删除此规则？')) return
+  async function removeRule(index: number) {
+    const ok = await confirm({
+      title: '删除规则',
+      message: `确认删除「${rules[index]?.name ?? '该规则'}」？此操作不可撤销。`,
+      confirmText: '删除',
+      danger: true,
+    })
+    if (!ok) return
     persist(rules.filter((_, i) => i !== index))
   }
 
@@ -668,6 +677,7 @@ function PlatformsTab({
   onSave: (s: Partial<SettingsData>) => void
   initialData: SettingsData | null
 }) {
+  const confirm = useConfirm()
   const [platforms, setPlatforms] = useState<PlatformItem[]>(initialData?.platforms ?? PLATFORM_DATA)
   const [editing, setEditing] = useState<{ item: PlatformItem; index: number } | null>(null)
 
@@ -714,8 +724,14 @@ function PlatformsTab({
     showToast('已保存')
   }
 
-  function remove(index: number) {
-    if (!confirm('确认删除此平台？')) return
+  async function remove(index: number) {
+    const ok = await confirm({
+      title: '删除平台',
+      message: `确认删除平台「${platforms[index]?.name ?? ''}」？`,
+      confirmText: '删除',
+      danger: true,
+    })
+    if (!ok) return
     persist(platforms.filter((_, i) => i !== index))
   }
 
