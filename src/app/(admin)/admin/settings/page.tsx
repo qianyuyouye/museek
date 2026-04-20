@@ -8,6 +8,10 @@ import { DataTable, Column } from '@/components/admin/data-table'
 import { useApi, apiCall } from '@/lib/use-api'
 import { useConfirm } from '@/components/admin/confirm-dialog'
 import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
+import { SettingsAiTab } from '@/components/admin/settings-ai-tab'
+import { SettingsStorageTab } from '@/components/admin/settings-storage-tab'
+import { SettingsSmsTab } from '@/components/admin/settings-sms-tab'
+import { SettingsNotificationTab } from '@/components/admin/settings-notification-tab'
 
 // ── Tab definitions ──────────────────────────────────────────────
 
@@ -17,6 +21,10 @@ const TABS = [
   { key: 'templates', label: '💬 评语模板' },
   { key: 'platforms', label: '🌐 平台管理' },
   { key: 'options', label: '🎛 选项管理' },
+  { key: 'ai', label: '🤖 AI 配置' },
+  { key: 'storage', label: '📦 存储配置' },
+  { key: 'sms', label: '📱 短信配置' },
+  { key: 'notifications', label: '📬 通知模板' },
 ]
 
 // ── Settings types ──────────────────────────────────────────────
@@ -34,6 +42,10 @@ interface SettingsData {
   platforms: PlatformItem[]
   aiTools: string[]
   genres: string[]
+  aiConfig: any | null
+  storageConfig: any | null
+  smsConfig: any | null
+  notificationTemplates: Record<string, any> | null
 }
 
 function parseSettingsData(raw: SettingsApiItem[] | null): SettingsData | null {
@@ -75,7 +87,24 @@ function parseSettingsData(raw: SettingsApiItem[] | null): SettingsData | null {
   const aiTools = (map.get('ai_tools') as string[]) ?? []
   const genres = (map.get('genres') as string[]) ?? []
 
-  return { weights, threshold, commissionRules, templates, platforms, aiTools, genres }
+  const aiConfig = (map.get('ai_config') as any) ?? null
+  const storageConfig = (map.get('storage_config') as any) ?? null
+  const smsConfig = (map.get('sms_config') as any) ?? null
+  const notificationTemplates = (map.get('notification_templates') as Record<string, any>) ?? null
+
+  return {
+    weights,
+    threshold,
+    commissionRules,
+    templates,
+    platforms,
+    aiTools,
+    genres,
+    aiConfig,
+    storageConfig,
+    smsConfig,
+    notificationTemplates,
+  }
 }
 
 // ── Main component ───────────────────────────────────────────────
@@ -155,6 +184,34 @@ export default function AdminSettingsPage() {
         {tab === 'templates' && <TemplatesTab showToast={showToast} onSave={handleSave} initialData={data} />}
         {tab === 'platforms' && <PlatformsTab showToast={showToast} onSave={handleSave} initialData={data} />}
         {tab === 'options' && <OptionsTab showToast={showToast} onSave={handleSave} initialData={data} />}
+        {tab === 'ai' && (
+          <SettingsAiTab
+            initial={data?.aiConfig ?? null}
+            onSaved={refetch}
+            showToast={(msg) => showToast(msg)}
+          />
+        )}
+        {tab === 'storage' && (
+          <SettingsStorageTab
+            initial={data?.storageConfig ?? null}
+            onSaved={refetch}
+            showToast={(msg) => showToast(msg)}
+          />
+        )}
+        {tab === 'sms' && (
+          <SettingsSmsTab
+            initial={data?.smsConfig ?? null}
+            onSaved={refetch}
+            showToast={(msg) => showToast(msg)}
+          />
+        )}
+        {tab === 'notifications' && (
+          <SettingsNotificationTab
+            initial={data?.notificationTemplates ?? null}
+            onSaved={refetch}
+            showToast={(msg) => showToast(msg)}
+          />
+        )}
       </div>
     </div>
   )
