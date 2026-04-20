@@ -4,7 +4,7 @@ import { pingAi } from '@/lib/ai-analysis'
 import { getSetting, SETTING_KEYS } from '@/lib/system-settings'
 
 export const POST = safeHandler(async function POST(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.settings.edit')
   if ('error' in auth) return auth.error
 
   const body = await request.json()

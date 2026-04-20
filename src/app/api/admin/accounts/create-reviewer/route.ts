@@ -5,7 +5,7 @@ import { logAdminAction } from '@/lib/log-action'
 import { hashPassword } from '@/lib/password'
 
 export const POST = safeHandler(async function POST(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.accounts.manage')
   if ('error' in auth) return auth.error
 
   const body = await request.json()
