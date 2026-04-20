@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useApi } from '@/lib/use-api'
 import { SONG_STATUS_MAP } from '@/lib/constants'
 import { pageWrap, textPageTitle, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'
 import { formatDateTime } from '@/lib/format'
+import { Waveform } from '@/components/audio/waveform'
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -25,6 +26,7 @@ interface Song {
   likeCount: number
   createdAt: string
   cover: string
+  audioUrl?: string | null
 }
 
 interface ReviewData {
@@ -65,46 +67,64 @@ const TAB_DEFS: { key: TabKey; label: string }[] = [
 
 // ── Waveform SVG ───────────────────────────────────────────────
 
-function WaveformPlayer() {
+function WaveformPlayer({ audioUrl, title }: { audioUrl?: string | null; title?: string }) {
   const [playing, setPlaying] = useState(false)
-  const [bars] = useState(() =>
-    // Math.max 防止 sin 波谷 + random 低值导致负数（原公式最小 -6）
-    Array.from({ length: 60 }, (_, i) => Math.max(2, 18 + Math.sin(i * 0.5) * 12 + Math.random() * 14))
-  )
+  const [progress, setProgress] = useState(0) // 0~1
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  useEffect(() => {
+    const el = audioRef.current
+    if (!el) return
+    const onTime = () => setProgress(el.duration > 0 ? el.currentTime / el.duration : 0)
+    const onEnd = () => { setPlaying(false); setProgress(0) }
+    el.addEventListener('timeupdate', onTime)
+    el.addEventListener('ended', onEnd)
+    return () => {
+      el.removeEventListener('timeupdate', onTime)
+      el.removeEventListener('ended', onEnd)
+    }
+  }, [])
+
+  const toggle = () => {
+    const el = audioRef.current
+    if (!el) { setPlaying(!playing); return }
+    if (playing) {
+      el.pause()
+      setPlaying(false)
+    } else {
+      el.play().then(() => setPlaying(true)).catch(() => setPlaying(false))
+    }
+  }
 
   return (
     <div className={`${cardCls} !p-4`}>
       <div className="flex items-center gap-3 mb-3">
         <button
-          onClick={() => setPlaying(!playing)}
+          onClick={toggle}
           className="w-10 h-10 rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] text-white flex items-center justify-center text-lg border-0 cursor-pointer shadow-[0_2px_8px_rgba(99,102,241,0.3)]"
         >
           {playing ? '⏸' : '▶'}
         </button>
         <div className="flex-1">
-          <div className="text-sm font-medium text-[var(--text)]">my_song.wav</div>
-          <div className="text-xs text-[var(--text3)]">3:18 · 3.2MB · WAV</div>
+          <div className="text-sm font-medium text-[var(--text)]">{title || 'audio.mp3'}</div>
+          <div className="text-xs text-[var(--text3)]">{audioUrl ? 'Web Audio 解码' : '无音频文件'}</div>
         </div>
       </div>
-      <svg viewBox="0 0 600 60" className="w-full h-[60px]">
-        {bars.map((h, i) => (
-          <rect
-            key={i}
-            x={i * 10}
-            y={30 - h / 2}
-            width={6}
-            height={h}
-            rx={3}
-            fill={i < (playing ? 30 : 0) ? 'var(--accent)' : 'var(--border)'}
-          />
-        ))}
-      </svg>
+      <Waveform src={audioUrl} progress={progress} />
+      {audioUrl ? <audio ref={audioRef} src={audioUrl} preload="metadata" className="hidden" /> : null}
       <div className="flex justify-between text-[11px] text-[var(--text3)] mt-1">
-        <span>{playing ? '1:39' : '0:00'}</span>
-        <span>3:18</span>
+        <span>{formatTime(audioRef.current?.currentTime ?? 0)}</span>
+        <span>{formatTime(audioRef.current?.duration ?? 0)}</span>
       </div>
     </div>
   )
+}
+
+function formatTime(sec: number): string {
+  if (!isFinite(sec) || sec <= 0) return '0:00'
+  const m = Math.floor(sec / 60)
+  const s = Math.floor(sec % 60)
+  return `${m}:${s.toString().padStart(2, '0')}`
 }
 
 // ── Badge ───────────────────────────────────────────────────────
@@ -202,7 +222,7 @@ export default function CreatorSongsPage() {
             </div>
 
             {/* Waveform */}
-            <WaveformPlayer />
+            <WaveformPlayer audioUrl={song.audioUrl} title={song.title} />
 
             {/* Meta info 2-column */}
             <div className="grid grid-cols-2 gap-2 mt-3 text-[13px]">

@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, err, safeHandler} from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
+import { invalidate } from '@/lib/cache'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -33,6 +34,9 @@ export const POST = safeHandler(async function POST(request: NextRequest, contex
     where: { id: userId },
     data: { realNameStatus },
   })
+
+  // 看板"实名认证完成率"依赖此字段
+  invalidate('dashboard')
 
   await logAdminAction(request, {
     action: action === 'approve' ? 'approve_realname' : 'reject_realname',

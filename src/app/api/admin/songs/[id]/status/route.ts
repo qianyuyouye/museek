@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, err, safeHandler} from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
+import { invalidate } from '@/lib/cache'
 import { SongStatus } from '@prisma/client'
 
 /** 每个 action 允许的来源状态 → 目标状态 */
@@ -70,6 +71,9 @@ export const POST = safeHandler(async function POST(
     where: { id: songId },
     data: { status: transition.to },
   })
+
+  // 看板统计依赖歌曲状态分布，写后立即失效
+  invalidate('dashboard')
 
   await logAdminAction(request, {
     action: `song_${action}`,

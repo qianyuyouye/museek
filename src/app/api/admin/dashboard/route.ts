@@ -1,11 +1,11 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, safeHandler} from '@/lib/api-utils'
+import { cacheGet } from '@/lib/cache'
 
-export const GET = safeHandler(async function GET(request: NextRequest) {
-  const auth = await requirePermission(request)
-  if ('error' in auth) return auth.error
+const DASHBOARD_TTL_MS = 5 * 60 * 1000  // PRD §10.2 看板 5 分钟缓存
 
+async function loadDashboard() {
   const [
     totalCreators,
     totalReviewers,
@@ -61,7 +61,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
 
   const publishRate = totalSongs > 0 ? Math.round((published / totalSongs) * 1000) / 10 : 0
 
-  return ok({
+  return {
     stats: {
       totalCreators,
       totalReviewers,
@@ -80,5 +80,12 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
       values: trendValues,
     },
     rates,
-  })
+  }
+}
+
+export const GET = safeHandler(async function GET(request: NextRequest) {
+  const auth = await requirePermission(request)
+  if ('error' in auth) return auth.error
+  const data = await cacheGet('dashboard', DASHBOARD_TTL_MS, loadDashboard)
+  return ok(data)
 })
