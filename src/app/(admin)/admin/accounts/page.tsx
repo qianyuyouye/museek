@@ -638,8 +638,10 @@ function PermissionForm({
         >
           <option value="创作者">创作者</option>
           <option value="评审">评审</option>
-          <option value="管理员">管理员</option>
         </select>
+        <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>
+          如需创建平台管理员，请使用「平台管理员」菜单新增
+        </div>
       </div>
 
       {/* Admin permission dropdown */}
@@ -687,7 +689,11 @@ function PermissionForm({
 
       <button
         className={`${btnPrimary} w-full flex justify-center`}
-        onClick={() => onSubmit({ type: roleAttr, adminLevel: resolveAdminLevel(), groupIds: Array.from(selectedGroups) })}
+        onClick={() => onSubmit({
+          type: roleAttr === '评审' ? 'reviewer' : roleAttr === '创作者' ? 'creator' : undefined,
+          adminLevel: resolveAdminLevel(),
+          groupIds: Array.from(selectedGroups),
+        })}
       >
         确认变更
       </button>
