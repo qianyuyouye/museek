@@ -8,7 +8,7 @@ import { notify } from '@/lib/notifications'
 const VALID_STATUSES: Set<string> = new Set(Object.values(SettleStatus))
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.revenue.view')
   if ('error' in auth) return auth.error
 
   const { searchParams } = request.nextUrl
@@ -55,11 +55,11 @@ const TRANSITION: Record<string, { from: SettleStatus; to: SettleStatus; timeFie
 }
 
 export const POST = safeHandler(async function POST(request: NextRequest) {
-  const auth = await requirePermission(request)
-  if ('error' in auth) return auth.error
-
   const body = await request.json()
   const { ids, action } = body
+  const permKey = action === 'pay' ? 'admin.revenue.settle' : 'admin.revenue.edit'
+  const auth = await requirePermission(request, permKey)
+  if ('error' in auth) return auth.error
 
   if (!Array.isArray(ids) || ids.length === 0) {
     return err('ids 必须为非空数组')

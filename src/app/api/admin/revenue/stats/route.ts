@@ -4,7 +4,7 @@ import { requirePermission, ok, safeHandler} from '@/lib/api-utils'
 import { Prisma } from '@prisma/client'
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.revenue.view')
   if ('error' in auth) return auth.error
 
   // 只统计 mapping status='confirmed' 的 revenueRows

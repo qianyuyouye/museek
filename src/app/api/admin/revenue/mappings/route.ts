@@ -12,7 +12,7 @@ const UI_STATUS_ALIAS: Record<string, Prisma.SongMappingWhereInput> = {
 }
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.revenue.view')
   if ('error' in auth) return auth.error
 
   const { searchParams } = request.nextUrl
@@ -61,7 +61,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
 })
 
 export const POST = safeHandler(async function POST(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.revenue.operate')
   if ('error' in auth) return auth.error
 
   const body = await request.json()
