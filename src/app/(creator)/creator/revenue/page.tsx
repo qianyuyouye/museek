@@ -223,9 +223,9 @@ export default function CreatorRevenuePage() {
                   <tr key={row.id} className="border-b border-[var(--bg4)] hover:bg-[#fafbfe] transition">
                     <td className="py-3 text-[var(--text2)]">{row.songTitle}</td>
                     <td className="py-3 text-[var(--text2)]">{row.platform}</td>
-                    <td className="py-3 text-[var(--text2)]">{row.plays.toLocaleString()}</td>
-                    <td className="py-3 text-[var(--text2)]">¥{row.rawRevenue.toFixed(2)}</td>
-                    <td className="py-3 font-semibold text-[#10b981]">¥{row.creatorAmount.toFixed(2)}</td>
+                    <td className="py-3 text-[var(--text2)]">{(row.plays ?? 0).toLocaleString()}</td>
+                    <td className="py-3 text-[var(--text2)]">¥{(row.rawRevenue ?? 0).toFixed(2)}</td>
+                    <td className="py-3 font-semibold text-[#10b981]">¥{(row.creatorAmount ?? 0).toFixed(2)}</td>
                     <td className="py-3">
                       <span className="text-xs" style={{ color: st?.color }}>{st?.label ?? row.status}</span>
                     </td>
@@ -263,11 +263,11 @@ export default function CreatorRevenuePage() {
                   {qishuiData.map((row) => (
                     <tr key={row.id} className="border-b border-[var(--bg4)] hover:bg-[#fafbfe] transition">
                       <td className="py-3 text-[var(--text2)]">{row.songName}</td>
-                      <td className="py-3 text-[var(--text2)]">{row.month}</td>
-                      <td className="py-3 text-[var(--text2)]">¥{row.douyinRevenue.toFixed(2)}</td>
-                      <td className="py-3 text-[var(--text2)]">¥{row.qishuiRevenue.toFixed(2)}</td>
+                      <td className="py-3 text-[var(--text2)]">{row.month ?? row.period ?? '—'}</td>
+                      <td className="py-3 text-[var(--text2)]">¥{(row.douyinRevenue ?? 0).toFixed(2)}</td>
+                      <td className="py-3 text-[var(--text2)]">¥{(row.qishuiRevenue ?? 0).toFixed(2)}</td>
                       <td className="py-3 font-semibold text-[#10b981]">
-                        ¥{(row.douyinRevenue + row.qishuiRevenue).toFixed(2)}
+                        ¥{((row.douyinRevenue ?? 0) + (row.qishuiRevenue ?? 0)).toFixed(2)}
                       </td>
                     </tr>
                   ))}

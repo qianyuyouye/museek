@@ -51,4 +51,6 @@ README.zip
 # Playwright MCP 运行缓存
 /.playwright-mcp/
 # Playwright MCP snapshot 临时产物
-/revenue-*.yml
+/*.yml
+# 上传目录（本地存储）
+/public/uploads

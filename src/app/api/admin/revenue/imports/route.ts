@@ -195,7 +195,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
         matchType: 'auto_exact',
         status: 'confirmed',
         confirmedAt: now,
-        confirmedBy: auth.userId,
+        // confirmedBy 外键指向 users 表；admin 操作时留 null 避免 FK 约束失败
       })
     } else if (hits.length > 1) {
       newMappingsData.push({

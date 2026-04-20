@@ -57,7 +57,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     prisma.platformSong.findMany({
       where,
       include: {
-        user: { select: { name: true, agencyContract: true, realNameStatus: true } },
+        user: { select: { name: true, realName: true, phone: true, agencyContract: true, realNameStatus: true } },
         distributions: { select: { platform: true, status: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -82,8 +82,8 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     copyrightCode: s.copyrightCode,
     title: s.title,
     userId: s.userId,
-    userName: s.user.name,
-    creatorName: s.user.name,
+    userName: s.user.realName || s.user.name || s.user.phone || '未命名',
+    creatorName: s.user.realName || s.user.name || s.user.phone || '未命名',
     agencyContract: s.user.agencyContract,
     realNameStatus: s.user.realNameStatus,
     aiTools: s.aiTools,

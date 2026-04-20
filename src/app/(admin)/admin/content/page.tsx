@@ -129,9 +129,11 @@ export default function AdminContentPage() {
   }
 
   // We need counts for all tabs - use separate queries for counts
-  const { data: allData } = useApi<{ total: number }>('/api/admin/content?pageSize=1')
-  const { data: videoData } = useApi<{ total: number }>('/api/admin/content?type=video&pageSize=1')
-  const { data: articleData } = useApi<{ total: number }>('/api/admin/content?type=article&pageSize=1')
+  // 依赖 items.length 和 tab，列表 refetch 时 tab count 也一起刷新
+  const countKey = items.length + '|' + items.map((x) => x.status).join(',')
+  const { data: allData } = useApi<{ total: number }>('/api/admin/content?pageSize=1', [countKey])
+  const { data: videoData } = useApi<{ total: number }>('/api/admin/content?type=video&pageSize=1', [countKey])
+  const { data: articleData } = useApi<{ total: number }>('/api/admin/content?type=article&pageSize=1', [countKey])
 
   // Tab definitions
   const tabs = [

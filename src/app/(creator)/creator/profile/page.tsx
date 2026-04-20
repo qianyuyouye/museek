@@ -733,6 +733,7 @@ export default function CreatorProfile() {
             setAgencyRead(false)
             if (res.ok) {
               showToast('代理发行协议签署成功')
+              refetch()
             } else {
               showToast(res.message || '签署失败')
             }

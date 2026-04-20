@@ -124,7 +124,7 @@ export default function AdminStudentsPage() {
     const groupNames = s.groups.map((g) => g.name).join(', ') || '无'
 
     const basicInfo: [string, string | number][] = [
-      ['姓名', s.name],
+      ['姓名', s.realName || s.name || '—'],
       ['手机号', s.phone],
       ['邮箱', s.email || '—'],
       ['用户属性', roleLabel[s.type] ?? '创作者'],
@@ -144,7 +144,7 @@ export default function AdminStudentsPage() {
         )}
 
         <PageHeader
-          title={`用户档案 · ${s.name}`}
+          title={`用户档案 · ${s.realName || s.name || s.phone || '未命名'}`}
           actions={
             <button className={btnGhost} onClick={() => setDetail(null)}>
               ← 返回列表
@@ -420,7 +420,10 @@ export default function AdminStudentsPage() {
     {
       key: 'name',
       title: '姓名',
-      render: (v) => <span style={{ fontWeight: 600 }}>{v as string}</span>,
+      render: (v, row) => {
+        const u = row as unknown as Student
+        return <span style={{ fontWeight: 600 }}>{u.realName || (v as string) || '—'}</span>
+      },
     },
     {
       key: 'type',

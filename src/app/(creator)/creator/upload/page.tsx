@@ -287,7 +287,12 @@ export default function CreatorUploadPage() {
         try {
           features = await extractAudioFeatures(file)
         } catch { /* 提取失败不阻塞上传 */ }
-        setForm(prev => ({ ...prev, audioUploaded: true, audioUrl: fileUrl, audioFileName: file.name, audioSize: (file.size / 1024 / 1024).toFixed(1) + 'MB', audioFeatures: features }))
+        const sizeLabel = file.size >= 1024 * 1024
+          ? (file.size / 1024 / 1024).toFixed(1) + ' MB'
+          : file.size >= 1024
+            ? Math.round(file.size / 1024) + ' KB'
+            : file.size + ' B'
+        setForm(prev => ({ ...prev, audioUploaded: true, audioUrl: fileUrl, audioFileName: file.name, audioSize: sizeLabel, audioFeatures: features }))
       } else {
         setForm(prev => ({ ...prev, coverUploaded: true, coverUrl: fileUrl }))
       }
@@ -742,7 +747,11 @@ export default function CreatorUploadPage() {
               <div className="text-[13px] text-[var(--text3)] mb-1.5">
                 试听预览
               </div>
-              <WaveformPlayer />
+              {form.audioUrl ? (
+                <audio src={form.audioUrl} controls className="w-full h-9" />
+              ) : (
+                <WaveformPlayer />
+              )}
             </div>
 
             {/* Navigation */}

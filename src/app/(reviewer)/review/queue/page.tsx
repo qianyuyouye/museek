@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/admin/page-header'
 import { DataTable, Column } from '@/components/admin/data-table'
 import { useApi } from '@/lib/use-api'
 import { pageWrap, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'
+import { formatDateTime } from '@/lib/format'
 
 const GENRE_OPTIONS = ['全部', 'Pop', 'Rock', '电子', 'Hip-Hop', '民谣', '古典']
 
@@ -84,7 +85,7 @@ export default function ReviewQueuePage() {
     {
       key: 'createdAt',
       title: '上传时间',
-      render: (v) => <span>{v as string}</span>,
+      render: (v) => <span>{formatDateTime(v as string)}</span>,
     },
     {
       key: 'id',

@@ -39,6 +39,13 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
   // 汽水歌曲 ID (qishuiSongId) 不对创作者返回 —— PRD §7.1.5 要求屏蔽
   const settleList = settlements.map((s) => ({
     id: s.id,
+    // 前端 UI 习惯字段别名
+    songTitle: s.songName ?? '',
+    platform: '汽水音乐',
+    plays: 0,
+    rawRevenue: toNumber(s.totalRevenue),
+    status: s.settleStatus,
+    // 原始字段
     songName: s.songName,
     period: s.period,
     douyinRevenue: toNumber(s.douyinRevenue),
@@ -95,6 +102,11 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
       totalEarnings: Math.round(totalEarnings * 100) / 100,
       paidAmount: Math.round(paidAmount * 100) / 100,
       pendingAmount: Math.round(pendingAmount * 100) / 100,
+      // 前端 UI 读取的别名
+      total: Math.round(totalEarnings * 100) / 100,
+      qishuiTotal: Math.round(qishuiTotal * 100) / 100,
+      paid: Math.round(paidAmount * 100) / 100,
+      pending: Math.round(pendingAmount * 100) / 100,
     },
   })
 })

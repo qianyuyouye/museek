@@ -14,7 +14,7 @@ export const GET = safeHandler(async function GET(request: NextRequest, { params
 
   const song = await prisma.platformSong.findUnique({
     where: { id: songId },
-    include: { user: { select: { name: true } } },
+    include: { user: { select: { name: true, realName: true, phone: true } } },
   })
 
   if (!song) return err('歌曲不存在', 404)
@@ -38,7 +38,7 @@ export const GET = safeHandler(async function GET(request: NextRequest, { params
     contribution: song.contribution,
     status: song.status,
     version: song.version,
-    studentName: song.user.name,
+    studentName: song.user.realName || song.user.name || song.user.phone || '未命名',
     createdAt: song.createdAt,
   })
 })

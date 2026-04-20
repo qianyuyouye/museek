@@ -362,47 +362,48 @@ function QishuiUploader({ onDone }: { onDone: (msg: string) => void }) {
   }
 
   return (
-    <>
-      <input
-        ref={inputRef}
-        type="file"
-        accept=".csv"
-        className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
-      />
-      <div className={cardCls}>
-        <h3 className="text-base font-semibold mb-1">导入汽水音乐收益报表</h3>
-        <p className="text-xs text-[var(--text3)] mb-4">
-          每月从汽水后台导出CSV → 系统按歌曲ID查映射表精确匹配 → 新歌曲按歌名匹配歌曲库待人工确认 → 确认后自动记入映射表
-        </p>
-        <div
-          style={{
-            border: '2px dashed var(--border)',
-            borderRadius: 10,
-            padding: '16px 20px',
-            cursor: uploading ? 'wait' : 'pointer',
-            transition: 'all .2s',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            opacity: uploading ? 0.6 : 1,
-          }}
-          onClick={() => !uploading && inputRef.current?.click()}
-          onMouseOver={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
-          onMouseOut={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-        >
-          <span style={{ fontSize: 28 }}>📎</span>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 500 }}>
-              {uploading ? '解析中...' : '点击上传汽水音乐 CSV'}
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
-              列顺序：类型 · 起止日期 · 歌曲名称 · 歌曲ID · 抖音收入 · 汽水收入 · 总收入
-            </div>
+    <div className={cardCls}>
+      <h3 className="text-base font-semibold mb-1">导入汽水音乐收益报表</h3>
+      <p className="text-xs text-[var(--text3)] mb-4">
+        每月从汽水后台导出CSV → 系统按歌曲ID查映射表精确匹配 → 新歌曲按歌名匹配歌曲库待人工确认 → 确认后自动记入映射表
+      </p>
+      <label
+        htmlFor="qishui-csv-input"
+        style={{
+          border: '2px dashed var(--border)',
+          borderRadius: 10,
+          padding: '16px 20px',
+          cursor: uploading ? 'wait' : 'pointer',
+          transition: 'all .2s',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          opacity: uploading ? 0.6 : 1,
+          pointerEvents: uploading ? 'none' : 'auto',
+        }}
+        onMouseOver={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+        onMouseOut={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+      >
+        <input
+          ref={inputRef}
+          id="qishui-csv-input"
+          type="file"
+          accept=".csv"
+          disabled={uploading}
+          style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
+        />
+        <span style={{ fontSize: 28 }}>📎</span>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 500 }}>
+            {uploading ? '解析中...' : '点击上传汽水音乐 CSV'}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+            列顺序：类型 · 起止日期 · 歌曲名称 · 歌曲ID · 抖音收入 · 汽水收入 · 总收入
           </div>
         </div>
-      </div>
-    </>
+      </label>
+    </div>
   )
 }
 
