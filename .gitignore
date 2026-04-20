@@ -50,3 +50,5 @@ README.zip
 /.claude/settings.local.json
 # Playwright MCP 运行缓存
 /.playwright-mcp/
+# Playwright MCP snapshot 临时产物
+/revenue-*.yml
