@@ -15,7 +15,12 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     ...(type ? { type } : {}),
   }
 
-  const [notifications, total, unreadCount, workCount, revenueCount, systemCount, allCount] = await Promise.all([
+  const VALID_TYPES = ['work', 'revenue', 'system', 'assignment'] as const
+  type ValidType = typeof VALID_TYPES[number]
+  const normalizeType = (t: string): ValidType => (VALID_TYPES.includes(t as ValidType) ? (t as ValidType) : 'system')
+
+  const baseWhere = { userId }
+  const [notifications, total, unreadCount, workCount, revenueCount, systemCount, assignmentCount] = await Promise.all([
     prisma.notification.findMany({
       where,
       orderBy: { createdAt: 'desc' },
@@ -23,22 +28,26 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
       take: pageSize,
     }),
     prisma.notification.count({ where }),
-    prisma.notification.count({ where: { userId, read: false } }),
-    prisma.notification.count({ where: { userId, type: 'work' } }),
-    prisma.notification.count({ where: { userId, type: 'revenue' } }),
-    prisma.notification.count({ where: { userId, type: 'system' } }),
-    prisma.notification.count({ where: { userId } }),
+    prisma.notification.count({ where: { ...baseWhere, read: false } }),
+    prisma.notification.count({ where: { ...baseWhere, type: 'work' } }),
+    prisma.notification.count({ where: { ...baseWhere, type: 'revenue' } }),
+    prisma.notification.count({ where: { ...baseWhere, type: 'system' } }),
+    prisma.notification.count({ where: { ...baseWhere, type: 'assignment' } }),
   ])
 
   const list = notifications.map((n) => ({
     id: n.id,
-    type: n.type,
+    type: normalizeType(n.type),
     title: n.title,
+    content: n.content,
+    targetType: n.targetType,
+    targetId: n.targetId,
+    linkUrl: n.linkUrl,
     read: n.read,
-    createdAt: n.createdAt,
+    createdAt: n.createdAt.toISOString(),
   }))
 
-  return ok({ list, total, page, pageSize, unreadCount, typeCounts: { all: allCount, work: workCount, revenue: revenueCount, system: systemCount } })
+  return ok({ list, total, page, pageSize, unreadCount, typeCounts: { all: total, work: workCount, revenue: revenueCount, system: systemCount, assignment: assignmentCount } })
 })
 
 export const PUT = safeHandler(async function PUT(request: NextRequest) {
