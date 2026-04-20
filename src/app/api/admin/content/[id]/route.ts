@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, err, safeHandler} from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
+import { sanitizeHtml } from '@/lib/sanitize'
 
 export const GET = safeHandler(async function GET(
   request: NextRequest,
@@ -48,7 +49,7 @@ export const PUT = safeHandler(async function PUT(
     if (!['video', 'article'].includes(type)) return err('类型必须为 video 或 article')
     data.type = type
   }
-  if (content !== undefined) data.content = content || null
+  if (content !== undefined) data.content = content ? sanitizeHtml(content) : null
   if (videoUrl !== undefined) data.videoUrl = videoUrl || null
   if (status !== undefined) {
     if (!['draft', 'published', 'archived'].includes(status)) {

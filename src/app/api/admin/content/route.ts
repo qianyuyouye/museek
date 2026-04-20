@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, err, parsePagination, safeHandler} from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
+import { sanitizeHtml } from '@/lib/sanitize'
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
   const auth = await requirePermission(request)
@@ -45,13 +46,16 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     return err('状态必须为 draft / published / archived')
   }
 
+  // 富文本净化：去除 script / 事件 / javascript: 协议
+  const safeContent = content ? sanitizeHtml(content) : null
+
   const item = await prisma.cmsContent.create({
     data: {
       title,
       cover: cover || null,
       category,
       type,
-      content: content || null,
+      content: safeContent,
       videoUrl: videoUrl || null,
       status: status || 'draft',
       createdBy: auth.userId,
