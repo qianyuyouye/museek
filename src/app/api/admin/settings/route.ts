@@ -36,9 +36,18 @@ export const PUT = safeHandler(async function PUT(request: NextRequest) {
   if ('error' in auth) return auth.error
 
   const body = await request.json()
-  const { settings } = body as { settings: { key: string; value: unknown }[] }
+  const rawSettings = (body as { settings: { key: string; value: unknown }[] }).settings
 
-  if (!Array.isArray(settings)) return err('settings 必须为数组')
+  if (!Array.isArray(rawSettings)) return err('settings 必须为数组')
+
+  // 兼容历史/文档命名：commission_rules 别名到 revenue_rules
+  const KEY_ALIAS: Record<string, string> = {
+    commission_rules: 'revenue_rules',
+  }
+  const settings = rawSettings.map(({ key, value }) => ({
+    key: KEY_ALIAS[key] ?? key,
+    value,
+  }))
 
   const ALLOWED_KEYS = Object.keys(PRESET_KEYS)
   const invalidKeys = settings.filter(({ key }) => !ALLOWED_KEYS.includes(key)).map(({ key }) => key)

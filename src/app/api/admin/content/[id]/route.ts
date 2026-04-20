@@ -38,7 +38,7 @@ export const PUT = safeHandler(async function PUT(
   if (!existing) return err('内容不存在', 404)
 
   const body = await request.json()
-  const { title, cover, category, type, content, status } = body
+  const { title, cover, category, type, content, videoUrl, status } = body
 
   const data: Record<string, unknown> = {}
   if (title !== undefined) data.title = title
@@ -49,9 +49,10 @@ export const PUT = safeHandler(async function PUT(
     data.type = type
   }
   if (content !== undefined) data.content = content || null
+  if (videoUrl !== undefined) data.videoUrl = videoUrl || null
   if (status !== undefined) {
-    if (!['draft', 'published'].includes(status)) {
-      return err('状态必须为 draft 或 published')
+    if (!['draft', 'published', 'archived'].includes(status)) {
+      return err('状态必须为 draft / published / archived')
     }
     data.status = status
   }

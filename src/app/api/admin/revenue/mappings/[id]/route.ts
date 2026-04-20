@@ -59,19 +59,18 @@ export const PUT = safeHandler(async function PUT(
 
     case 'bind': {
       if (!creatorId) return err('bind 操作需要 creatorId')
+      // bind 时一并自动 confirm（PRD §6.4 操作矩阵：指定创作者/关联作品后即 confirmed + 触发回溯）
       const updated = await prisma.songMapping.update({
         where: { id: mappingId },
         data: {
           creatorId,
           ...(platformSongId !== undefined && { platformSongId }),
+          status: 'confirmed',
+          confirmedAt: new Date(),
+          confirmedBy: auth.userId,
         },
       })
-      // 如果该 mapping 已处于 confirmed 且具备 creatorId，本次 bind 相当于补齐信息，
-      // 同步回溯历史 revenue_rows 生成 settlement
-      let backfill
-      if (updated.status === 'confirmed' && updated.creatorId) {
-        backfill = await backfillSettlements(prisma, mappingId)
-      }
+      const backfill = updated.creatorId ? await backfillSettlements(prisma, mappingId) : null
       await logAdminAction(request, {
         action: 'bind_mapping',
         targetType: 'song_mapping',
@@ -80,10 +79,10 @@ export const PUT = safeHandler(async function PUT(
           qishuiSongId: existing.qishuiSongId,
           creatorId,
           platformSongId: platformSongId ?? null,
-          backfill: backfill ?? null,
+          backfill,
         },
       })
-      return ok(backfill ? { ...updated, backfill } : updated)
+      return ok({ ...updated, backfill })
     }
 
     default:

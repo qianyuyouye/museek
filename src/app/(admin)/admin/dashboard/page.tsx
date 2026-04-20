@@ -157,11 +157,14 @@ export default function AdminDashboard() {
 
   const DASHBOARD_STATS = useMemo(() => {
     const s = data?.stats
+    const totalUsersSub = s ? `创作者 ${s.totalCreators} · 评审 ${s.totalReviewers}` : ''
+    const totalSongsSub = s ? `上传 ${s.songsFromUpload} · 作业 ${s.songsFromAssignment}` : ''
+    const publishedSub = s ? `发行率 ${s.publishRate}%` : ''
     return [
-      { icon: 'users', label: '注册学生', val: s?.totalCreators ?? '-', sub: '', subc: '#16a34a', grad: 'linear-gradient(135deg, #6366f1, #818cf8)', pg: '/admin/students' },
-      { icon: 'music', label: '作品总数', val: s?.totalSongs ?? '-', sub: '', subc: '#16a34a', grad: 'linear-gradient(135deg, #ec4899, #f472b6)', pg: '/admin/songs' },
+      { icon: 'users', label: '注册用户', val: s?.totalUsers ?? '-', sub: totalUsersSub, subc: '#16a34a', grad: 'linear-gradient(135deg, #6366f1, #818cf8)', pg: '/admin/students' },
+      { icon: 'music', label: '作品总数', val: s?.totalSongs ?? '-', sub: totalSongsSub, subc: '#16a34a', grad: 'linear-gradient(135deg, #ec4899, #f472b6)', pg: '/admin/songs' },
       { icon: 'clipboard', label: '评审中', val: s?.pendingReview ?? '-', sub: '', subc: '#16a34a', grad: 'linear-gradient(135deg, #0694a2, #22d3ee)', pg: '/admin/songs' },
-      { icon: 'rocket', label: '已发行', val: s?.published ?? '-', sub: '', subc: '#16a34a', grad: 'linear-gradient(135deg, #3b82f6, #60a5fa)', pg: '/admin/songs' },
+      { icon: 'rocket', label: '已发行', val: s?.published ?? '-', sub: publishedSub, subc: '#16a34a', grad: 'linear-gradient(135deg, #3b82f6, #60a5fa)', pg: '/admin/songs' },
       { icon: 'yen', label: '总收益', val: s ? `¥${s.totalRevenue.toLocaleString()}` : '-', sub: '', subc: '#16a34a', grad: 'linear-gradient(135deg, #f59e0b, #fbbf24)', pg: '/admin/revenue' },
       { icon: 'group', label: '用户组', val: s?.groupCount ?? '-', sub: '', subc: '#16a34a', grad: 'linear-gradient(135deg, #14b8a6, #5eead4)', pg: '/admin/groups' },
     ]

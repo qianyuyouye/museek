@@ -493,6 +493,8 @@ model CmsContent {
   category  String       @db.VarChar(50)
   type      ContentType
   content   String?      @db.Text
+  // 视频类型专用：视频资源 URL（video 类型时必填）
+  videoUrl  String?      @map("video_url") @db.VarChar(500)
   views     Int          @default(0)
   status    ContentStatus @default(draft)
   createdBy Int?         @map("created_by")
@@ -532,6 +534,7 @@ enum ContentType {
 enum ContentStatus {
   published
   draft
+  archived
 }
 
 // 4.18 system_settings（系统设置）

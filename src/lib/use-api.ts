@@ -9,6 +9,17 @@ interface UseApiResult<T> {
   refetch: () => void
 }
 
+/**
+ * 全局错误提示监听：页面可注册一个简单 toast 回调，
+ * apiCall/ useApi 非 200 时自动广播 message。
+ * 注册方式：在布局 Provider 里 window.__globalToast = (msg) => showToast(msg)
+ */
+function broadcastError(message: string | undefined) {
+  if (!message || typeof window === 'undefined') return
+  const fn = (window as unknown as { __globalToast?: (m: string) => void }).__globalToast
+  try { fn?.(message) } catch { /* ignore */ }
+}
+
 /** 通用 GET 数据 hook */
 export function useApi<T>(url: string | null, deps: unknown[] = []): UseApiResult<T> {
   const [data, setData] = useState<T | null>(null)
@@ -45,6 +56,7 @@ export async function apiCall<T = unknown>(
   url: string,
   method: 'POST' | 'PUT' | 'DELETE' = 'POST',
   body?: unknown,
+  opts: { silent?: boolean } = {},
 ): Promise<{ ok: boolean; data?: T; message?: string }> {
   try {
     const res = await fetch(url, {
@@ -56,8 +68,12 @@ export async function apiCall<T = unknown>(
     if (json.code === 200) {
       return { ok: true, data: json.data }
     }
-    return { ok: false, message: json.message || '操作失败' }
+    const message = json.message || '操作失败'
+    if (!opts.silent) broadcastError(message)
+    return { ok: false, message }
   } catch {
-    return { ok: false, message: '网络错误' }
+    const message = '网络错误'
+    if (!opts.silent) broadcastError(message)
+    return { ok: false, message }
   }
 }

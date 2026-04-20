@@ -36,11 +36,14 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   if ('error' in auth) return auth.error
 
   const body = await request.json()
-  const { title, cover, category, type, content, status } = body
+  const { title, cover, category, type, content, videoUrl, status } = body
 
   if (!title) return err('标题不能为空')
   if (!category) return err('分类不能为空')
   if (!type || !['video', 'article'].includes(type)) return err('类型必须为 video 或 article')
+  if (status !== undefined && !['draft', 'published', 'archived'].includes(status)) {
+    return err('状态必须为 draft / published / archived')
+  }
 
   const item = await prisma.cmsContent.create({
     data: {
@@ -49,6 +52,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
       category,
       type,
       content: content || null,
+      videoUrl: videoUrl || null,
       status: status || 'draft',
       createdBy: auth.userId,
     },

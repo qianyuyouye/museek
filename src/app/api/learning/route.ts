@@ -17,7 +17,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     },
   })
 
-  return ok({ list: records })
+  return ok({ list: records, total: records.length, page: 1, pageSize: records.length })
 })
 
 // POST /api/learning — upsert 学习进度（心跳/进度上报）

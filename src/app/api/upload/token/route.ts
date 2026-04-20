@@ -7,9 +7,13 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   const { userId } = getCurrentUser(request)
   if (!userId) return err('未登录', 401)
 
-  const { fileName, fileSize, type } = await request.json()
+  const body = await request.json()
+  // 兼容两套命名：{fileName, fileSize, type} 与 {name, size, kind}
+  const fileName: string | undefined = body.fileName ?? body.name
+  const fileSize: number | undefined = body.fileSize ?? body.size
+  const type: string | undefined = body.type ?? body.kind
 
-  if (!fileName || !fileSize || !type) return err('缺少 fileName/fileSize/type')
+  if (!fileName || !fileSize || !type) return err('缺少 fileName/fileSize/type（或别名 name/size/kind）')
   if (type !== 'audio' && type !== 'image') return err('type 必须是 audio 或 image')
 
   const error = validateUpload(fileName, fileSize, type)

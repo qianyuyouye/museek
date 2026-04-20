@@ -8,7 +8,10 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
 
   const [
     totalCreators,
+    totalReviewers,
     totalSongs,
+    songsFromUpload,
+    songsFromAssignment,
     pendingReview,
     published,
     revenueAgg,
@@ -19,7 +22,10 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     groupCount,
   ] = await Promise.all([
     prisma.user.count({ where: { type: 'creator' } }),
+    prisma.user.count({ where: { type: 'reviewer' } }),
     prisma.platformSong.count(),
+    prisma.platformSong.count({ where: { source: 'upload' } }),
+    prisma.platformSong.count({ where: { source: 'assignment' } }),
     prisma.platformSong.count({ where: { status: 'pending_review' } }),
     prisma.platformSong.count({ where: { status: 'published' } }),
     prisma.settlement.aggregate({ _sum: { creatorAmount: true } }),
@@ -53,12 +59,19 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
   const trendMonths = trendRaw.map((r) => r.period ?? '')
   const trendValues = trendRaw.map((r) => Number(r._sum.creatorAmount ?? 0))
 
+  const publishRate = totalSongs > 0 ? Math.round((published / totalSongs) * 1000) / 10 : 0
+
   return ok({
     stats: {
       totalCreators,
+      totalReviewers,
+      totalUsers: totalCreators + totalReviewers,
       totalSongs,
+      songsFromUpload,
+      songsFromAssignment,
       pendingReview,
       published,
+      publishRate,
       totalRevenue,
       groupCount,
     },
