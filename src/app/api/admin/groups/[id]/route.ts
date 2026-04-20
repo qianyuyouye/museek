@@ -7,7 +7,7 @@ import { logAdminAction } from '@/lib/log-action'
 type Params = { params: Promise<{ id: string }> }
 
 export const GET = safeHandler(async function GET(request: NextRequest, { params }: Params) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.groups.view')
   if ('error' in auth) return auth.error
 
   const { id } = await params
@@ -50,7 +50,7 @@ export const GET = safeHandler(async function GET(request: NextRequest, { params
 })
 
 export const PUT = safeHandler(async function PUT(request: NextRequest, { params }: Params) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.groups.edit')
   if ('error' in auth) return auth.error
 
   const { id } = await params
@@ -102,7 +102,7 @@ export const PUT = safeHandler(async function PUT(request: NextRequest, { params
 })
 
 export const DELETE = safeHandler(async function DELETE(request: NextRequest, { params }: Params) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.groups.manage')
   if ('error' in auth) return auth.error
 
   const { id } = await params

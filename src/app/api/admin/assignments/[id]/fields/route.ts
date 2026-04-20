@@ -8,7 +8,7 @@ export const GET = safeHandler(async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.assignments.view')
   if ('error' in auth) return auth.error
 
   const { id } = await params
@@ -33,7 +33,7 @@ export const PUT = safeHandler(async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.assignments.edit')
   if ('error' in auth) return auth.error
 
   const { id } = await params

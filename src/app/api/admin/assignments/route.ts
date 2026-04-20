@@ -5,7 +5,7 @@ import { logAdminAction } from '@/lib/log-action'
 import { notify } from '@/lib/notifications'
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.assignments.view')
   if ('error' in auth) return auth.error
 
   const { searchParams } = request.nextUrl
@@ -41,7 +41,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
 })
 
 export const POST = safeHandler(async function POST(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.assignments.manage')
   if ('error' in auth) return auth.error
 
   const body = await request.json()
