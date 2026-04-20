@@ -28,7 +28,8 @@ interface Settlement {
 interface QishuiDetail {
   id: number
   songName: string
-  month: string
+  month?: string
+  period?: string
   douyinRevenue: number
   qishuiRevenue: number
 }

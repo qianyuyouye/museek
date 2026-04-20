@@ -9,9 +9,14 @@ import { pageWrap } from '@/lib/ui-tokens'
 interface DashboardData {
   stats: {
     totalCreators: number
+    totalReviewers: number
+    totalUsers: number
     totalSongs: number
+    songsFromUpload: number
+    songsFromAssignment: number
     pendingReview: number
     published: number
+    publishRate: number
     totalRevenue: number
     groupCount: number
   }
