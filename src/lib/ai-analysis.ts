@@ -1,21 +1,13 @@
-/**
- * AI 音频预分析
- *
- * 流程：前端 Web Audio API 提取音频特征 → 特征数据存数据库 → AI 基于特征分析
- *
- * 环境变量：
- *   AI_API_BASE_URL - API 地址（默认 https://api.openai.com/v1）
- *   AI_API_KEY - API 密钥
- *   AI_MODEL - 模型名称（默认 gpt-4o-mini）
- */
+import { prisma } from './prisma'
+import { getSetting, SETTING_KEYS } from './system-settings'
 
 export interface AudioFeatures {
-  duration: number       // 秒
-  sampleRate: number     // Hz
-  channels: number       // 声道数
-  peakFrequency: string  // 主频段描述
-  energyProfile: string  // 能量分布描述
-  rhythmDensity: string  // 节奏密度描述
+  duration: number
+  sampleRate: number
+  channels: number
+  peakFrequency: string
+  energyProfile: string
+  rhythmDensity: string
 }
 
 export interface AIAnalysisResult {
@@ -47,13 +39,55 @@ interface AnalysisInput {
   audioFeatures: AudioFeatures | null
 }
 
-export async function analyzeSong(input: AnalysisInput): Promise<AIAnalysisResult> {
-  const baseUrl = process.env.AI_API_BASE_URL || 'https://api.openai.com/v1'
-  const apiKey = process.env.AI_API_KEY
-  const model = process.env.AI_MODEL || 'gpt-4o-mini'
+interface AiConfig {
+  enabled: boolean
+  baseUrl: string
+  apiKey: string
+  model: string
+  timeoutMs: number
+}
 
-  if (!apiKey) {
-    console.warn('[AI Analysis] AI_API_KEY 未配置，返回默认值')
+let lastAlertAt = 0
+
+async function logUnavailable(reason: string): Promise<void> {
+  if (process.env.NODE_ENV !== 'production') return
+  // 去抖：1 小时内最多一条日志
+  if (Date.now() - lastAlertAt < 3600_000) return
+  lastAlertAt = Date.now()
+  try {
+    await prisma.operationLog.create({
+      data: {
+        operatorId: 0,
+        operatorName: 'system',
+        action: 'ai_analysis_unavailable',
+        targetType: 'system',
+        detail: { reason },
+      },
+    })
+  } catch (err) {
+    console.error('[AI Analysis] 写入告警失败:', err)
+  }
+}
+
+async function loadConfig(): Promise<AiConfig> {
+  const fromDb = await getSetting<Partial<AiConfig>>(SETTING_KEYS.AI_CONFIG, {})
+  return {
+    enabled: fromDb.enabled ?? !!process.env.AI_API_KEY,
+    baseUrl: fromDb.baseUrl || process.env.AI_API_BASE_URL || 'https://api.openai.com/v1',
+    apiKey: fromDb.apiKey || process.env.AI_API_KEY || '',
+    model: fromDb.model || process.env.AI_MODEL || 'gpt-4o-mini',
+    timeoutMs: fromDb.timeoutMs ?? 10000,
+  }
+}
+
+export async function analyzeSong(input: AnalysisInput): Promise<AIAnalysisResult> {
+  const config = await loadConfig()
+
+  if (!config.enabled) {
+    return DEFAULT_RESULT
+  }
+  if (!config.apiKey) {
+    await logUnavailable('AI_API_KEY 未配置')
     return DEFAULT_RESULT
   }
 
@@ -93,22 +127,24 @@ ${audioSection}
 只返回 JSON。`
 
   try {
-    const res = await fetch(`${baseUrl}/chat/completions`, {
+    const res = await fetch(`${config.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${config.apiKey}`,
       },
       body: JSON.stringify({
-        model,
+        model: config.model,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.3,
         max_tokens: 500,
       }),
+      signal: AbortSignal.timeout(config.timeoutMs),
     })
 
     if (!res.ok) {
       console.error('[AI Analysis] API 请求失败:', res.status, await res.text())
+      await logUnavailable(`API 返回 ${res.status}`)
       return DEFAULT_RESULT
     }
 
@@ -130,6 +166,32 @@ ${audioSection}
     }
   } catch (err) {
     console.error('[AI Analysis] 分析失败:', err)
+    await logUnavailable(err instanceof Error ? err.message : 'unknown')
     return DEFAULT_RESULT
+  }
+}
+
+/** 由 test-ai API 调用，用最小 prompt 测试连接性 */
+export async function pingAi(config: Pick<AiConfig, 'baseUrl' | 'apiKey' | 'model' | 'timeoutMs'>): Promise<{ ok: boolean; message: string }> {
+  if (!config.apiKey) return { ok: false, message: 'apiKey 不能为空' }
+  try {
+    const res = await fetch(`${config.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: config.model,
+        messages: [{ role: 'user', content: 'ping' }],
+        max_tokens: 5,
+      }),
+      signal: AbortSignal.timeout(config.timeoutMs ?? 5000),
+    })
+    if (res.ok) return { ok: true, message: '连接成功' }
+    const body = await res.text().catch(() => '')
+    return { ok: false, message: `HTTP ${res.status}: ${body.slice(0, 100)}` }
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : '连接失败' }
   }
 }
