@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, ok, err, safeHandler} from '@/lib/api-utils'
 import { SongStatus, SubmissionStatus } from '@prisma/client'
+import { notify } from '@/lib/notifications'
 
 export const POST = safeHandler(async function POST(request: NextRequest) {
   const { userId, portal } = getCurrentUser(request)
@@ -48,7 +49,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   }
 
   // 事务：乐观锁 updateMany 先占位（只有一个并发能 count=1），再创建 review
-  let review: { id: number }
+  let review: { id: number; creatorId: number; songTitle: string }
   try {
     review = await prisma.$transaction(async (tx) => {
       // 先读歌曲拿 version / source / submission
@@ -99,7 +100,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
         })
       }
 
-      return created
+      return { ...created, creatorId: song.userId, songTitle: song.title }
     })
   } catch (e) {
     if (e instanceof Error) {
@@ -107,6 +108,25 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
       if (e.message === 'NOT_PENDING') return err('该歌曲已被其他评审处理或状态已变更', 409)
     }
     throw e
+  }
+
+  // 事务已提交，异步通知创作者（失败只打日志，不回滚主业务）
+  try {
+    const templateKey = newSongStatus === 'needs_revision' ? 'tpl.song_needs_revision' : 'tpl.review_done'
+    await notify(
+      review.creatorId,
+      templateKey,
+      {
+        songTitle: review.songTitle,
+        score: totalScore,
+        songId,
+        comment: comment ?? '',
+      },
+      'song',
+      songId,
+    )
+  } catch (e) {
+    console.error('[notify] review submit failed:', e)
   }
 
   return ok({ reviewId: review.id, totalScore, songStatus: newSongStatus })
