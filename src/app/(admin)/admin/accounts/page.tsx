@@ -71,7 +71,8 @@ export default function AdminAccountsPage() {
   const confirm = useConfirm()
   const [tab, setTab] = useState('reviewer')
   const [toast, setToast] = useState('')
-  const [createModal, setCreateModal] = useState(false)
+  const [createReviewerModal, setCreateReviewerModal] = useState(false)
+  const [createCreatorModal, setCreateCreatorModal] = useState(false)
   const [permModal, setPermModal] = useState<ReviewerAccount | CreatorAccount | null>(null)
 
   const { data, loading, refetch } = useApi<AccountsApiData>(
@@ -331,8 +332,13 @@ export default function AdminAccountsPage() {
         actions={
           <div className="flex items-center gap-2">
             {tab === 'reviewer' && (
-              <button className={btnPrimary} onClick={() => setCreateModal(true)}>
+              <button className={btnPrimary} onClick={() => setCreateReviewerModal(true)}>
                 + 创建评审账号
+              </button>
+            )}
+            {tab === 'creator' && (
+              <button className={btnPrimary} onClick={() => setCreateCreatorModal(true)}>
+                + 创建创作者账号
               </button>
             )}
             <button
@@ -369,8 +375,8 @@ export default function AdminAccountsPage() {
 
       {/* 创建评审账号 Modal */}
       <AdminModal
-        open={createModal}
-        onClose={() => setCreateModal(false)}
+        open={createReviewerModal}
+        onClose={() => setCreateReviewerModal(false)}
         title="创建评审账号"
       >
         <CreateReviewerForm
@@ -378,8 +384,29 @@ export default function AdminAccountsPage() {
           onSubmit={async (body) => {
             const res = await apiCall('/api/admin/accounts/create-reviewer', 'POST', body)
             if (res.ok) {
-              setCreateModal(false)
+              setCreateReviewerModal(false)
               showToast('✅ 评审账号创建成功')
+              refetch()
+            } else {
+              showToast(res.message ?? '创建失败')
+            }
+          }}
+        />
+      </AdminModal>
+
+      {/* 创建创作者账号 Modal */}
+      <AdminModal
+        open={createCreatorModal}
+        onClose={() => setCreateCreatorModal(false)}
+        title="创建创作者账号"
+      >
+        <CreateCreatorForm
+          groups={groups}
+          onSubmit={async (body) => {
+            const res = await apiCall('/api/admin/accounts/create-creator', 'POST', body)
+            if (res.ok) {
+              setCreateCreatorModal(false)
+              showToast('✅ 创作者账号创建成功')
               refetch()
             } else {
               showToast(res.message ?? '创建失败')
@@ -473,6 +500,69 @@ function CreateReviewerForm({ groups, onSubmit }: { groups: UserGroup[]; onSubmi
         onClick={() => onSubmit({ name, phone, email, groupId: groupId ? Number(groupId) : null, password })}
       >
         创建评审账号
+      </button>
+    </div>
+  )
+}
+
+// ── Create Creator Form ─────────────────────────────────────────
+function CreateCreatorForm({ groups, onSubmit }: { groups: UserGroup[]; onSubmit: (body: Record<string, unknown>) => void }) {
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
+  const [groupId, setGroupId] = useState('')
+  const [password, setPassword] = useState('Abc12345')
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div>
+        <label className={labelCls}>姓名 *</label>
+        <input className={inputCls} placeholder="创作者姓名" value={name} onChange={(e) => setName(e.target.value)} />
+      </div>
+      <div>
+        <label className={labelCls}>手机号 *</label>
+        <input className={inputCls} placeholder="11位手机号" value={phone} onChange={(e) => setPhone(e.target.value)} />
+      </div>
+      <div>
+        <label className={labelCls}>邮箱</label>
+        <input className={inputCls} placeholder="user@example.com（可选）" value={email} onChange={(e) => setEmail(e.target.value)} />
+      </div>
+      <div>
+        <label className={labelCls}>加入用户组</label>
+        <select
+          className={inputCls}
+          value={groupId}
+          onChange={(e) => setGroupId(e.target.value)}
+        >
+          <option value="">请选择用户组（可选）</option>
+          {groups.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className={labelCls}>初始密码</label>
+        <input className={inputCls} value={password} onChange={(e) => setPassword(e.target.value)} />
+      </div>
+      <div
+        style={{
+          padding: 12,
+          background: 'rgba(108,92,231,.08)',
+          borderRadius: 8,
+          fontSize: 12,
+          color: 'var(--accent2)',
+          lineHeight: 1.6,
+        }}
+      >
+        💡 创建后创作者即可使用手机号 + 密码登录创作者端，无需走短信注册。
+      </div>
+      <button
+        className={`${btnPrimary} w-full flex justify-center`}
+        onClick={() => onSubmit({ name, phone, email: email || undefined, groupId: groupId ? Number(groupId) : null, password })}
+      >
+        创建创作者账号
       </button>
     </div>
   )
