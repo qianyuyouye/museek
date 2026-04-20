@@ -101,6 +101,31 @@ describe('歌曲 · ISRC 绑定 + 授权 PDF', () => {
     expect(r.status).toBe(200)
   })
 
+  it('TC-ISRC-NOTIFY 绑定 ISRC 成功后创作者收到 tpl.isrc_bound', async () => {
+    const { prisma } = await import('@/lib/prisma')
+    const creator = await prisma.user.findUnique({ where: { phone: '13800001234' }, select: { id: true } })
+    await prisma.notification.deleteMany({ where: { userId: creator!.id } })
+
+    const song = await prisma.platformSong.create({
+      data: {
+        title: 'ISRC 通知测试',
+        userId: creator!.id,
+        status: 'reviewed',
+        source: 'upload',
+        copyrightCode: `ISRC-${Date.now() % 100000000}`,
+      },
+    })
+    const { cookie: admC } = await adminLogin()
+    const r = await http(`/api/admin/songs/${song.id}/isrc`, { method: 'POST', cookie: admC, body: { isrc: 'CN-TEST-26-99999' } })
+    expectOk(r, 'isrc bind')
+
+    const notes = await prisma.notification.findMany({ where: { userId: creator!.id, targetType: 'song', targetId: String(song.id) } })
+    expect(notes.some((n) => n.content?.includes('CN-TEST-26-99999'))).toBe(true)
+
+    await prisma.notification.deleteMany({ where: { userId: creator!.id } })
+    await prisma.platformSong.delete({ where: { id: song.id } })
+  })
+
   it('TC-E-34 授权凭证 PDF：已签创作者 → 200 + %PDF', async () => {
     const res = await fetch(`${BASE_URL}/api/admin/songs/1/agency-pdf`, {
       headers: { Cookie: adminCookie, Origin: BASE_URL },
