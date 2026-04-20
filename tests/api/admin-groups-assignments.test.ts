@@ -143,4 +143,28 @@ describe('作业 CRUD', () => {
     const r = await http(`/api/admin/assignments/${createdAssignmentId}`, { method: 'DELETE', cookie: adminCookie })
     expect([200, 400]).toContain(r.status)
   })
+
+  it('TC-ASN-NOTIFY 作业创建后广播 tpl.assignment_created 给组成员', async () => {
+    const { prisma } = await import('@/lib/prisma')
+    const creator = await prisma.user.findUnique({ where: { phone: '13800001234' }, select: { id: true } })
+    await prisma.notification.deleteMany({ where: { userId: creator!.id } })
+
+    const group = await prisma.group.findUnique({ where: { inviteCode: 'E2ETEST1' } })
+    const { cookie: admC } = await adminLogin()
+    const r = await http('/api/admin/assignments', {
+      method: 'POST',
+      cookie: admC,
+      body: { title: '通知测试作业', description: '做一做', groupId: group!.id, deadline: '2099-12-31' },
+    })
+    expectOk(r, 'assignment create')
+
+    const asnId = (r.json.data as { id: number }).id
+    const notes = await prisma.notification.findMany({ where: { userId: creator!.id, targetType: 'assignment', targetId: String(asnId) } })
+    expect(notes.length).toBe(1)
+    expect(notes[0].title).toContain('通知测试作业')
+    expect(notes[0].type).toBe('assignment')
+
+    await prisma.notification.deleteMany({ where: { userId: creator!.id } })
+    await prisma.assignment.delete({ where: { id: asnId } })
+  })
 })

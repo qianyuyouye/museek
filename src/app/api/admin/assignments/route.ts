@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, err, parsePagination, safeHandler} from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
+import { notify } from '@/lib/notifications'
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
   const auth = await requirePermission(request)
@@ -75,5 +76,31 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     targetId: assignment.id,
     detail: { title: assignment.title, groupId: gid, deadline: assignment.deadline },
   })
+
+  try {
+    const members = await prisma.userGroup.findMany({
+      where: { groupId: assignment.groupId, user: { type: 'creator', status: 'active' } },
+      select: { userId: true },
+    })
+    await Promise.all(
+      members.map((m) =>
+        notify(
+          m.userId,
+          'tpl.assignment_created',
+          {
+            assignmentTitle: assignment.title,
+            assignmentDescription: assignment.description ?? '',
+            deadline: assignment.deadline ? assignment.deadline.toISOString().slice(0, 10) : '',
+            assignmentId: assignment.id,
+          },
+          'assignment',
+          assignment.id,
+        ).catch((e) => console.error('[notify] assignment_created failed uid=', m.userId, e)),
+      ),
+    )
+  } catch (e) {
+    console.error('[notify] assignment broadcast failed:', e)
+  }
+
   return ok(assignment)
 })
