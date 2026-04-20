@@ -86,7 +86,8 @@ archived → reviewed（恢复）
 npm run dev              # 启动开发服务器
 npx prisma db push       # 同步 schema 到数据库
 npx prisma generate      # 重新生成 Prisma Client
-npx prisma db seed       # 运行种子数据
+npx prisma db seed       # 运行种子数据（仅管理员）
+npx tsx prisma/seed-test-users.ts  # 可选：注入测试用 creator/reviewer + E2ETEST1 邀请码组，配合 vitest 登录（详见脚本注释）
 npm run build            # 生产构建
 npx tsc --noEmit         # 类型检查
 ```
