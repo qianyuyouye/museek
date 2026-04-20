@@ -51,6 +51,37 @@ README.zip
 # Playwright MCP 运行缓存
 /.playwright-mcp/
 # Playwright MCP snapshot 临时产物
-/*.yml
+/revenue-*.yml
+/dashboard*.yml
+/profile*.yml
+/songs*.yml
+/assignments*.yml
+/asgn*.yml
+/assess.yml
+/admin-content.yml
+/content.yml
+/courses.yml
+/creator-*.yml
+/dist-*.yml
+/distributions.yml
+/groups.yml
+/isrc-*.yml
+/learning.yml
+/pack-done.yml
+/queue.yml
+/realname.yml
+/register-ready.yml
+/rev-*.yml
+/role-new.yml
+/roles.yml
+/settings.yml
+/step2-filled.yml
+/student-detail.yml
+/students.yml
+/submit-asgn.yml
+/upload-*.yml
+/workbench.yml
+/accounts.yml
+/batch.yml
 # 上传目录（本地存储）
 /public/uploads
