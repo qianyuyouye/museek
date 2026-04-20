@@ -19,6 +19,6 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   const error = validateUpload(fileName, fileSize, type)
   if (error) return err(error)
 
-  const token = createUploadToken(fileName, type)
+  const token = await createUploadToken(fileName, type)
   return ok(token)
 })

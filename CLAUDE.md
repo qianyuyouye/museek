@@ -86,7 +86,8 @@ archived → reviewed（恢复）
 npm run dev              # 启动开发服务器
 npx prisma db push       # 同步 schema 到数据库
 npx prisma generate      # 重新生成 Prisma Client
-npx prisma db seed       # 运行种子数据
+npx prisma db seed       # 运行种子数据（仅管理员）
+npx tsx prisma/seed-test-users.ts  # 可选：注入测试用 creator/reviewer + E2ETEST1 邀请码组，配合 vitest 登录（详见脚本注释）
 npm run build            # 生产构建
 npx tsc --noEmit         # 类型检查
 ```
@@ -119,3 +120,18 @@ OSS_BUCKET=                                  # 可选，配了走 OSS 上传
 - 所有 `parseInt` 后必须 `isNaN` 检查
 - 管理端鉴权用 `requireAdmin`，创作者/评审端用 `getCurrentUser` + portal 校验
 - 文件上传流程：前端获取 token → 直接 PUT 到存储（开发本地/生产 OSS）
+
+## 运行时配置（Batch 1A 起）
+
+以下配置优先从管理端 `/admin/settings` DB 读取（`system_settings` 表），未配置时回落到 env：
+
+- **AI 预分析**：`ai_config.*` → `AI_API_KEY / AI_API_BASE_URL / AI_MODEL`
+- **文件存储**：`storage_config.*` → `OSS_BUCKET / OSS_REGION / OSS_DOMAIN / OSS_ACCESS_KEY_ID / OSS_ACCESS_KEY_SECRET`
+- **阿里云短信**：`sms_config.*` → `ALIYUN_ACCESS_KEY_ID / ALIYUN_ACCESS_KEY_SECRET / ALIYUN_SMS_SIGN_NAME / ALIYUN_SMS_TEMPLATE_CODE`
+- **通知模板**：`notification_templates` JSON（无 env 对应，仅 DB）
+
+**加密字段**：`apiKey / accessKeySecret / accessKeyId` 三项使用 `ENCRYPTION_KEY` (AES-256-GCM) 加密存 DB，前端只看脱敏值 `sk-****abcd`。
+
+**生产部署建议**：全部用 DB 配置；env 仅保留 `ENCRYPTION_KEY / JWT_SECRET / DATABASE_URL` 三项启动前置。
+
+**备注**：OSS SDK 实际的 signatureUrl 签名调用在 Batch 1B 实施；Batch 1A 只让配置可落库、lib 读取路径切到 DB 优先。

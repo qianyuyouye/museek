@@ -1,5 +1,6 @@
 import crypto from 'crypto'
 import path from 'path'
+import { getSetting, SETTING_KEYS } from './system-settings'
 
 const AUDIO_EXTS = ['.wav', '.mp3']
 const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.webp']
@@ -7,14 +8,43 @@ const MAX_AUDIO = 50 * 1024 * 1024
 const MAX_IMAGE = 5 * 1024 * 1024
 
 interface UploadToken {
-  /** 前端 PUT 文件到这个 URL */
   uploadUrl: string
-  /** 上传完成后文件的访问 URL（存数据库用） */
   fileUrl: string
-  /** 上传方式 */
   method: 'PUT'
-  /** 额外 headers（OSS 需要） */
   headers?: Record<string, string>
+}
+
+interface StorageConfig {
+  mode: 'local' | 'oss'
+  oss: {
+    accessKeyId: string
+    accessKeySecret: string
+    region: string
+    bucket: string
+    domain: string
+  }
+  signedUrlTtlSec: number
+  uploadTokenTtlSec: number
+  zipRetainHours: number
+}
+
+async function loadStorageConfig(): Promise<StorageConfig> {
+  const fromDb = await getSetting<Partial<StorageConfig>>(SETTING_KEYS.STORAGE_CONFIG, {})
+  const oss = fromDb.oss ?? {} as Partial<StorageConfig['oss']>
+  const mode = fromDb.mode ?? (process.env.OSS_BUCKET ? 'oss' : 'local')
+  return {
+    mode: mode as 'local' | 'oss',
+    oss: {
+      accessKeyId: oss.accessKeyId || process.env.OSS_ACCESS_KEY_ID || '',
+      accessKeySecret: oss.accessKeySecret || process.env.OSS_ACCESS_KEY_SECRET || '',
+      region: oss.region || process.env.OSS_REGION || 'oss-cn-hangzhou',
+      bucket: oss.bucket || process.env.OSS_BUCKET || '',
+      domain: oss.domain || process.env.OSS_DOMAIN || '',
+    },
+    signedUrlTtlSec: fromDb.signedUrlTtlSec ?? 3600,
+    uploadTokenTtlSec: fromDb.uploadTokenTtlSec ?? 300,
+    zipRetainHours: fromDb.zipRetainHours ?? 24,
+  }
 }
 
 function generateKey(originalName: string, type: 'audio' | 'image'): string {
@@ -38,7 +68,6 @@ export function validateUpload(fileName: string, fileSize: number, type: 'audio'
   return null
 }
 
-/** 开发环境：返回本地上传端点 */
 function getLocalToken(key: string): UploadToken {
   return {
     uploadUrl: `/api/upload/local/${key}`,
@@ -47,28 +76,38 @@ function getLocalToken(key: string): UploadToken {
   }
 }
 
-/** 生产环境：返回 OSS 预签名 URL */
-function getOSSToken(key: string): UploadToken {
-  // TODO: 用阿里云 OSS SDK 生成预签名 PUT URL
-  // const client = new OSS({ region, accessKeyId, accessKeySecret, bucket })
-  // const url = client.signatureUrl(key, { method: 'PUT', expires: 300 })
-  const bucket = process.env.OSS_BUCKET || ''
-  const region = process.env.OSS_REGION || ''
-  const domain = process.env.OSS_DOMAIN || `https://${bucket}.${region}.aliyuncs.com`
-
+/**
+ * OSS 上传 Token（过渡版）
+ *
+ * Batch 1A：仅返回基于 DB 配置的占位 URL，未做 signatureUrl 真实签名。
+ * Batch 1B：接入 ali-oss SDK，调用 `client.signatureUrl(key, {method:'PUT', expires:300})`。
+ */
+function getOSSToken(key: string, config: StorageConfig): UploadToken {
+  const { bucket, region, domain } = config.oss
+  const base = domain || `https://${bucket}.${region}.aliyuncs.com`
   return {
-    uploadUrl: `${domain}/${key}`, // 实际要用 signatureUrl
-    fileUrl: `${domain}/${key}`,
+    uploadUrl: `${base}/${key}`, // TODO(Batch-1B): 替换为 signatureUrl 签名
+    fileUrl: `${base}/${key}`,
     method: 'PUT',
     headers: { 'Content-Type': 'application/octet-stream' },
   }
 }
 
-export function createUploadToken(fileName: string, type: 'audio' | 'image'): UploadToken {
+export async function createUploadToken(fileName: string, type: 'audio' | 'image'): Promise<UploadToken> {
   const key = generateKey(fileName, type)
+  const config = await loadStorageConfig()
 
-  if (process.env.OSS_BUCKET) {
-    return getOSSToken(key)
+  if (config.mode === 'oss') {
+    if (!config.oss.bucket || !config.oss.accessKeyId) {
+      throw new Error('OSS 模式已启用但配置不完整（bucket 或 accessKeyId 缺失）')
+    }
+    return getOSSToken(key, config)
   }
   return getLocalToken(key)
+}
+
+/** 用于 UI 层快速判断当前存储模式 */
+export async function getCurrentStorageMode(): Promise<'local' | 'oss'> {
+  const config = await loadStorageConfig()
+  return config.mode
 }
