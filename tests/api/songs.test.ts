@@ -44,7 +44,8 @@ describe('歌曲 · 状态机', () => {
     const byGenre = await http('/api/admin/songs?genre=Pop', { cookie: adminCookie })
     expectOk(byGenre, 'genre filter')
     const all = byGenre.json.data.list as { genre: string }[]
-    expect(all.every((s) => s.genre === 'Pop')).toBe(true)
+    // MySQL ci collation 大小写不敏感：pop / Pop 都应匹配
+    expect(all.every((s) => s.genre?.toLowerCase() === 'pop')).toBe(true)
 
     const byScore = await http('/api/admin/songs?minScore=80&maxScore=89', { cookie: adminCookie })
     expectOk(byScore, 'score filter')

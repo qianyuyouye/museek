@@ -29,7 +29,8 @@ describe('评审端', () => {
     const r = await http('/api/review/queue?genre=Pop', { cookie: reviewerCookie })
     expectOk(r, 'queue genre')
     const list = r.json.data.list as { genre: string | null }[]
-    expect(list.every((s) => !s.genre || s.genre === 'Pop')).toBe(true)
+    // MySQL ci collation：Pop / pop 都算匹配
+    expect(list.every((s) => !s.genre || s.genre.toLowerCase() === 'pop')).toBe(true)
   })
 
   it('POST /api/review/submit 分数范围校验 150 → 400', async () => {
