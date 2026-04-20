@@ -154,3 +154,44 @@ describe('收益 · 分成规则', () => {
     expect(Math.abs(sum - Number(d.totalRevenue))).toBeLessThanOrEqual(0.05)
   })
 })
+
+describe('收益 · 前端字段 alias（/admin/revenue 页面直接消费）', () => {
+  it('imports 列表每行带 idHit/nameMatch/unmatched/duplicates 别名', async () => {
+    const r = await http('/api/admin/revenue/imports?pageSize=3', { cookie: adminCookie })
+    expectOk(r, 'imports')
+    const list = r.json.data.list as { idHit: number; nameMatch: number; unmatched: number; duplicates: number; matchedRows: number }[]
+    if (list.length === 0) return
+    for (const row of list) {
+      expect(typeof row.idHit).toBe('number')
+      expect(typeof row.nameMatch).toBe('number')
+      expect(typeof row.unmatched).toBe('number')
+      expect(typeof row.duplicates).toBe('number')
+      // alias 必须等于 schema 字段
+      expect(row.idHit).toBe(row.matchedRows)
+    }
+  })
+
+  it('mappings 列表每行带 qishuiId/songName/source/creatorName 别名', async () => {
+    const r = await http('/api/admin/revenue/mappings?status=all&pageSize=3', { cookie: adminCookie })
+    expectOk(r, 'mappings')
+    const list = r.json.data.list as { qishuiId: string; qishuiSongId: string; songName: string | null; source: string; creatorName: string | null }[]
+    if (list.length === 0) return
+    for (const m of list) {
+      expect(m.qishuiId).toBe(m.qishuiSongId)
+      expect(['auto', 'manual']).toContain(m.source)
+      // songName / creatorName 可为 null 但字段必须存在
+      expect('songName' in m).toBe(true)
+      expect('creatorName' in m).toBe(true)
+    }
+  })
+
+  it('mappings ?status=unbound 语义映射为 creatorId IS NULL（不再 400）', async () => {
+    const r = await http('/api/admin/revenue/mappings?status=unbound&pageSize=3', { cookie: adminCookie })
+    expectOk(r, 'mappings unbound')
+    const list = r.json.data.list as { creatorId: number | null; status: string }[]
+    for (const m of list) {
+      expect(m.creatorId).toBeNull()
+      expect(m.status).toBe('unbound')
+    }
+  })
+})

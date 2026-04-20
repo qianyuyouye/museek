@@ -22,9 +22,14 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     prisma.revenueImport.count(),
   ])
 
+  // 前端 UI 习惯名 → schema 字段的 alias（保留原字段避免破坏其他调用方）
   const list = imports.map((r) => ({
     ...r,
     totalRevenue: parseFloat(r.totalRevenue.toString()),
+    idHit: r.matchedRows,
+    nameMatch: r.suspectRows,
+    unmatched: r.unmatchedRows,
+    duplicates: r.duplicateRows,
   }))
 
   return ok({ list, total, page, pageSize })
