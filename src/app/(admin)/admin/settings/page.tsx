@@ -196,8 +196,30 @@ function ScoresTab({ showToast, onSave, initialData }: { showToast: (msg: string
             max="100"
             value={d.value}
             onChange={(e) => {
+              const raw = Math.max(0, Math.min(100, Number(e.target.value)))
               const next = [...weights]
-              next[i] = { ...next[i], value: Number(e.target.value) }
+              // delta 均分给另两项：主动项 +X，其余两项各 -X/2；任一项触 0 后把剩余 delta 全给另一项
+              const active = next[i].value
+              const otherIdx = next.map((_, j) => j).filter((j) => j !== i)
+              let delta = raw - active
+              // 先尝试每项减一半
+              let half = delta / 2
+              let v0 = next[otherIdx[0]].value - half
+              let v1 = next[otherIdx[1]].value - half
+              // 防越界：有项小于 0 → 把溢出转嫁给另一项；两项都溢出 → 限制主动项
+              if (v0 < 0) { v1 += v0; v0 = 0 }
+              if (v1 < 0) { v0 += v1; v1 = 0 }
+              if (v0 < 0 || v1 < 0) {
+                // 另两项都已到 0，主动项不能再增加
+                delta = (next[otherIdx[0]].value + next[otherIdx[1]].value)
+                v0 = 0; v1 = 0
+              }
+              // 取整并修正总和误差
+              v0 = Math.round(v0); v1 = Math.round(v1)
+              const activeNew = 100 - v0 - v1
+              next[i] = { ...next[i], value: Math.max(0, Math.min(100, activeNew)) }
+              next[otherIdx[0]] = { ...next[otherIdx[0]], value: v0 }
+              next[otherIdx[1]] = { ...next[otherIdx[1]], value: v1 }
               setWeights(next)
             }}
             className="score-weight-slider"
