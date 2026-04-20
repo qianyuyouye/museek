@@ -310,20 +310,29 @@ export default function BatchDownloadPage() {
         subtitle={loading ? '加载中...' : `共 ${allSongs.length} 首作品 · 筛选后 ${filtered.length} 首`}
       />
 
-      {/* Filters row */}
+      {/* Status Tabs */}
       <div className={cardCls}>
+        <div className="flex flex-wrap items-center gap-1 mb-3" role="tablist">
+          {STATUS_FILTERS.map((f) => {
+            const active = statusFilter === f.value
+            return (
+              <button
+                key={f.value}
+                role="tab"
+                aria-selected={active}
+                onClick={() => setStatusFilter(f.value)}
+                className={`px-3 py-1.5 text-xs rounded-lg border transition-all ${
+                  active
+                    ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
+                    : 'bg-white text-[var(--text2)] border-[var(--border)] hover:bg-[var(--bg2)]'
+                }`}
+              >
+                {f.label}
+              </button>
+            )
+          })}
+        </div>
         <div className="flex flex-wrap items-center gap-3">
-          {/* 状态 */}
-          <select
-            className={selectCls}
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            {STATUS_FILTERS.map((f) => (
-              <option key={f.value} value={f.value}>{f.label}</option>
-            ))}
-          </select>
-
           {/* 风格 */}
           <select
             className={selectCls}

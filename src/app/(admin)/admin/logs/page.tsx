@@ -6,6 +6,7 @@ import { SearchBar } from '@/components/admin/search-bar'
 import { DataTable, Column } from '@/components/admin/data-table'
 import { useApi } from '@/lib/use-api'
 import { pageWrap, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'
+import { formatDateTime } from '@/lib/format'
 
 interface LogItem {
   id: number
@@ -40,13 +41,63 @@ export default function AdminLogsPage() {
 
   const filtered = data?.list ?? []
 
+  // 英文 action → 中文映射；未命中的保持原样（兼容历史中文 action）
+  const ACTION_LABEL: Record<string, string> = {
+    create_group: '创建用户组',
+    update_group: '更新用户组',
+    delete_group: '删除用户组',
+    regenerate_invite: '重新生成邀请码',
+    toggle_group_status: '切换组状态',
+    create_assignment: '创建作业',
+    update_assignment: '更新作业',
+    update_form_fields: '配置作业表单',
+    create_reviewer: '创建评审账号',
+    update_admin: '更新管理员',
+    create_admin: '创建管理员',
+    delete_admin: '删除管理员',
+    create_role: '创建角色',
+    update_role: '更新角色',
+    delete_role: '删除角色',
+    reset_password: '重置密码',
+    toggle_user_status: '切换账号状态',
+    update_student: '更新学员',
+    notify_student: '推送提醒',
+    approve_realname: '审核实名通过',
+    reject_realname: '驳回实名',
+    song_publish: '确认发行',
+    song_reject: '退回歌曲',
+    song_archive: '归档歌曲',
+    song_restore: '恢复归档',
+    song_review_done: '评审归档',
+    assign_isrc: '绑定 ISRC',
+    upsert_distribution: '更新发行渠道',
+    sync_distributions: '触发对账同步',
+    confirm_distribution: '确认上架',
+    mark_distribution_exception: '标记异常',
+    import_revenue_csv: '导入收益报表',
+    bind_mapping: '绑定映射',
+    confirm_mapping: '确认映射',
+    reject_mapping: '标记无关',
+    settlement_confirm: '确认结算',
+    settlement_export: '导出结算',
+    settlement_pay: '标记打款',
+    update_system_setting: '更新系统设置',
+    update_content: '更新内容',
+    create_content: '新建内容',
+    publish_content: '发布内容',
+    unpublish_content: '下架内容',
+    delete_content: '删除内容',
+    songs_batch_download: '批量下载',
+  }
+  const translateAction = (v: string) => ACTION_LABEL[v] ?? v
+
   const columns: Column<LogItem>[] = [
-    { key: 'createdAt', title: '时间', render: (v) => <span>{new Date(v as string).toLocaleString('zh-CN')}</span> },
+    { key: 'createdAt', title: '时间', render: (v) => <span>{formatDateTime(v as string)}</span> },
     { key: 'operatorName', title: '操作人', render: (v) => <span>{(v as string) || '系统'}</span> },
     {
       key: 'action',
       title: '操作行为',
-      render: (v) => <span style={{ fontWeight: 600 }}>{v as string}</span>,
+      render: (v) => <span style={{ fontWeight: 600 }}>{translateAction(v as string)}</span>,
     },
     { key: 'targetId', title: '对象' },
     { key: 'ip', title: 'IP地址' },

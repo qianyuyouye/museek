@@ -116,6 +116,11 @@ export default function CreatorHome() {
     total: number
   }>('/api/content?pageSize=100')
 
+  // 获取真实学习记录（统计 completedAt 非空的数量）
+  const { data: learningData } = useApi<{
+    list: { contentId: number; progress: number; completedAt: string | null }[]
+  }>('/api/learning')
+
   // ── 统计计算 ──────────────────────────────────────────────
 
   const mySongs = songsData?.list ?? []
@@ -140,7 +145,8 @@ export default function CreatorHome() {
 
   const hotCourses = hotCoursesData?.list ?? []
   const totalCourses = allCoursesData?.total ?? 0
-  const learnedCourses = Math.min(4, totalCourses) // 假设已学 4 门
+  // 真实已完成课程数：从 /api/learning 查 completedAt 非空记录
+  const learnedCourses = learningData?.list.filter((r) => r.completedAt != null).length ?? 0
   const learningProgress = totalCourses > 0 ? `${learnedCourses}/${totalCourses} 课程` : '—'
 
   // ── Render ────────────────────────────────────────────────

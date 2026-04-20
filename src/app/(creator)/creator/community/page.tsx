@@ -7,8 +7,8 @@ import { pageWrap, textPageTitle } from '@/lib/ui-tokens'
 // ── Constants ───────────────────────────────────────────────────
 
 const TABS = [
-  { key: 'hot', label: '🔥 本周热门' },
-  { key: 'featured', label: '⭐ 老师精选' },
+  { key: 'hot', label: '🔥 热门' },
+  { key: 'featured', label: '⭐ 精选' },
   { key: 'all', label: '🎵 全部' },
 ] as const
 

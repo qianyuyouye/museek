@@ -461,12 +461,21 @@ export function LoginForm({ portal }: { portal: string }) {
               </div>
             ) : (
               <div style={{ textAlign: 'center' }}>
-                <span
-                  style={{ color: cfg.accent, cursor: 'pointer' }}
-                  onClick={() => { setShowForgot(true); setForgotMsg('') }}
-                >
-                  忘记密码？{portal === 'admin' ? '联系超级管理员' : ''}
-                </span>
+                {portal === 'admin' ? (
+                  <span
+                    style={{ color: cfg.accent, cursor: 'pointer' }}
+                    onClick={() => alert('管理员账号无法自助重置。\n请联系超级管理员在"平台管理员"页面为你重置密码。')}
+                  >
+                    忘记密码？联系超级管理员
+                  </span>
+                ) : (
+                  <span
+                    style={{ color: cfg.accent, cursor: 'pointer' }}
+                    onClick={() => { setShowForgot(true); setForgotMsg('') }}
+                  >
+                    忘记密码？
+                  </span>
+                )}
               </div>
             )}
           </div>
