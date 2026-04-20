@@ -1,4 +1,6 @@
 import { getSetting, SETTING_KEYS } from './system-settings'
+import { prisma } from './prisma'
+import type { Notification } from '@prisma/client'
 
 export type NotificationType = 'work' | 'revenue' | 'system' | 'assignment'
 
@@ -28,6 +30,7 @@ export type TemplateKey =
   | 'tpl.assignment_created'
   | 'tpl.assignment_due_soon'
   | 'tpl.welcome'
+  | 'tpl.isrc_bound'
 
 /** 内置默认模板（fallback） */
 const DEFAULT_TEMPLATES: Record<TemplateKey, NotificationTemplate> = {
@@ -42,6 +45,12 @@ const DEFAULT_TEMPLATES: Record<TemplateKey, NotificationTemplate> = {
   'tpl.assignment_created': { type: 'work', title: '新作业：《{assignmentTitle}》', content: '{assignmentDescription} 截止时间：{deadline}。', linkUrl: '/creator/assignments' },
   'tpl.assignment_due_soon': { type: 'work', title: '作业即将截止：《{assignmentTitle}》', content: '距离截止还有 24 小时，尚未提交。', linkUrl: '/creator/assignments' },
   'tpl.welcome': { type: 'system', title: '欢迎加入 Museek', content: '注册成功！请前往个人中心完成实名认证。', linkUrl: '/creator/profile' },
+  'tpl.isrc_bound': {
+    type: 'work',
+    title: '版权编号已分配：《{songTitle}》',
+    content: '平台已为作品分配 ISRC 编号：{isrc}。',
+    linkUrl: '/creator/songs?id={songId}',
+  },
 }
 
 export async function getTemplate(key: TemplateKey): Promise<NotificationTemplate | null> {
@@ -65,4 +74,38 @@ export async function renderTemplate(key: TemplateKey, vars: Record<string, unkn
     content: interpolate(tpl.content, vars),
     linkUrl: interpolate(tpl.linkUrl, vars),
   }
+}
+
+/**
+ * 业务动作触发通知：渲染模板 + 落库。
+ *
+ * **错误处理契约**：
+ * - 模板不存在：返回 null（静默降级）
+ * - `prisma.notification.create` 失败（DB 连接 / FK 违反 / 字段超长等）：**会上抛**
+ *
+ * **调用方必须自己 try/catch**，否则通知故障会传染到主业务响应（主业务事务已提交的情况下）。
+ * 各调用点应 `console.error('[notify] <场景> failed:', e)` 打 context 方便排障。
+ *
+ * - targetId 统一 String 化
+ */
+export async function notify(
+  userId: number,
+  templateKey: TemplateKey,
+  vars: Record<string, unknown>,
+  targetType?: string,
+  targetId?: string | number,
+): Promise<Notification | null> {
+  const rendered = await renderTemplate(templateKey, vars)
+  if (!rendered) return null
+  return prisma.notification.create({
+    data: {
+      userId,
+      type: rendered.type,
+      title: rendered.title,
+      content: rendered.content,
+      linkUrl: rendered.linkUrl,
+      targetType: targetType ?? null,
+      targetId: targetId != null ? String(targetId) : null,
+    },
+  })
 }
