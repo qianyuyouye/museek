@@ -183,6 +183,21 @@ export default function BatchDownloadPage() {
       } catch (e) {
         errors.push(`${s.title}: ${e instanceof Error ? e.message : '下载失败'}`)
       }
+
+      // 代理发行授权凭证 PDF（仅当作者已签 agency_contract）
+      if (s.agencyContract) {
+        try {
+          const pr = await fetch(`/api/admin/songs/${s.id}/agency-pdf`)
+          if (pr.ok) {
+            const pblob = await pr.blob()
+            zip.file(`agency-pdfs/${safe(s.copyrightCode || String(s.id))}.pdf`, pblob)
+          } else {
+            errors.push(`${s.title}: 授权凭证生成失败 (HTTP ${pr.status})`)
+          }
+        } catch { /* PDF 失败不影响音频 */ }
+      } else {
+        errors.push(`${s.title}: 未签代理协议，跳过授权凭证`)
+      }
     }
 
     if (errors.length > 0) {
