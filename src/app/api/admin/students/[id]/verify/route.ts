@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, err, safeHandler} from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
 import { invalidate } from '@/lib/cache'
+import { notify } from '@/lib/notifications'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -18,7 +19,7 @@ export const POST = safeHandler(async function POST(request: NextRequest, contex
   if (!user) return err('用户不存在', 404)
 
   const body = await request.json()
-  const { action } = body
+  const { action, reason } = body as { action: 'approve' | 'reject'; reason?: string }
 
   if (action !== 'approve' && action !== 'reject') {
     return err('action 必须为 approve 或 reject')
@@ -38,11 +39,21 @@ export const POST = safeHandler(async function POST(request: NextRequest, contex
   // 看板"实名认证完成率"依赖此字段
   invalidate('dashboard')
 
+  try {
+    if (action === 'approve') {
+      await notify(userId, 'tpl.realname_approved', {}, 'user', userId)
+    } else {
+      await notify(userId, 'tpl.realname_rejected', { reason: reason ?? '请重新提交' }, 'user', userId)
+    }
+  } catch (e) {
+    console.error('[notify] realname verify failed:', e)
+  }
+
   await logAdminAction(request, {
     action: action === 'approve' ? 'approve_realname' : 'reject_realname',
     targetType: 'user',
     targetId: userId,
-    detail: { name: user.name, phone: user.phone, realName: user.realName },
+    detail: { action, reason: reason ?? null, name: user.name, phone: user.phone, realName: user.realName },
   })
   return ok({
     id: updated.id,

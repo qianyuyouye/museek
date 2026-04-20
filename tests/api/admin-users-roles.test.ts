@@ -182,4 +182,31 @@ describe('学员 + 评审账号', () => {
     // 掩码版本不返回完整密码
     expect(r.json.data.masked ?? r.json.data.password).toBeTruthy()
   })
+
+  it('TC-RN-NOTIFY approve → tpl.realname_approved；reject + reason → tpl.realname_rejected', async () => {
+    const { prisma } = await import('@/lib/prisma')
+    const creator = await prisma.user.findUnique({ where: { phone: '13800001234' }, select: { id: true } })
+    await prisma.notification.deleteMany({ where: { userId: creator!.id } })
+
+    // 置 pending，approve
+    await prisma.user.update({ where: { id: creator!.id }, data: { realNameStatus: 'pending' } })
+    const { cookie: admC } = await adminLogin()
+    let r = await http(`/api/admin/students/${creator!.id}/verify`, { method: 'POST', cookie: admC, body: { action: 'approve' } })
+    expectOk(r, 'approve')
+    let notes = await prisma.notification.findMany({ where: { userId: creator!.id } })
+    // tpl.realname_approved: type='system', title='实名认证已通过'
+    expect(notes.some((n) => n.title?.includes('实名') && n.type === 'system')).toBe(true)
+    await prisma.notification.deleteMany({ where: { userId: creator!.id } })
+
+    // reject with reason
+    await prisma.user.update({ where: { id: creator!.id }, data: { realNameStatus: 'pending' } })
+    r = await http(`/api/admin/students/${creator!.id}/verify`, { method: 'POST', cookie: admC, body: { action: 'reject', reason: '身份证模糊' } })
+    expectOk(r, 'reject')
+    notes = await prisma.notification.findMany({ where: { userId: creator!.id } })
+    // tpl.realname_rejected: content='驳回原因：{reason}。请修改后重新提交。'
+    expect(notes.some((n) => n.content?.includes('身份证模糊'))).toBe(true)
+
+    await prisma.notification.deleteMany({ where: { userId: creator!.id } })
+    await prisma.user.update({ where: { id: creator!.id }, data: { realNameStatus: 'verified' } })
+  })
 })
