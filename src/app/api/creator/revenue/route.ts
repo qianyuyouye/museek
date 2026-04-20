@@ -36,9 +36,9 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     prisma.settlement.count({ where: { creatorId: userId } }),
   ])
 
+  // 汽水歌曲 ID (qishuiSongId) 不对创作者返回 —— PRD §7.1.5 要求屏蔽
   const settleList = settlements.map((s) => ({
     id: s.id,
-    qishuiSongId: s.qishuiSongId,
     songName: s.songName,
     period: s.period,
     douyinRevenue: toNumber(s.douyinRevenue),

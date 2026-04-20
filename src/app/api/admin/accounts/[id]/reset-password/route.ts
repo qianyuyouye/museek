@@ -5,10 +5,18 @@ import { logAdminAction } from '@/lib/log-action'
 import { hashPassword } from '@/lib/password'
 
 function generatePassword(): string {
-  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
-  let pw = ''
-  for (let i = 0; i < 10; i++) pw += chars[Math.floor(Math.random() * chars.length)]
-  return pw
+  // 保证同时包含字母与数字（否则触发下面的强度校验）
+  const letters = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz'
+  const digits = '23456789'
+  const all = letters + digits
+  const pick = (s: string) => s[Math.floor(Math.random() * s.length)]
+  const chars: string[] = [pick(letters), pick(digits)]
+  for (let i = 0; i < 8; i++) chars.push(pick(all))
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[chars[i], chars[j]] = [chars[j], chars[i]]
+  }
+  return chars.join('')
 }
 
 export const POST = safeHandler(async function POST(

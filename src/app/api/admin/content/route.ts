@@ -40,7 +40,9 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   const { title, cover, category, type, content, videoUrl, status } = body
 
   if (!title) return err('标题不能为空')
+  if (typeof title !== 'string' || title.length > 200) return err('标题长度不能超过 200 字符')
   if (!category) return err('分类不能为空')
+  if (typeof category !== 'string' || category.length > 50) return err('分类长度不能超过 50 字符')
   if (!type || !['video', 'article'].includes(type)) return err('类型必须为 video 或 article')
   if (status !== undefined && !['draft', 'published', 'archived'].includes(status)) {
     return err('状态必须为 draft / published / archived')

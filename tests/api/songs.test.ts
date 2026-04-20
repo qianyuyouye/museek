@@ -107,7 +107,8 @@ describe('作业 · 重新提交', () => {
 
 describe('评审绩效 + 评审队列', () => {
   it('TC-A-11-001 /admin/accounts?tab=reviewer 返回绩效字段', async () => {
-    const r = await http('/api/admin/accounts?tab=reviewer&pageSize=10', { cookie: adminCookie })
+    // 用 search 精准定位种子评审，避免被后续创建的 reviewer 挤出分页
+    const r = await http('/api/admin/accounts?tab=reviewer&search=13500008888&pageSize=10', { cookie: adminCookie })
     expectOk(r, 'reviewer stats')
     const liu = (r.json.data.list as Array<{ phone: string; reviewCount?: number; avgScore?: number }>)
       .find((u) => u.phone === '13500008888')
