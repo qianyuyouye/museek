@@ -209,4 +209,55 @@ describe('学员 + 评审账号', () => {
     await prisma.notification.deleteMany({ where: { userId: creator!.id } })
     await prisma.user.update({ where: { id: creator!.id }, data: { realNameStatus: 'verified' } })
   })
+
+  it('TC-CCR-001 admin POST /api/admin/accounts/create-creator 创建 creator 账号', async () => {
+    const { prisma } = await import('@/lib/prisma')
+    const testPhone = `1380000${Math.floor(1000 + Math.random() * 9000)}`
+    await prisma.user.deleteMany({ where: { phone: testPhone } })
+
+    const { cookie: admC } = await adminLogin()
+    const group = await prisma.group.findUnique({ where: { inviteCode: 'E2ETEST1' } })
+
+    const r = await http('/api/admin/accounts/create-creator', {
+      method: 'POST',
+      cookie: admC,
+      body: { name: '测试创作者', phone: testPhone, email: 'test@x.com', password: 'Abc12345', groupId: group!.id },
+    })
+    expectOk(r, 'create-creator')
+    const data = r.json.data as { id: number; name: string; phone: string; type: string; groups: Array<{ id: number; name: string }> }
+    expect(data.type).toBe('creator')
+    expect(data.phone).toBe(testPhone)
+    expect(data.groups.length).toBe(1)
+
+    const loginR = await http('/api/auth/login', {
+      method: 'POST',
+      body: { account: testPhone, password: 'Abc12345', portal: 'creator' },
+    })
+    expect(loginR.json.code).toBe(200)
+
+    await prisma.userGroup.deleteMany({ where: { userId: data.id } })
+    await prisma.user.delete({ where: { id: data.id } })
+  })
+
+  it('TC-CCR-002 重复 phone → 400', async () => {
+    const { cookie: admC } = await adminLogin()
+    const r = await http('/api/admin/accounts/create-creator', {
+      method: 'POST',
+      cookie: admC,
+      body: { name: '重复测试', phone: '13800001234', password: 'Abc12345' },
+    })
+    expect(r.status).toBe(400)
+    expect(r.json.message).toContain('已被注册')
+  })
+
+  it('TC-CCR-003 密码弱（无字母或无数字）→ 400', async () => {
+    const { cookie: admC } = await adminLogin()
+    const r = await http('/api/admin/accounts/create-creator', {
+      method: 'POST',
+      cookie: admC,
+      body: { name: '弱密码', phone: '13911112222', password: '12345678' },
+    })
+    expect(r.status).toBe(400)
+    expect(r.json.message).toMatch(/字母|数字|强度/)
+  })
 })
