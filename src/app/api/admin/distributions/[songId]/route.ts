@@ -11,7 +11,7 @@ export const GET = safeHandler(async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ songId: string }> },
 ) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.distributions.view')
   if ('error' in auth) return auth.error
 
   const { songId } = await params
@@ -30,7 +30,7 @@ export const POST = safeHandler(async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ songId: string }> },
 ) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.distributions.operate')
   if ('error' in auth) return auth.error
 
   const { songId } = await params

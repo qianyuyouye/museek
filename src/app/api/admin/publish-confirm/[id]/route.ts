@@ -7,7 +7,7 @@ export const GET = safeHandler(async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.publish_confirm.view')
   if ('error' in auth) return auth.error
 
   const { id } = await params
@@ -89,7 +89,7 @@ export const POST = safeHandler(async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.publish_confirm.operate')
   if ('error' in auth) return auth.error
 
   const { id } = await params
