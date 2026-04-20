@@ -42,7 +42,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     where.AND = conditions
   }
 
-  const [list, total] = await Promise.all([
+  const [rawList, total] = await Promise.all([
     prisma.operationLog.findMany({
       where,
       orderBy: { createdAt: 'desc' },
@@ -51,6 +51,9 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     }),
     prisma.operationLog.count({ where }),
   ])
+
+  // BigInt 不能直接 JSON 序列化，转字符串
+  const list = rawList.map((r) => ({ ...r, id: r.id.toString() }))
 
   return ok({ list, total, page, pageSize })
 })

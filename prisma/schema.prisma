@@ -381,13 +381,13 @@ model Settlement {
   qishuiSongId   String?         @map("qishui_song_id") @db.VarChar(30)
   songName       String?         @map("song_name") @db.VarChar(200)
   period         String?         @db.VarChar(50)
-  douyinRevenue  Decimal?        @map("douyin_revenue") @db.Decimal(12, 2)
-  qishuiRevenue  Decimal?        @map("qishui_revenue") @db.Decimal(12, 2)
-  totalRevenue   Decimal?        @map("total_revenue") @db.Decimal(12, 2)
+  douyinRevenue  Decimal         @default(0) @map("douyin_revenue") @db.Decimal(12, 2)
+  qishuiRevenue  Decimal         @default(0) @map("qishui_revenue") @db.Decimal(12, 2)
+  totalRevenue   Decimal         @default(0) @map("total_revenue") @db.Decimal(12, 2)
   creatorId      Int             @map("creator_id")
   platformRatio  Decimal         @default(0.30) @map("platform_ratio") @db.Decimal(4, 2)
   creatorRatio   Decimal         @default(0.70) @map("creator_ratio") @db.Decimal(4, 2)
-  creatorAmount  Decimal?        @map("creator_amount") @db.Decimal(12, 2)
+  creatorAmount  Decimal         @default(0) @map("creator_amount") @db.Decimal(12, 2)
   settleStatus   SettleStatus    @default(pending) @map("settle_status")
   exportedAt     DateTime?       @map("exported_at")
   paidAt         DateTime?       @map("paid_at")
@@ -470,7 +470,8 @@ enum DistributionStatus {
 
 // 4.16 operation_logs（操作日志）
 model OperationLog {
-  id           Int      @id @default(autoincrement())
+  // BigInt 防溢出（PRD §4.16 要求；日志量大时单表上亿）
+  id           BigInt   @id @default(autoincrement())
   operatorId   Int?     @map("operator_id")
   operatorName String?  @map("operator_name") @db.VarChar(100)
   action       String   @db.VarChar(100)
