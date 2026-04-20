@@ -4,7 +4,7 @@ import { requirePermission, ok, parsePagination, safeHandler} from '@/lib/api-ut
 import { Prisma } from '@prisma/client'
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.logs.view')
   if ('error' in auth) return auth.error
 
   const { searchParams } = request.nextUrl

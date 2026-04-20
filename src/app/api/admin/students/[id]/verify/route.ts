@@ -8,7 +8,7 @@ import { notify } from '@/lib/notifications'
 type RouteContext = { params: Promise<{ id: string }> }
 
 export const POST = safeHandler(async function POST(request: NextRequest, context: RouteContext) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.students.operate')
   if ('error' in auth) return auth.error
 
   const { id } = await context.params
