@@ -7,7 +7,13 @@ if (!jwtSecret && process.env.NODE_ENV === 'production') {
 }
 const SECRET = new TextEncoder().encode(jwtSecret || 'fallback-dev-secret')
 
-const PUBLIC_PATHS = ['/admin/login', '/creator/login', '/review/login', '/api/auth']
+const PUBLIC_PATHS = [
+  '/admin/login', '/creator/login', '/review/login',
+  '/api/auth',
+  // 公开只读接口（作品广场 + 已发布内容）
+  '/api/content',
+  '/api/songs/published',
+]
 
 function getLoginPath(pathname: string): string {
   if (pathname.startsWith('/admin')) return '/admin/login'

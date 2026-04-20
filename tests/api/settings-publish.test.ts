@@ -165,27 +165,23 @@ describe('学习记录 /learning', () => {
   })
 })
 
-describe('公开内容 /content + /songs/published', () => {
-  // 注：源码 /api/content 与 /api/songs/published 未做 auth 判断（设计本意公开），
-  // 但 middleware 当前对所有非白名单路径拦截 401。这里按当前实现断言登录后功能正确，
-  // middleware 白名单遗漏 /api/content、/api/songs/published 是范围外 bug，单独列修。
-
-  it('TC-PUB-C-001 /content 带登录 cookie → 只返回 published', async () => {
-    const r = await http('/api/content', { cookie: creatorCookie })
+describe('公开内容 /content + /songs/published（未登录可访问）', () => {
+  it('TC-PUB-C-001 未登录 /content → 只返回 published', async () => {
+    const r = await http('/api/content')
     expectOk(r, 'content')
     const list = r.json.data.list as { status: string }[]
     for (const c of list) expect(c.status).toBe('published')
   })
 
-  it('TC-PUB-C-002 /content category 筛选', async () => {
-    const r = await http('/api/content?category=AI', { cookie: creatorCookie })
+  it('TC-PUB-C-002 未登录 /content?category=AI 筛选', async () => {
+    const r = await http('/api/content?category=AI')
     expectOk(r, 'content cat')
     const list = r.json.data.list as { category: string }[]
     for (const c of list) expect(c.category).toBe('AI')
   })
 
-  it('TC-PUB-C-003 /songs/published 不泄露 phone / idCard', async () => {
-    const r = await http('/api/songs/published?pageSize=5', { cookie: creatorCookie })
+  it('TC-PUB-C-003 未登录 /songs/published 不泄露 phone / idCard', async () => {
+    const r = await http('/api/songs/published?pageSize=5')
     expectOk(r, 'songs published')
     const list = r.json.data.list as { likeCount?: number }[]
     for (const s of list) {
@@ -195,8 +191,8 @@ describe('公开内容 /content + /songs/published', () => {
     }
   })
 
-  it('TC-PUB-C-004 未登录 /content → 当前 middleware 返回 401', async () => {
-    const r = await http('/api/content')
+  it('TC-PUB-C-004 /api/admin/content 不受公开白名单影响（仍需登录）', async () => {
+    const r = await http('/api/admin/content')
     expect(r.json.code).toBe(401)
   })
 })
