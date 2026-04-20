@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 
-const jwtSecret = process.env.JWT_SECRET
-if (!jwtSecret && process.env.NODE_ENV === 'production') {
-  throw new Error('JWT_SECRET environment variable is required in production')
+// SECRET 延迟到首次请求时计算，避免 build 阶段 throw
+let _secret: Uint8Array | null = null
+function SECRET(): Uint8Array {
+  if (_secret) return _secret
+  const jwtSecret = process.env.JWT_SECRET
+  if (!jwtSecret && process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE !== 'phase-production-build') {
+    throw new Error('JWT_SECRET environment variable is required in production')
+  }
+  _secret = new TextEncoder().encode(jwtSecret || 'fallback-dev-secret')
+  return _secret
 }
-const SECRET = new TextEncoder().encode(jwtSecret || 'fallback-dev-secret')
 
 const PUBLIC_PATHS = [
   '/admin/login', '/creator/login', '/review/login',
@@ -61,7 +67,7 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    const { payload } = await jwtVerify(token, SECRET)
+    const { payload } = await jwtVerify(token, SECRET())
     const portal = payload.portal as string
 
     if ((pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) && portal !== 'admin') {
