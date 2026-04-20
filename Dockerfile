@@ -4,6 +4,9 @@ RUN sed -i 's#https\?://dl-cdn.alpinelinux.org#https://mirrors.aliyun.com#g' /et
     && apk add --no-cache openssl
 WORKDIR /app
 COPY package.json package-lock.json ./
+# 跳过 @playwright/test 的 postinstall 浏览器下载（E2E 只在本地/CI 执行，服务器不需要）
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+ENV PLAYWRIGHT_BROWSERS_PATH=0
 RUN npm config set registry https://registry.npmmirror.com \
     && npm ci
 

@@ -6,3 +6,11 @@ node_modules
 .playwright-mcp
 *.png
 docs
+# E2E / 测试产物（E2E 只在本地/CI 跑，服务端不需要）
+e2e
+tests
+playwright.config.ts
+playwright-report
+test-results
+# 本地临时文件
+/public/uploads
