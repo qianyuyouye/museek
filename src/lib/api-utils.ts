@@ -72,10 +72,12 @@ export function err(message: string, status = 400) {
   return NextResponse.json({ code: status, message }, { status })
 }
 
-/** 解析分页参数 */
+/** 解析分页参数；NaN/非法值回退到默认 */
 export function parsePagination(searchParams: URLSearchParams) {
-  const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
-  const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get('pageSize') || '20', 10)))
+  const rawPage = parseInt(searchParams.get('page') || '1', 10)
+  const rawPageSize = parseInt(searchParams.get('pageSize') || '20', 10)
+  const page = Number.isFinite(rawPage) ? Math.max(1, rawPage) : 1
+  const pageSize = Number.isFinite(rawPageSize) ? Math.min(100, Math.max(1, rawPageSize)) : 20
   return { page, pageSize, skip: (page - 1) * pageSize }
 }
 

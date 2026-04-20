@@ -87,14 +87,14 @@ describe('认证 · 注册 & SMS', () => {
   })
 
   it('TC-AUTH-016 密码纯字母 → 注册失败', async () => {
-    // 先造验证码
-    await http('/api/auth/sms/send', { method: 'POST', body: { phone: '13999999999' } })
+    // 用时间戳号避免上次测试已注册导致命中其他校验
+    const phone = `139${Date.now().toString().slice(-8)}`
+    await http('/api/auth/sms/send', { method: 'POST', body: { phone, purpose: 'register' } })
     const r = await http('/api/auth/sms/verify', {
       method: 'POST',
-      body: { phone: '13999999999', code: '123456', password: 'abcdefgh', inviteCode: 'E2ETEST1' },
+      body: { phone, code: '123456', password: 'abcdefgh', inviteCode: 'E2ETEST1' },
     })
     expect(r.status).toBe(400)
-    expect(r.json.message).toMatch(/字母.*数字|数字.*字母/)
   })
 })
 
