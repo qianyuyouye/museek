@@ -68,36 +68,29 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
       : null,
   }))
 
-  // 汽水收益聚合与明细：通过 revenueRows joined via songMappings
-  const [qishuiAgg, qishuiRows, qishuiRowCount] = await Promise.all([
-    prisma.revenueRow.aggregate({
-      where: { mapping: { creatorId: userId } },
-      _sum: { totalRevenue: true },
-    }),
-    prisma.revenueRow.findMany({
-      where: { mapping: { creatorId: userId } },
-      orderBy: { id: 'desc' },
-      select: {
-        id: true,
-        songName: true,
-        period: true,
-        douyinRevenue: true,
-        qishuiRevenue: true,
-        totalRevenue: true,
-      },
-    }),
-    prisma.revenueRow.count({ where: { mapping: { creatorId: userId } } }),
-  ])
-  const qishuiTotal = toNumber(qishuiAgg._sum.totalRevenue)
+  // 汽水收益明细：findMany 全量，total + count 在内存聚合（同数据集避免重复扫描）
+  const qishuiRows = await prisma.revenueRow.findMany({
+    where: { mapping: { creatorId: userId } },
+    orderBy: [{ period: 'desc' }, { id: 'desc' }],
+    select: {
+      id: true,
+      songName: true,
+      period: true,
+      douyinRevenue: true,
+      qishuiRevenue: true,
+      totalRevenue: true,
+    },
+  })
   const qishuiDetailsList = qishuiRows.map((row) => ({
     id: row.id,
     songName: row.songName,
     period: row.period,
-    month: row.period,
     douyinRevenue: toNumber(row.douyinRevenue),
     qishuiRevenue: toNumber(row.qishuiRevenue),
     totalRevenue: toNumber(row.totalRevenue),
   }))
+  const qishuiTotal = qishuiDetailsList.reduce((s, r) => s + r.totalRevenue, 0)
+  const qishuiRowCount = qishuiDetailsList.length
 
   // 统计：用 aggregate 代替全量拉取
   const [totalAgg, paidAgg, pendingAgg] = await Promise.all([
