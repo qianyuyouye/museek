@@ -115,5 +115,52 @@ describe('Theme 6 field-contract + defaults + copyright', () => {
     })
   })
   // Patch C tests
+  describe('C: /api/creator/upload 默认字段填充（GAP-CRTR-004）', () => {
+    it('不传 performer 时 DB 行 performer = user.realName', async () => {
+      const user = await prisma.user.findUnique({
+        where: { id: creatorUserId },
+        select: { realName: true, name: true },
+      })
+      const expected = (user!.realName?.trim() || user!.name).trim()
+
+      const r = await http('/api/creator/upload', {
+        method: 'POST',
+        cookie: creatorCookie,
+        body: {
+          title: '默认 performer 测试',
+          aiTools: ['Suno'],
+          contribution: 'lead',
+          audioUrl: '/uploads/audio/test.mp3',
+        },
+      })
+      expectOk(r, 'upload default performer')
+      const id = r.json.data.id
+      const song = await prisma.platformSong.findUnique({ where: { id } })
+      expect(song?.performer).toBe(expected)
+      expect(song?.albumName).toBe('默认 performer 测试')
+      await prisma.platformSong.delete({ where: { id } })
+    })
+
+    it('传入 performer 时保留', async () => {
+      const r = await http('/api/creator/upload', {
+        method: 'POST',
+        cookie: creatorCookie,
+        body: {
+          title: '显式 performer 测试',
+          aiTools: ['Suno'],
+          contribution: 'lead',
+          audioUrl: '/uploads/audio/test.mp3',
+          performer: '编曲师小王',
+          albumName: '专辑 X',
+        },
+      })
+      expectOk(r, 'upload explicit performer')
+      const id = r.json.data.id
+      const song = await prisma.platformSong.findUnique({ where: { id } })
+      expect(song?.performer).toBe('编曲师小王')
+      expect(song?.albumName).toBe('专辑 X')
+      await prisma.platformSong.delete({ where: { id } })
+    })
+  })
   // Patch D tests
 })
