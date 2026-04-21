@@ -294,3 +294,30 @@ describe('lib/magic-bytes', () => {
     expect(checkMagicBytes(tooSmall, 'audio')).toMatch(/过小|too small|无法识别/i)
   })
 })
+
+import { toSignedUrl } from '@/lib/signed-url'
+
+describe('lib/signed-url', () => {
+  it('null 输入返 null', async () => {
+    expect(await toSignedUrl(null)).toBeNull()
+  })
+
+  it('不带 viewerId → 匿名签名 URL 含 exp/sig 不含 uid', async () => {
+    const url = await toSignedUrl('uploads/audio/x.mp3')
+    expect(url).toMatch(/^\/api\/files\/uploads\/audio\/x\.mp3\?/)
+    const q = new URL(url!, 'http://x').searchParams
+    expect(q.get('uid')).toBeNull()
+    expect(q.get('sig')).toMatch(/^[0-9a-f]{64}$/)
+  })
+
+  it('带 viewerId → 签名含 uid', async () => {
+    const url = await toSignedUrl('uploads/audio/x.mp3', 42)
+    const q = new URL(url!, 'http://x').searchParams
+    expect(q.get('uid')).toBe('42')
+  })
+
+  it('去除前导 / 的兜底', async () => {
+    const url = await toSignedUrl('/uploads/audio/x.mp3')
+    expect(url).toMatch(/^\/api\/files\/uploads\/audio\/x\.mp3\?/)
+  })
+})
