@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, err, parsePagination, safeHandler} from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
-import { hashPassword } from '@/lib/password'
+import { hashPassword, validatePassword } from '@/lib/password'
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
   const auth = await requirePermission(request, 'admin.admins.view')
@@ -52,7 +52,8 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
 
   if (!account) return err('账号不能为空')
   if (!name) return err('名称不能为空')
-  if (!password) return err('密码不能为空')
+  const pwdErr = validatePassword(password)
+  if (pwdErr) return err(pwdErr)
   if (!roleId) return err('角色不能为空')
 
   const existing = await prisma.adminUser.findUnique({ where: { account } })

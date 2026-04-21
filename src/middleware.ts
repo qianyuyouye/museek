@@ -1,13 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
+import { prisma } from '@/lib/prisma'
+import { ipRateLimit } from '@/lib/rate-limit'
+
+// Theme 8: 切到 Node runtime，支持在 middleware 里查 TokenBlacklist + rate_limits DB 表
+// Next.js 15 稳定支持。
 
 // SECRET 延迟到首次请求时计算，避免 build 阶段 throw
 let _secret: Uint8Array | null = null
+let _warnedFallback = false
 function SECRET(): Uint8Array {
   if (_secret) return _secret
   const jwtSecret = process.env.JWT_SECRET
   if (!jwtSecret && process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE !== 'phase-production-build') {
     throw new Error('JWT_SECRET environment variable is required in production')
+  }
+  if (!jwtSecret && !_warnedFallback) {
+    console.warn('\n[middleware] ⚠️  JWT_SECRET 未设置，正在使用 fallback-dev-secret（仅开发环境可用）')
+    _warnedFallback = true
   }
   _secret = new TextEncoder().encode(jwtSecret || 'fallback-dev-secret')
   return _secret
@@ -29,29 +39,44 @@ function getLoginPath(pathname: string): string {
   return '/creator/login'
 }
 
+function getClientIpFromRequest(request: NextRequest): string {
+  return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    || request.headers.get('x-real-ip')
+    || ''
+}
+
+const isTestBypass = () => process.env.TEST_MODE === '1' || process.env.NODE_ENV === 'test'
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const isApiRoute = pathname.startsWith('/api/')
+
+  // 静态资源直通
+  if (pathname.startsWith('/_next') || pathname.startsWith('/favicon') || pathname === '/') {
+    return NextResponse.next()
+  }
+
+  // Theme 8: 全局 API 限流 60/min/IP（PRD §10.6）
+  if (isApiRoute && !isTestBypass()) {
+    const ip = getClientIpFromRequest(request)
+    if (ip && (await ipRateLimit(ip, 'api:all', 60, 60 * 1000))) {
+      return NextResponse.json({ code: 429, message: '请求过于频繁，请稍后再试' }, { status: 429 })
+    }
+  }
 
   if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
     return NextResponse.next()
   }
 
-  if (pathname.startsWith('/_next') || pathname.startsWith('/favicon') || pathname === '/') {
-    return NextResponse.next()
-  }
-
-  const isApiRoute = pathname.startsWith('/api/')
-
-  // CSRF 防护：对所有写方法 API 校验 Origin/Referer 是否同源
-  // 同源规则：Origin 或 Referer 必须以 host 开头
-  if (isApiRoute && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) {
+  // Theme 8: CSRF 严格模式 —— origin 和 referer 都缺失直接 403
+  if (isApiRoute && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method) && !isTestBypass()) {
     const origin = request.headers.get('origin')
     const referer = request.headers.get('referer')
     const host = request.headers.get('host')
-    const allowedOrigins = [
-      `http://${host}`,
-      `https://${host}`,
-    ]
+    if (!origin && !referer) {
+      return NextResponse.json({ code: 403, message: 'CSRF 检查失败：缺少来源头' }, { status: 403 })
+    }
+    const allowedOrigins = [`http://${host}`, `https://${host}`]
     const originOk = !origin || allowedOrigins.includes(origin)
     const refererOk = !referer || allowedOrigins.some(a => referer.startsWith(a))
     if ((origin && !originOk) || (!origin && referer && !refererOk)) {
@@ -70,6 +95,21 @@ export async function middleware(request: NextRequest) {
   try {
     const { payload } = await jwtVerify(token, SECRET())
     const portal = payload.portal as string
+    const jti = payload.jti as string | undefined
+
+    // Theme 8: blacklist 校验（logout 后的 token 即使未自然过期也拒绝）
+    if (jti) {
+      const blacklisted = await prisma.tokenBlacklist.findUnique({ where: { jti } })
+      if (blacklisted) {
+        if (isApiRoute) {
+          return NextResponse.json({ code: 401, message: '登录已失效' }, { status: 401 })
+        }
+        const response = NextResponse.redirect(new URL(getLoginPath(pathname), request.url))
+        response.cookies.delete('access_token')
+        response.cookies.delete('refresh_token')
+        return response
+      }
+    }
 
     if ((pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) && portal !== 'admin') {
       if (isApiRoute) {
@@ -110,4 +150,5 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  runtime: 'nodejs',
 }

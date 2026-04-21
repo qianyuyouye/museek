@@ -1,40 +1,66 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifySmsCode } from '@/lib/sms'
 import { prisma } from '@/lib/prisma'
-import { hashPassword } from '@/lib/password'
+import { hashPassword, validatePassword } from '@/lib/password'
 import { signAccessToken, signRefreshToken, setAuthCookies } from '@/lib/auth'
 import type { UserJwtPayload } from '@/types/auth'
-import { safeHandler } from '@/lib/api-utils'
+import { safeHandler, getClientIp } from '@/lib/api-utils'
+import {
+  ipRateLimit,
+  recordSmsVerifyFailure,
+  isSmsVerifyLocked,
+  clearSmsVerifyFailure,
+  recordInviteCodeFailure,
+  isInviteCodeLocked,
+} from '@/lib/rate-limit'
 
 export const POST = safeHandler(async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
+  // Theme 8: IP 限流 20/min
+  if (ip && (await ipRateLimit(ip, 'sms-verify', 20, 60 * 1000))) {
+    return NextResponse.json({ code: 429, message: '请求过于频繁，请稍后再试' }, { status: 429 })
+  }
+
   const { phone, code, password, inviteCode } = await request.json()
 
   if (!phone || !code) {
     return NextResponse.json({ code: 400, message: '手机号和验证码不能为空' }, { status: 400 })
   }
 
+  // Theme 8: 验证码错误 5 次锁 15min
+  const lockedFor = await isSmsVerifyLocked(phone)
+  if (lockedFor > 0) {
+    return NextResponse.json({ code: 423, message: `验证码错误过多，请 ${lockedFor} 秒后重试` }, { status: 423 })
+  }
+
   const valid = await verifySmsCode(phone, code)
   if (!valid) {
+    await recordSmsVerifyFailure(phone)
     return NextResponse.json({ code: 400, message: '验证码错误或已过期' }, { status: 400 })
   }
+  await clearSmsVerifyFailure(phone)
 
   let user = await prisma.user.findUnique({ where: { phone } })
 
   if (!user) {
-    if (!password || password.length < 8) {
-      return NextResponse.json({ code: 400, message: '密码至少 8 位' }, { status: 400 })
-    }
-    // 强度：必须同时包含字母与数字
-    if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
-      return NextResponse.json({ code: 400, message: '密码必须同时包含字母与数字' }, { status: 400 })
+    const pwdErr = validatePassword(password)
+    if (pwdErr) {
+      return NextResponse.json({ code: 400, message: pwdErr }, { status: 400 })
     }
 
     if (!inviteCode) {
       return NextResponse.json({ code: 400, message: '邀请码不能为空' }, { status: 400 })
     }
 
+    // Theme 8: 邀请码爆破防护 —— 先查是否已锁
+    if (ip && (await isInviteCodeLocked(ip, phone))) {
+      return NextResponse.json({ code: 423, message: '邀请码错误次数过多，请 1 小时后重试' }, { status: 423 })
+    }
+
     const group = await prisma.group.findUnique({ where: { inviteCode } })
     if (!group || group.status !== 'active') {
+      // 记录错误一次；达到阈值则下次请求被拒
+      if (ip) await recordInviteCodeFailure(ip, phone)
       return NextResponse.json({ code: 400, message: '邀请码无效或已停用' }, { status: 400 })
     }
     const groupId = group.id

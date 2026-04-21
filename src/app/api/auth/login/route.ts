@@ -33,11 +33,11 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
 
   // IP 限流：每分钟最多 10 次登录尝试（PRD §10.6）
   const ip = getClientIp(request)
-  if (ip && ipRateLimit(ip, 'login', 10, 60 * 1000)) {
+  if (ip && (await ipRateLimit(ip, 'login', 10, 60 * 1000))) {
     return NextResponse.json({ code: 429, message: '登录过于频繁，请稍后再试' }, { status: 429 })
   }
   // 账号锁定：连续失败 5 次锁定 5 分钟
-  const lockedFor = isAccountLocked(account)
+  const lockedFor = await isAccountLocked(account)
   if (lockedFor > 0) {
     return NextResponse.json({ code: 423, message: `账号已暂时锁定，请 ${lockedFor} 秒后重试` }, { status: 423 })
   }
@@ -49,7 +49,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     })
 
     if (!admin || !(await verifyPassword(password, admin.passwordHash))) {
-      recordLoginFailure(account)
+      await recordLoginFailure(account)
       return NextResponse.json({ code: 401, message: '账号或密码错误' }, { status: 401 })
     }
 
@@ -57,7 +57,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
       return NextResponse.json({ code: 403, message: '账号已被禁用' }, { status: 403 })
     }
 
-    clearLoginFailure(account)
+    await clearLoginFailure(account)
 
     const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
       || request.headers.get('x-real-ip') || ''
@@ -112,7 +112,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     })
 
     if (!user || !user.passwordHash || !(await verifyPassword(password, user.passwordHash))) {
-      recordLoginFailure(account)
+      await recordLoginFailure(account)
       return NextResponse.json({ code: 401, message: '账号或密码错误' }, { status: 401 })
     }
 
@@ -120,7 +120,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
       return NextResponse.json({ code: 403, message: '账号已被禁用' }, { status: 403 })
     }
 
-    clearLoginFailure(account)
+    await clearLoginFailure(account)
 
     await prisma.user.update({
       where: { id: user.id },
@@ -171,7 +171,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     })
 
     if (!user || !user.passwordHash || !(await verifyPassword(password, user.passwordHash))) {
-      recordLoginFailure(account)
+      await recordLoginFailure(account)
       return NextResponse.json({ code: 401, message: '账号或密码错误' }, { status: 401 })
     }
 
@@ -179,7 +179,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
       return NextResponse.json({ code: 403, message: '账号已被禁用' }, { status: 403 })
     }
 
-    clearLoginFailure(account)
+    await clearLoginFailure(account)
 
     await prisma.user.update({
       where: { id: user.id },

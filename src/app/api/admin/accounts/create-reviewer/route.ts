@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, err, safeHandler} from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
-import { hashPassword } from '@/lib/password'
+import { hashPassword, validatePassword } from '@/lib/password'
 
 export const POST = safeHandler(async function POST(request: NextRequest) {
   const auth = await requirePermission(request, 'admin.accounts.manage')
@@ -15,9 +15,8 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     return err('缺少必填字段：name, phone, password')
   }
 
-  if (password.length < 8) {
-    return err('密码长度不能少于 8 位')
-  }
+  const pwdErr = validatePassword(password)
+  if (pwdErr) return err(pwdErr)
 
   const existing = await prisma.user.findUnique({ where: { phone } })
   if (existing) {

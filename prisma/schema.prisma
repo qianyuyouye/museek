@@ -613,3 +613,26 @@ model CopyrightSequence {
 
   @@map("copyright_sequences")
 }
+
+// Theme 8: 持久化限流桶（替代纯内存 Map，支持多实例）
+model AuthRateLimit {
+  key       String   @id @db.VarChar(200) // 形如 "api:login:1.2.3.4" 或 "sms_attempt:13800000000"
+  count     Int      @default(0)
+  resetAt   DateTime @map("reset_at")
+
+  @@index([resetAt])
+  @@map("auth_rate_limits")
+}
+
+// Theme 8: 登出 / 密码修改 / 实名作废 时将 JWT jti 列入黑名单
+model TokenBlacklist {
+  jti       String   @id @db.VarChar(40)
+  userId    Int      @map("user_id")
+  reason    String   @db.VarChar(30) // logout / password_change / admin_revoke
+  expiresAt DateTime @map("expires_at") // 原 JWT 过期时间，过期后可清理
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("token_blacklist")
+}

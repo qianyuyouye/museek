@@ -1,10 +1,17 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { ok, err, safeHandler } from '@/lib/api-utils'
+import { ok, err, safeHandler, getClientIp } from '@/lib/api-utils'
 import { verifySmsCode } from '@/lib/sms'
-import { hashPassword } from '@/lib/password'
+import { hashPassword, validatePassword } from '@/lib/password'
+import { ipRateLimit } from '@/lib/rate-limit'
 
 export const POST = safeHandler(async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
+  // Theme 8: IP 限流 5/min
+  if (ip && (await ipRateLimit(ip, 'reset-password', 5, 60 * 1000))) {
+    return err('请求过于频繁，请稍后再试', 429)
+  }
+
   const { phone, code, newPassword } = await request.json() as {
     phone?: string
     code?: string
@@ -13,10 +20,8 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
 
   if (!phone || !code || !newPassword) return err('请填写手机号、验证码和新密码')
   if (!/^1[3-9]\d{9}$/.test(phone)) return err('手机号格式不正确')
-  if (newPassword.length < 8) return err('密码长度不能少于 8 位')
-  if (!/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) {
-    return err('密码必须同时包含字母与数字')
-  }
+  const pwdErr = validatePassword(newPassword)
+  if (pwdErr) return err(pwdErr)
 
   const valid = await verifySmsCode(phone, code)
   if (!valid) return err('验证码无效或已过期')
