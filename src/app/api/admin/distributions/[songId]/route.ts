@@ -3,8 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, err, safeHandler} from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
 import { DistributionStatus } from '@prisma/client'
+import { isPlatformEnabled } from '@/lib/platforms'
 
-const PLATFORMS = new Set(['QQ音乐', '网易云音乐', 'Spotify', 'Apple Music', '酷狗音乐'])
 const VALID_STATUSES = new Set(Object.values(DistributionStatus))
 
 export const GET = safeHandler(async function GET(
@@ -40,7 +40,7 @@ export const POST = safeHandler(async function POST(
   const body = await request.json()
   const { platform, status, submittedAt, liveDate } = body
 
-  if (!platform || !PLATFORMS.has(platform)) {
+  if (!platform || typeof platform !== 'string' || !(await isPlatformEnabled(platform))) {
     return err('无效的平台名称')
   }
   if (!status || !VALID_STATUSES.has(status)) {
