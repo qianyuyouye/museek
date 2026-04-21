@@ -27,6 +27,9 @@ interface AssignmentItem {
   memberCount: number
   submittedCount: number
   submitted: boolean
+  submissionStatus: 'pending_review' | 'reviewed' | 'needs_revision' | null
+  submissionSongId: number | null
+  submissionScore: number | null
   createdAt: string
 }
 
@@ -557,9 +560,49 @@ export default function CreatorAssignmentsPage() {
                       </span>
                     </div>
 
+                    {/* Submission status badge (if submitted) */}
+                    {asn.submitted && asn.submissionStatus && (
+                      <div className="mt-2 text-[11px]">
+                        {asn.submissionStatus === 'pending_review' && (
+                          <span className="text-[var(--orange)]">⏳ 等待老师评分...</span>
+                        )}
+                        {asn.submissionStatus === 'reviewed' && (
+                          <span className="text-[var(--green2)]">
+                            ✅ 评审完成{asn.submissionScore != null ? ` · ${asn.submissionScore}分` : ''}
+                          </span>
+                        )}
+                        {asn.submissionStatus === 'needs_revision' && (
+                          <span className="text-[var(--red)]">📝 老师建议修改后重新提交</span>
+                        )}
+                      </div>
+                    )}
+
                     {/* Action */}
                     <div className="mt-3">
-                      {asn.submitted ? (
+                      {asn.submitted && asn.submissionStatus === 'needs_revision' ? (
+                        <div className="flex gap-2">
+                          <button
+                            className={`${btnGhost} flex-1 justify-center text-[13px]`}
+                            onClick={() => setSubmittedView(asn.id)}
+                          >
+                            查看详情
+                          </button>
+                          <button
+                            className={`${btnPrimary} flex-1 justify-center text-[13px] ${asn.status !== 'active' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            disabled={asn.status !== 'active'}
+                            onClick={() => {
+                              // 直接跳转到创作者 songs 编辑页：与作品库保持一致的修改路径
+                              if (asn.submissionSongId) {
+                                window.location.href = `/creator/upload?songId=${asn.submissionSongId}`
+                              } else {
+                                loadFieldsAndOpen(asn.id)
+                              }
+                            }}
+                          >
+                            📝 修改并重新提交
+                          </button>
+                        </div>
+                      ) : asn.submitted ? (
                         <button
                           className={`${btnGhost} w-full justify-center text-[13px]`}
                           onClick={() => setSubmittedView(asn.id)}

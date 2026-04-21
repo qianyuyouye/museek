@@ -11,7 +11,10 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     return NextResponse.json({ code: 429, message: '请求过于频繁，请稍后再试' }, { status: 429 })
   }
 
-  const { phone, purpose } = await request.json() as { phone: string; purpose?: 'register' | 'reset_password' }
+  const { phone, purpose } = await request.json() as {
+    phone: string
+    purpose?: 'register' | 'reset_password' | 'change_phone'
+  }
 
   if (!phone || !/^1[3-9]\d{9}$/.test(phone)) {
     return NextResponse.json({ code: 400, message: '手机号格式不正确' }, { status: 400 })
@@ -19,6 +22,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
 
   // 注册场景：手机号已被占用则拒绝发送，避免枚举/骚扰
   // 重置密码场景：手机号必须已注册
+  // 更换手机号场景：绕过存在性判断（/api/profile/phone 会双验证码校验）
   if (purpose === 'register' || purpose === 'reset_password') {
     const exists = await prisma.user.findUnique({ where: { phone }, select: { id: true } })
     if (purpose === 'register' && exists) {

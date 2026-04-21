@@ -33,32 +33,35 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     prisma.assignment.count({ where }),
   ])
 
-  // 查询当前用户已提交的作业
-  const submittedSet = new Set(
-    (
-      await prisma.assignmentSubmission.findMany({
-        where: {
-          userId,
-          assignmentId: { in: assignments.map((a) => a.id) },
-        },
-        select: { assignmentId: true },
-      })
-    ).map((s) => s.assignmentId),
-  )
+  // 查询当前用户已提交的作业（含状态，用于识别 needs_revision 重新提交）
+  const submissions = await prisma.assignmentSubmission.findMany({
+    where: {
+      userId,
+      assignmentId: { in: assignments.map((a) => a.id) },
+    },
+    select: { assignmentId: true, status: true, platformSongId: true, score: true },
+  })
+  const submissionByAsn = new Map(submissions.map((s) => [s.assignmentId, s]))
 
-  const list = assignments.map((a) => ({
-    id: a.id,
-    groupId: a.groupId,
-    groupName: a.group.name,
-    title: a.title,
-    description: a.description,
-    deadline: a.deadline,
-    status: a.status,
-    memberCount: a.totalMembers,
-    submittedCount: a.submissionCount,
-    submitted: submittedSet.has(a.id),
-    createdAt: a.createdAt,
-  }))
+  const list = assignments.map((a) => {
+    const sub = submissionByAsn.get(a.id)
+    return {
+      id: a.id,
+      groupId: a.groupId,
+      groupName: a.group.name,
+      title: a.title,
+      description: a.description,
+      deadline: a.deadline,
+      status: a.status,
+      memberCount: a.totalMembers,
+      submittedCount: a.submissionCount,
+      submitted: !!sub,
+      submissionStatus: sub?.status ?? null, // pending_review / reviewed / needs_revision
+      submissionSongId: sub?.platformSongId ?? null,
+      submissionScore: sub?.score ?? null,
+      createdAt: a.createdAt,
+    }
+  })
 
   return ok({ list, total, page, pageSize })
 })

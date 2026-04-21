@@ -33,9 +33,15 @@ export default function ReviewerProfilePage() {
   const [confirmPw, setConfirmPw] = useState('')
   const [toast, setToast] = useState('')
 
-  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2000) }
+  // 更换手机号表单
+  const [oldCode, setOldCode] = useState('')
+  const [newPhone, setNewPhone] = useState('')
+  const [newCode, setNewCode] = useState('')
+  const [oldCodeCooldown, setOldCodeCooldown] = useState(0)
+  const [newCodeCooldown, setNewCodeCooldown] = useState(0)
 
-  // Sync edit form with profile data
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2500) }
+
   useEffect(() => {
     if (profile) {
       setEditName(profile.name || '')
@@ -43,12 +49,66 @@ export default function ReviewerProfilePage() {
     }
   }, [profile])
 
+  useEffect(() => {
+    if (oldCodeCooldown <= 0) return
+    const t = setTimeout(() => setOldCodeCooldown((x) => x - 1), 1000)
+    return () => clearTimeout(t)
+  }, [oldCodeCooldown])
+  useEffect(() => {
+    if (newCodeCooldown <= 0) return
+    const t = setTimeout(() => setNewCodeCooldown((x) => x - 1), 1000)
+    return () => clearTimeout(t)
+  }, [newCodeCooldown])
+
   const user = {
     name: profile?.name ?? '—',
     phone: profile?.phone ?? '—',
     email: profile?.email ?? '—',
     role: '评审',
     registeredAt: profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('zh-CN') : '—',
+  }
+
+  async function sendOldCode() {
+    if (!profile?.phone) return
+    const res = await apiCall('/api/auth/sms/send', 'POST', { phone: profile.phone, purpose: 'change_phone' })
+    if (res.ok) {
+      showToast('✅ 旧手机验证码已发送')
+      setOldCodeCooldown(60)
+    } else {
+      showToast(`❌ ${res.message || '发送失败'}`)
+    }
+  }
+  async function sendNewCode() {
+    if (!newPhone || !/^1[3-9]\d{9}$/.test(newPhone)) {
+      showToast('❌ 请先填写正确的新手机号'); return
+    }
+    const res = await apiCall('/api/auth/sms/send', 'POST', { phone: newPhone, purpose: 'change_phone' })
+    if (res.ok) {
+      showToast('✅ 新手机验证码已发送')
+      setNewCodeCooldown(60)
+    } else {
+      showToast(`❌ ${res.message || '发送失败'}`)
+    }
+  }
+
+  async function submitPhoneChange() {
+    if (!profile?.phone || !oldCode || !newPhone || !newCode) {
+      showToast('❌ 请填写完整'); return
+    }
+    const res = await apiCall('/api/profile/phone', 'POST', {
+      oldPhone: profile.phone,
+      oldCode,
+      newPhone,
+      newCode,
+    })
+    if (res.ok) {
+      showToast('✅ 手机号已更新，下次登录请使用新号码')
+      setModal(null)
+      setOldCode(''); setNewCode(''); setNewPhone('')
+      refetchProfile()
+    } else {
+      showToast(`❌ ${res.message || '更新失败'}`)
+    }
   }
 
   return (
@@ -65,7 +125,8 @@ export default function ReviewerProfilePage() {
             <h2 className={textSectionTitle}>基本信息</h2>
             <div className="flex gap-2">
               <button className={btnGhost} onClick={() => setModal('edit')}>✏️ 编辑</button>
-              <button className={btnGhost} onClick={() => setModal('password')}>🔒 修改密码</button>
+              <button className={btnGhost} onClick={() => setModal('phone')}>📱 改手机号</button>
+              <button className={btnGhost} onClick={() => setModal('password')}>🔒 改密码</button>
             </div>
           </div>
 
@@ -140,7 +201,7 @@ export default function ReviewerProfilePage() {
             <div className="mb-5">
               <label className={labelCls}>手机号</label>
               <input className={inputCls} value={user.phone} disabled style={{ opacity: 0.5 }} />
-              <span className="text-[11px] text-[var(--text3)]">修改手机号需验证码</span>
+              <span className="text-[11px] text-[var(--text3)]">修改手机号请用"改手机号"入口</span>
             </div>
             <button className={`${btnPrimary} w-full flex items-center justify-center`} onClick={async () => {
               const res = await apiCall('/api/profile', 'PUT', { name: editName, email: editEmail })
@@ -152,6 +213,58 @@ export default function ReviewerProfilePage() {
                 showToast(`❌ ${res.message || '更新失败'}`)
               }
             }}>保存</button>
+          </div>
+        </div>
+      )}
+
+      {/* Phone Change Modal */}
+      {modal === 'phone' && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setModal(null)}>
+          <div className="bg-white rounded-xl p-7 w-[420px]" onClick={e => e.stopPropagation()}>
+            <h3 className="text-base font-semibold mb-4">更换手机号</h3>
+            <p className="text-xs text-[var(--text3)] mb-5">
+              旧手机号与新手机号需各自通过短信验证码校验。更新成功后，下次登录请使用新号码。
+            </p>
+
+            <div className="mb-3.5">
+              <label className={labelCls}>旧手机号</label>
+              <input className={inputCls} value={profile?.phone || ''} disabled style={{ opacity: 0.5 }} />
+            </div>
+            <div className="mb-3.5">
+              <label className={labelCls}>旧手机验证码</label>
+              <div className="flex gap-2">
+                <input className={inputCls} value={oldCode} onChange={e => setOldCode(e.target.value)} placeholder="6位数字" maxLength={6} />
+                <button
+                  className={`${btnGhost} whitespace-nowrap`}
+                  disabled={oldCodeCooldown > 0}
+                  onClick={sendOldCode}
+                >
+                  {oldCodeCooldown > 0 ? `${oldCodeCooldown}s` : '发送验证码'}
+                </button>
+              </div>
+            </div>
+
+            <div className="mb-3.5">
+              <label className={labelCls}>新手机号</label>
+              <input className={inputCls} value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="1 开头 11 位手机号" maxLength={11} />
+            </div>
+            <div className="mb-5">
+              <label className={labelCls}>新手机验证码</label>
+              <div className="flex gap-2">
+                <input className={inputCls} value={newCode} onChange={e => setNewCode(e.target.value)} placeholder="6位数字" maxLength={6} />
+                <button
+                  className={`${btnGhost} whitespace-nowrap`}
+                  disabled={newCodeCooldown > 0 || !newPhone}
+                  onClick={sendNewCode}
+                >
+                  {newCodeCooldown > 0 ? `${newCodeCooldown}s` : '发送验证码'}
+                </button>
+              </div>
+            </div>
+
+            <button className={`${btnPrimary} w-full flex items-center justify-center`} onClick={submitPhoneChange}>
+              确认更换
+            </button>
           </div>
         </div>
       )}

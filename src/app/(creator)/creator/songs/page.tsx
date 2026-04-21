@@ -66,20 +66,41 @@ const TAB_DEFS: { key: TabKey; label: string }[] = [
 
 // ── Waveform SVG ───────────────────────────────────────────────
 
-function WaveformPlayer({ audioUrl, title }: { audioUrl?: string | null; title?: string }) {
+interface ReviewMark {
+  t: number
+  note: string
+}
+
+function WaveformPlayer({
+  audioUrl,
+  title,
+  marks,
+}: {
+  audioUrl?: string | null
+  title?: string
+  marks?: ReviewMark[]
+}) {
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0) // 0~1
+  const [duration, setDuration] = useState(0)
+  const [currentTime, setCurrentTime] = useState(0)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
     const el = audioRef.current
     if (!el) return
-    const onTime = () => setProgress(el.duration > 0 ? el.currentTime / el.duration : 0)
+    const onTime = () => {
+      setProgress(el.duration > 0 ? el.currentTime / el.duration : 0)
+      setCurrentTime(el.currentTime)
+    }
+    const onLoaded = () => setDuration(el.duration || 0)
     const onEnd = () => { setPlaying(false); setProgress(0) }
     el.addEventListener('timeupdate', onTime)
+    el.addEventListener('loadedmetadata', onLoaded)
     el.addEventListener('ended', onEnd)
     return () => {
       el.removeEventListener('timeupdate', onTime)
+      el.removeEventListener('loadedmetadata', onLoaded)
       el.removeEventListener('ended', onEnd)
     }
   }, [])
@@ -95,6 +116,15 @@ function WaveformPlayer({ audioUrl, title }: { audioUrl?: string | null; title?:
     }
   }
 
+  const seekTo = (sec: number) => {
+    const el = audioRef.current
+    if (!el) return
+    el.currentTime = Math.max(0, Math.min(el.duration || 0, sec))
+    setCurrentTime(el.currentTime)
+  }
+
+  const validMarks = (marks || []).filter((m) => typeof m?.t === 'number' && typeof m?.note === 'string')
+
   return (
     <div className={`${cardCls} !p-4`}>
       <div className="flex items-center gap-3 mb-3">
@@ -109,12 +139,48 @@ function WaveformPlayer({ audioUrl, title }: { audioUrl?: string | null; title?:
           <div className="text-xs text-[var(--text3)]">{audioUrl ? 'Web Audio 解码' : '无音频文件'}</div>
         </div>
       </div>
-      <Waveform src={audioUrl} progress={progress} />
+      <div className="relative">
+        <Waveform src={audioUrl} progress={progress} />
+        {/* 评审时间轴标记（只读） */}
+        {validMarks.length > 0 && duration > 0 && (
+          <div className="absolute inset-0 pointer-events-none">
+            {validMarks.map((m, i) => (
+              <div
+                key={`mark-${i}`}
+                className="absolute top-0 bottom-0 w-[2px] bg-[var(--orange)]"
+                style={{ left: `${(m.t / duration) * 100}%` }}
+                title={`${formatTime(m.t)} ${m.note}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
       {audioUrl ? <audio ref={audioRef} src={audioUrl} preload="metadata" className="hidden" /> : null}
       <div className="flex justify-between text-[11px] text-[var(--text3)] mt-1">
-        <span>{formatTime(audioRef.current?.currentTime ?? 0)}</span>
-        <span>{formatTime(audioRef.current?.duration ?? 0)}</span>
+        <span>{formatTime(currentTime)}</span>
+        <span>{formatTime(duration)}</span>
       </div>
+
+      {validMarks.length > 0 && (
+        <div className="mt-3 border-t border-[var(--border)] pt-2">
+          <div className="text-xs text-[var(--text3)] mb-1.5">
+            🕘 评审时间轴 ({validMarks.length})
+          </div>
+          <div className="flex flex-col gap-1 max-h-[140px] overflow-auto">
+            {validMarks.map((m, i) => (
+              <button
+                type="button"
+                key={`mark-row-${i}`}
+                onClick={() => seekTo(m.t)}
+                className="flex items-center gap-2 text-xs bg-white rounded px-2 py-1 border border-[var(--border)] hover:border-[var(--accent)] text-left cursor-pointer"
+              >
+                <span className="text-[var(--accent2)] font-mono shrink-0">{formatTime(m.t)}</span>
+                <span className="flex-1 text-[var(--text2)] break-words">{m.note}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -220,8 +286,16 @@ export default function CreatorSongsPage() {
               </div>
             </div>
 
-            {/* Waveform */}
-            <WaveformPlayer audioUrl={song.audioUrl} title={song.title} />
+            {/* Waveform + 评审时间轴 marks */}
+            <WaveformPlayer
+              audioUrl={song.audioUrl}
+              title={song.title}
+              marks={
+                review && review.tags && typeof review.tags === 'object' && 'marks' in review.tags
+                  ? ((review.tags as { marks?: ReviewMark[] }).marks ?? [])
+                  : []
+              }
+            />
 
             {/* Meta info 2-column */}
             <div className="grid grid-cols-2 gap-2 mt-3 text-[13px]">

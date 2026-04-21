@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useApi } from '@/lib/use-api'
 import { pageWrap, textPageTitle, textSectionTitle } from '@/lib/ui-tokens'
 
@@ -37,7 +38,12 @@ interface StatsApiData {
     recommendRate: number
   }
   history: ReviewHistoryApi[]
+  page: number
+  pageSize: number
+  total: number
 }
+
+const HISTORY_PAGE_SIZE = 10
 
 // ── Stat card config ─────────────────────────────────────────────
 
@@ -189,7 +195,13 @@ const COLUMNS = ['歌曲', '学生', '总分', '建议', '用时', '日期'] as 
 // ── Page component ───────────────────────────────────────────────
 
 export default function ReviewStatsPage() {
-  const { data, loading } = useApi<StatsApiData>('/api/review/stats')
+  const [page, setPage] = useState(1)
+  const { data, loading } = useApi<StatsApiData>(
+    `/api/review/stats?page=${page}&pageSize=${HISTORY_PAGE_SIZE}`,
+    [page],
+  )
+  const total = data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / HISTORY_PAGE_SIZE))
 
   if (loading) {
     return (
@@ -322,41 +334,87 @@ export default function ReviewStatsPage() {
                 onMouseOver={(e) => { e.currentTarget.style.background = '#f8faff' }}
                 onMouseOut={(e) => { e.currentTarget.style.background = '' }}
               >
-                {/* 歌曲 */}
-                <td className="px-[18px] py-3.5 text-sm font-medium text-[var(--text)]">
-                  {row.title}
-                </td>
-                {/* 学生 */}
-                <td className="px-[18px] py-3.5 text-sm text-[var(--text2)]">
-                  {row.student}
-                </td>
-                {/* 总分 */}
+                <td className="px-[18px] py-3.5 text-sm font-medium text-[var(--text)]">{row.title}</td>
+                <td className="px-[18px] py-3.5 text-sm text-[var(--text2)]">{row.student}</td>
                 <td className="px-[18px] py-3.5">
                   <span
                     className="text-sm font-bold"
-                    style={{
-                      color: row.score >= 80 ? 'var(--green2)' : 'var(--orange)',
-                    }}
+                    style={{ color: row.score >= 80 ? 'var(--green2)' : 'var(--orange)' }}
                   >
                     {row.score}
                   </span>
                 </td>
-                {/* 建议 */}
-                <td className="px-[18px] py-3.5 text-sm text-[var(--text2)]">
-                  {row.rec}
-                </td>
-                {/* 用时 */}
-                <td className="px-[18px] py-3.5 text-sm text-[var(--text2)]">
-                  {row.duration}
-                </td>
-                {/* 日期 */}
-                <td className="px-[18px] py-3.5 text-sm text-[var(--text3)]">
-                  {row.date}
-                </td>
+                <td className="px-[18px] py-3.5 text-sm text-[var(--text2)]">{row.rec}</td>
+                <td className="px-[18px] py-3.5 text-sm text-[var(--text2)]">{row.duration}</td>
+                <td className="px-[18px] py-3.5 text-sm text-[var(--text3)]">{row.date}</td>
               </tr>
             ))}
+            {history.length === 0 && !loading && (
+              <tr>
+                <td colSpan={COLUMNS.length} className="px-[18px] py-8 text-center text-sm text-[var(--text3)]">
+                  暂无评审记录
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
+
+        {/* Pagination */}
+        {total > 0 && (
+          <div className="px-5 py-3 flex justify-between items-center border-t border-[#f0f4fb] bg-[#fafbff]">
+            <span className="text-xs text-[var(--text3)]">
+              第 {(page - 1) * HISTORY_PAGE_SIZE + 1}–{Math.min(page * HISTORY_PAGE_SIZE, total)} 条 / 总共 {total} 条
+            </span>
+            <div className="flex items-center gap-[3px]">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="w-7 h-7 border border-[var(--border)] rounded-md bg-white flex items-center justify-center text-[13px]"
+                style={{
+                  cursor: page === 1 ? 'default' : 'pointer',
+                  color: page === 1 ? '#d1dae8' : 'var(--text2)',
+                }}
+              >
+                ‹
+              </button>
+              {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                const start = Math.max(1, Math.min(page - 2, totalPages - 4))
+                const n = start + i
+                if (n > totalPages) return null
+                return (
+                  <button
+                    key={n}
+                    onClick={() => setPage(n)}
+                    className="w-7 h-7 rounded-md text-[12.5px] cursor-pointer"
+                    style={{
+                      border: '1px solid',
+                      borderColor: page === n ? 'var(--accent)' : 'var(--border)',
+                      background: page === n ? 'var(--accent)' : '#fff',
+                      color: page === n ? '#fff' : 'var(--text2)',
+                      fontWeight: page === n ? 600 : 400,
+                    }}
+                  >
+                    {n}
+                  </button>
+                )
+              })}
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="w-7 h-7 border border-[var(--border)] rounded-md bg-white flex items-center justify-center text-[13px]"
+                style={{
+                  cursor: page === totalPages ? 'default' : 'pointer',
+                  color: page === totalPages ? '#d1dae8' : 'var(--text2)',
+                }}
+              >
+                ›
+              </button>
+              <span className="ml-2 text-[11.5px] text-[var(--text3)] bg-[#f4f7fe] px-2.5 py-[3px] rounded-md border border-[var(--border)]">
+                {HISTORY_PAGE_SIZE} 条/页
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

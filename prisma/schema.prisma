@@ -636,6 +636,25 @@ model AuthRateLimit {
   @@map("auth_rate_limits")
 }
 
+// Theme 10: 评审草稿（切页/刷新前暂存分数 + 评语 + marks，userId+songId 唯一）
+model ReviewDraft {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  songId     Int      @map("song_id")
+  technique  Int?     @db.TinyInt
+  creativity Int?     @db.TinyInt
+  commercial Int?     @db.TinyInt
+  comment    String?  @db.Text
+  tags       Json?    // { quick: string[], marks: {time:number, text:string}[] }
+  recommendation String? @db.VarChar(30)
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, songId])
+  @@index([userId, updatedAt])
+  @@map("review_drafts")
+}
+
 // Theme 8: 登出 / 密码修改 / 实名作废 时将 JWT jti 列入黑名单
 model TokenBlacklist {
   jti       String   @id @db.VarChar(40)

@@ -1,14 +1,17 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser, ok, err, safeHandler} from '@/lib/api-utils'
+import { getCurrentUser, ok, err, parsePagination, safeHandler } from '@/lib/api-utils'
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
   const { userId, portal } = getCurrentUser(request)
   if (!userId || portal !== 'reviewer') return err('无权限', 403)
 
+  const { searchParams } = request.nextUrl
+  const { page, pageSize, skip } = parsePagination(searchParams)
+
   const where = { reviewerId: userId }
 
-  const [aggregate, reviews, stronglyRecommendCount] = await Promise.all([
+  const [aggregate, reviews, reviewTotal, stronglyRecommendCount] = await Promise.all([
     prisma.review.aggregate({
       where,
       _count: true,
@@ -26,7 +29,10 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
         },
       },
       orderBy: { reviewedAt: 'desc' },
+      skip,
+      take: pageSize,
     }),
+    prisma.review.count({ where }),
     prisma.review.count({
       where: { ...where, recommendation: 'strongly_recommend' },
     }),
@@ -59,5 +65,5 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     reviewedAt: r.reviewedAt,
   }))
 
-  return ok({ stats, history })
+  return ok({ stats, history, page, pageSize, total: reviewTotal })
 })

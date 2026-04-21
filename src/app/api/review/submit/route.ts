@@ -100,6 +100,9 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
         })
       }
 
+      // Theme 10: 提交成功后清理该评审员对该歌曲的草稿（事务内一并）
+      await tx.reviewDraft.deleteMany({ where: { userId, songId } })
+
       return { ...created, creatorId: song.userId, songTitle: song.title }
     })
   } catch (e) {
