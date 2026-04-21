@@ -136,3 +136,50 @@ describe('lib/signature HMAC local mode', () => {
     expect(verifyLocalPutSig(key, q, 42)).toMatch(/签名|无效/)
   })
 })
+
+import { checkMagicBytes } from '@/lib/magic-bytes'
+
+describe('lib/magic-bytes', () => {
+  const mp3_id3 = Buffer.concat([Buffer.from('ID3'), Buffer.alloc(9)])
+  const mp3_sync = Buffer.concat([Buffer.from([0xff, 0xfb, 0x90, 0x00]), Buffer.alloc(8)])
+  const wav = Buffer.concat([
+    Buffer.from('RIFF'), Buffer.from([0, 0, 0, 0]), Buffer.from('WAVE'),
+  ])
+  const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0])
+  const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(8)])
+  const webp = Buffer.concat([
+    Buffer.from('RIFF'), Buffer.from([0, 0, 0, 0]), Buffer.from('WEBP'),
+  ])
+  const svg = Buffer.concat([Buffer.from('<?xml version="1.0"?><svg'), Buffer.alloc(20)])
+  const tooSmall = Buffer.from([0xff])
+
+  it('合法 MP3 ID3 头', () => {
+    expect(checkMagicBytes(mp3_id3, 'audio')).toBeNull()
+  })
+
+  it('合法 MP3 帧同步 0xFFFB', () => {
+    expect(checkMagicBytes(mp3_sync, 'audio')).toBeNull()
+  })
+
+  it('合法 WAV', () => {
+    expect(checkMagicBytes(wav, 'audio')).toBeNull()
+  })
+
+  it('合法 PNG/JPEG/WEBP', () => {
+    expect(checkMagicBytes(png, 'image')).toBeNull()
+    expect(checkMagicBytes(jpeg, 'image')).toBeNull()
+    expect(checkMagicBytes(webp, 'image')).toBeNull()
+  })
+
+  it('SVG 不是 image 被拒', () => {
+    expect(checkMagicBytes(svg, 'image')).toMatch(/不匹配|invalid/i)
+  })
+
+  it('PNG 伪装成 audio 被拒', () => {
+    expect(checkMagicBytes(png, 'audio')).toMatch(/不匹配|invalid/i)
+  })
+
+  it('过小 buffer 被拒', () => {
+    expect(checkMagicBytes(tooSmall, 'audio')).toMatch(/过小|too small|无法识别/i)
+  })
+})
