@@ -87,6 +87,7 @@ describe('歌曲 · 状态变更通知', () => {
     expect(notes.some((n) => n.title.includes('发行通知测试') && n.type === 'work')).toBe(true)
 
     await prisma.notification.deleteMany({ where: { userId: creator!.id } })
+    await prisma.distribution.deleteMany({ where: { songId: song.id } })
     await prisma.platformSong.delete({ where: { id: song.id } })
   })
 })
