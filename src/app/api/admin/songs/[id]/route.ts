@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, err, safeHandler} from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
+import { toSignedUrl } from '@/lib/signed-url'
 
 export const GET = safeHandler(async function GET(
   request: NextRequest,
@@ -28,7 +29,11 @@ export const GET = safeHandler(async function GET(
 
   if (!song) return err('歌曲不存在', 404)
 
-  return ok(song)
+  return ok({
+    ...song,
+    audioUrl: await toSignedUrl(song.audioUrl, auth.userId),
+    coverUrl: await toSignedUrl(song.coverUrl, auth.userId),
+  })
 })
 
 export const PUT = safeHandler(async function PUT(

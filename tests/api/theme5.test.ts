@@ -227,6 +227,54 @@ describe('Theme 5 upload-security chain', () => {
       if (song) await prisma.platformSong.delete({ where: { id: song.id } })
     })
   })
+
+  describe('C3 API 读出口均返签名 URL', () => {
+    let songId = 0
+    beforeAll(async () => {
+      const s = await prisma.platformSong.findFirst({ where: { userId: creatorUserId } })
+      if (!s) throw new Error('需要 creator 至少有 1 首歌作前置；检查 seed-test-users')
+      songId = s.id
+    })
+
+    it('GET /api/creator/songs/:id audioUrl 形如签名 URL', async () => {
+      const r = await http(`/api/creator/songs/${songId}`, { cookie: creatorCookie })
+      expectOk(r)
+      if (r.json.data.audioUrl != null) {
+        expect(r.json.data.audioUrl).toMatch(/\/api\/files\/.*\?.*sig=/)
+      }
+    })
+
+    it('GET /api/songs/published 匿名请求 coverUrl 不含 uid', async () => {
+      const r = await http('/api/songs/published')
+      expectOk(r)
+      const item = r.json.data.list?.[0]
+      if (item?.coverUrl != null) {
+        expect(item.coverUrl).toMatch(/\/api\/files\/.*\?.*sig=/)
+        expect(item.coverUrl).not.toContain('uid=')
+      }
+    })
+
+    it('GET /api/review/queue audioUrl 签名', async () => {
+      const r = await http('/api/review/queue', { cookie: reviewerCookie })
+      expectOk(r)
+      const item = r.json.data.list?.[0]
+      if (item?.audioUrl != null) {
+        expect(item.audioUrl).toMatch(/\/api\/files\/.*\?.*sig=/)
+      }
+    })
+
+    it('GET /api/admin/songs audioUrl/coverUrl 签名', async () => {
+      const r = await http('/api/admin/songs?pageSize=1', { cookie: adminCookie })
+      expectOk(r)
+      const item = r.json.data.list?.[0]
+      if (item?.audioUrl != null) {
+        expect(item.audioUrl).toMatch(/\/api\/files\/.*\?.*sig=/)
+      }
+      if (item?.coverUrl != null) {
+        expect(item.coverUrl).toMatch(/\/api\/files\/.*\?.*sig=/)
+      }
+    })
+  })
 })
 
 import { signPutUrl, signGetUrl, verifyLocalPutSig, verifyLocalGetSig } from '@/lib/signature'

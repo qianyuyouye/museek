@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, ok, err, parsePagination, safeHandler} from '@/lib/api-utils'
+import { toSignedUrl } from '@/lib/signed-url'
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
   const { userId, portal } = getCurrentUser(request)
@@ -32,7 +33,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     prisma.platformSong.count({ where }),
   ])
 
-  const list = songs.map((s) => ({
+  const list = await Promise.all(songs.map(async (s) => ({
     id: s.id,
     copyrightCode: s.copyrightCode,
     title: s.title,
@@ -40,13 +41,13 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     studentName: s.user.realName || s.user.name || s.user.phone || '未命名',
     genre: s.genre,
     bpm: s.bpm,
-    audioUrl: s.audioUrl,
-    coverUrl: s.coverUrl,
+    audioUrl: await toSignedUrl(s.audioUrl, userId),
+    coverUrl: await toSignedUrl(s.coverUrl, userId),
     source: s.source,
     assignmentId: s.assignmentId,
     aiTools: Array.isArray(s.aiTools) ? s.aiTools : (s.aiTools ? [s.aiTools] : []),
     createdAt: s.createdAt,
-  }))
+  })))
 
   return ok({ list, total, page, pageSize })
 })

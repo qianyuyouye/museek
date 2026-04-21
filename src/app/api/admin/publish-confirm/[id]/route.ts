@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, err, safeHandler} from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
+import { toSignedUrl } from '@/lib/signed-url'
 
 export const GET = safeHandler(async function GET(
   request: NextRequest,
@@ -67,8 +68,8 @@ export const GET = safeHandler(async function GET(
       isrc: distribution.song.isrc,
       genre: distribution.song.genre,
       performer: distribution.song.performer,
-      coverUrl: distribution.song.coverUrl,
-      audioUrl: distribution.song.audioUrl,
+      coverUrl: await toSignedUrl(distribution.song.coverUrl, auth.userId),
+      audioUrl: await toSignedUrl(distribution.song.audioUrl, auth.userId),
     },
     creatorName: distribution.song.user.name,
     daysSinceSubmit: distribution.submittedAt

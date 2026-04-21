@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, err, parsePagination, safeHandler} from '@/lib/api-utils'
 import { SongStatus } from '@prisma/client'
+import { toSignedUrl } from '@/lib/signed-url'
 
 const VALID_STATUSES: Set<string> = new Set(Object.values(SongStatus))
 
@@ -77,7 +78,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     statusCounts.all += row._count
   }
 
-  const list = songs.map((s) => ({
+  const list = await Promise.all(songs.map(async (s) => ({
     id: s.id,
     copyrightCode: s.copyrightCode,
     title: s.title,
@@ -96,10 +97,10 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     status: s.status,
     likeCount: s.likeCount,
     distributions: s.distributions,
-    audioUrl: s.audioUrl,
-    coverUrl: s.coverUrl,
+    audioUrl: await toSignedUrl(s.audioUrl, auth.userId),
+    coverUrl: await toSignedUrl(s.coverUrl, auth.userId),
     createdAt: s.createdAt,
-  }))
+  })))
 
   return ok({ list, total, page, pageSize, statusCounts })
 })

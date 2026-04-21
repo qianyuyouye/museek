@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, ok, err, safeHandler} from '@/lib/api-utils'
+import { toSignedUrl } from '@/lib/signed-url'
 
 export const GET = safeHandler(async function GET(
   request: NextRequest,
@@ -52,5 +53,9 @@ export const GET = safeHandler(async function GET(
   if (!song) return err('作品不存在', 404)
   if (song.userId !== userId) return err('无权限', 403)
 
-  return ok(song)
+  return ok({
+    ...song,
+    audioUrl: await toSignedUrl(song.audioUrl, userId),
+    coverUrl: await toSignedUrl(song.coverUrl, userId),
+  })
 })

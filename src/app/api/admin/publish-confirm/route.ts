@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, err, parsePagination, safeHandler} from '@/lib/api-utils'
 import { DistributionStatus } from '@prisma/client'
+import { toSignedUrl } from '@/lib/signed-url'
 
 const VALID_STATUSES: Set<string> = new Set(Object.values(DistributionStatus))
 
@@ -66,7 +67,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
 
   const now = Date.now()
 
-  const list = distributions.map((d) => {
+  const list = await Promise.all(distributions.map(async (d) => {
     const hasRevenue = d.song.mappings.some((m) =>
       m.revenueRows.some((r) => r.settlement !== null),
     )
@@ -80,7 +81,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
       liveDate: d.liveDate,
       url: d.url,
       title: d.song.title,
-      coverUrl: d.song.coverUrl,
+      coverUrl: await toSignedUrl(d.song.coverUrl, auth.userId),
       copyrightCode: d.song.copyrightCode,
       isrc: d.song.isrc,
       creatorName: d.song.user.name,
@@ -89,7 +90,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
         : null,
       hasRevenue,
     }
-  })
+  }))
 
   return ok({ list, total, page, pageSize, statusCounts })
 })

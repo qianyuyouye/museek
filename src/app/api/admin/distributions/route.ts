@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, safeHandler} from '@/lib/api-utils'
 import { getEnabledPlatforms } from '@/lib/platforms'
+import { toSignedUrl } from '@/lib/signed-url'
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
   const auth = await requirePermission(request, 'admin.distributions.view')
@@ -24,15 +25,15 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
   })
 
   const matrix: Record<number, Record<string, string>> = {}
-  const songList = songs.map((s) => {
+  const songList = await Promise.all(songs.map(async (s) => {
     const row: Record<string, string> = {}
     for (const p of platforms) row[p] = 'none'
     for (const d of s.distributions) {
       if (platformSet.has(d.platform)) row[d.platform] = d.status
     }
     matrix[s.id] = row
-    return { id: s.id, title: s.title, cover: s.coverUrl }
-  })
+    return { id: s.id, title: s.title, cover: await toSignedUrl(s.coverUrl, auth.userId) }
+  }))
 
   return ok({ songs: songList, platforms, matrix })
 })

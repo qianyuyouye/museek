@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { ok, parsePagination, safeHandler } from '@/lib/api-utils'
+import { toSignedUrl } from '@/lib/signed-url'
 
 /** 公开接口：获取已发行歌曲列表（作品广场用） */
 export const GET = safeHandler(async function GET(request: NextRequest) {
@@ -21,7 +22,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
   ])
 
   return ok({
-    list: list.map(s => ({
+    list: await Promise.all(list.map(async s => ({
       id: s.id,
       title: s.title,
       genre: s.genre,
@@ -29,10 +30,10 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
       score: s.score,
       copyrightCode: s.copyrightCode,
       likeCount: s.likeCount,
-      coverUrl: s.coverUrl,
+      coverUrl: await toSignedUrl(s.coverUrl),
       authorName: s.user?.realName || s.user?.name || '未知',
       createdAt: s.createdAt,
-    })),
+    }))),
     total,
   })
 })
