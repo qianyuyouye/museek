@@ -66,7 +66,7 @@ const columns: Column<Teacher>[] = [
 
 export default function AdminTeachersPage() {
   const { data: teachersData, loading } = useApi<{ list: Teacher[] }>(
-    '/api/admin/accounts?tab=reviewer&pageSize=100'
+    '/api/admin/teachers?pageSize=100'
   )
   const teachers = teachersData?.list ?? []
 
