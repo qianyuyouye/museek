@@ -300,6 +300,12 @@ export default function CreatorAssignmentsPage() {
           <div
             className="border-2 border-dashed border-[var(--border)] rounded-xl p-8 text-center cursor-pointer transition-all mb-6 hover:border-[var(--accent)]"
             onClick={() => audioRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault() }}
+            onDrop={(e) => {
+              e.preventDefault()
+              const f = e.dataTransfer.files?.[0]
+              if (f) handleAudioUpload(f)
+            }}
           >
             {uploading ? (
               <div>

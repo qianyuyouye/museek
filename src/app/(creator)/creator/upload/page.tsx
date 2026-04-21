@@ -453,6 +453,12 @@ export default function CreatorUploadPage() {
                   : 'border-[var(--border)] hover:border-[var(--accent)]'
               }`}
               onClick={() => audioRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault() }}
+              onDrop={(e) => {
+                e.preventDefault()
+                const f = e.dataTransfer.files?.[0]
+                if (f) handleFileUpload(f, 'audio')
+              }}
             >
               {uploading ? (
                 <div><span className="text-[40px]">⏳</span><p className="mt-2 text-[var(--accent)] font-medium">上传中...</p></div>
@@ -485,6 +491,12 @@ export default function CreatorUploadPage() {
                   : 'border-[var(--border)] hover:border-[var(--accent)]'
               }`}
               onClick={() => coverRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault() }}
+              onDrop={(e) => {
+                e.preventDefault()
+                const f = e.dataTransfer.files?.[0]
+                if (f) handleFileUpload(f, 'image')
+              }}
             >
               {form.coverUploaded ? (
                 <div>
