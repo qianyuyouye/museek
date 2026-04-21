@@ -311,7 +311,7 @@ enum MappingStatus {
 // 4.10 revenue_imports（收益导入批次）
 model RevenueImport {
   id             Int           @id @default(autoincrement())
-  platform       RevenuePlatform @default(qishui)
+  platform       String          @default("qishui") @db.VarChar(50)
   fileName       String        @map("file_name") @db.VarChar(200)
   period         String?       @db.VarChar(50)
   totalRows      Int           @default(0) @map("total_rows")
