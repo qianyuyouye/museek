@@ -102,6 +102,26 @@ docker compose --profile init run init       # 首次建表+种子
 
 默认管理员：`admin` / `Abc12345`
 
+## Theme 5 部署步骤（上传安全链）
+
+**首次部署或升级到 Theme 5+ 时执行**：
+
+1. 配置 env（均可选，缺则自动 fallback）：
+   - `UPLOAD_SECRET` — HMAC 密钥；缺失时从 `JWT_SECRET` 派生 `sha256(JWT_SECRET + ":upload")`
+   - `STORAGE_ROOT` — 本地模式文件落盘根目录；默认 `./storage`
+
+2. 数据迁移：
+   ```bash
+   mysql museek < scripts/theme5-cleanup.sql
+   ```
+   脚本幂等可重跑。剥离历史 `audio_url/cover_url` 的前导 `/`。
+
+3. 本地存储目录：
+   - 裸机：`storage/uploads/{audio,images}/` 需写权限
+   - Docker：`docker-compose.yml` 已挂 `./storage:/app/storage`（确保宿主机目录存在）
+
+4. 生产建议：切到 OSS 模式（管理端 `/admin/settings` → 存储配置），不再走本地网关
+
 ## 环境变量
 
 ```env

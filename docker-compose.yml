@@ -13,9 +13,13 @@ services:
       - OSS_BUCKET=${OSS_BUCKET:-}
       - OSS_REGION=${OSS_REGION:-}
       - OSS_DOMAIN=${OSS_DOMAIN:-}
+      - UPLOAD_SECRET=${UPLOAD_SECRET:-}
+      - STORAGE_ROOT=/app/storage
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      - ./storage:/app/storage
     restart: unless-stopped
 
   # 首次初始化：建表 + 种子数据（用 builder 阶段镜像，含完整 node_modules）
