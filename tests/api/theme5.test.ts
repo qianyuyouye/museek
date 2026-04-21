@@ -228,6 +228,26 @@ describe('Theme 5 upload-security chain', () => {
     })
   })
 
+  describe('E1 review/songs/:id 字段契约', () => {
+    it('响应 key 名 coverUrl/aiTools（非 cover/aiTool），audioUrl/coverUrl 是签名 URL', async () => {
+      const song = await prisma.platformSong.findFirst({ where: { status: 'pending_review' } })
+      if (!song) {
+        console.warn('跳过 E1：需 pending_review 歌曲；由测试 seed 保证')
+        return
+      }
+      const r = await http(`/api/review/songs/${song.id}`, { cookie: reviewerCookie })
+      expectOk(r)
+      expect(r.json.data).toHaveProperty('coverUrl')
+      expect(r.json.data).toHaveProperty('aiTools')
+      expect(r.json.data).not.toHaveProperty('cover')
+      expect(r.json.data).not.toHaveProperty('aiTool')
+      expect(Array.isArray(r.json.data.aiTools)).toBe(true)
+      if (r.json.data.audioUrl != null) {
+        expect(r.json.data.audioUrl).toMatch(/\/api\/files\/.*\?.*sig=/)
+      }
+    })
+  })
+
   describe('C3 API 读出口均返签名 URL', () => {
     let songId = 0
     beforeAll(async () => {

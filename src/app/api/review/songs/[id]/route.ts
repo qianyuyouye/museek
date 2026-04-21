@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, ok, err, safeHandler } from '@/lib/api-utils'
+import { toSignedUrl } from '@/lib/signed-url'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -24,11 +25,11 @@ export const GET = safeHandler(async function GET(request: NextRequest, { params
     id: song.id,
     title: song.title,
     userId: song.userId,
-    cover: song.coverUrl,
-    audioUrl: song.audioUrl,
+    coverUrl: await toSignedUrl(song.coverUrl, userId),
+    audioUrl: await toSignedUrl(song.audioUrl, userId),
     genre: song.genre,
     bpm: song.bpm,
-    aiTool: song.aiTools,
+    aiTools: song.aiTools,
     performer: song.performer,
     lyricist: song.lyricist,
     composer: song.composer,

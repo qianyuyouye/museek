@@ -12,11 +12,11 @@ interface SongDetail {
   id: number
   title: string
   userId: number
-  cover: string
+  coverUrl?: string | null
   audioUrl?: string | null
   genre: string
   bpm: number
-  aiTool: string
+  aiTools: string[]
   lyrics?: string | null
   styleDesc?: string | null
   creationDesc?: string | null
@@ -291,8 +291,10 @@ export default function ReviewAssessPage() {
           <div className={cardCls}>
             {/* Song info header */}
             <div className="flex items-center gap-4 mb-4">
-              <div className="text-5xl w-[72px] h-[72px] bg-[var(--bg4)] rounded-[10px] flex items-center justify-center shrink-0">
-                {song.cover}
+              <div className="text-5xl w-[72px] h-[72px] bg-[var(--bg4)] rounded-[10px] flex items-center justify-center shrink-0 overflow-hidden">
+                {song.coverUrl
+                  ? <img src={song.coverUrl} alt={song.title} className="w-full h-full object-cover" />
+                  : <span>🎵</span>}
               </div>
               <div>
                 <div className="text-lg font-semibold text-[var(--text)]">
@@ -324,7 +326,7 @@ export default function ReviewAssessPage() {
             <div className="text-sm">
               <div className="mb-2.5">
                 <span className="text-[var(--text3)]">AI工具：</span>
-                {song.aiTool}
+                {Array.isArray(song.aiTools) ? song.aiTools.join(', ') : '-'}
               </div>
               <div className="mb-2.5">
                 <span className="text-[var(--text3)]">Prompt：</span>
