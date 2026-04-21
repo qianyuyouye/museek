@@ -74,6 +74,8 @@ export default function AdminAccountsPage() {
   const [createReviewerModal, setCreateReviewerModal] = useState(false)
   const [createCreatorModal, setCreateCreatorModal] = useState(false)
   const [permModal, setPermModal] = useState<ReviewerAccount | CreatorAccount | null>(null)
+  const [resetPwd, setResetPwd] = useState<{ name: string; password: string } | null>(null)
+  const [copied, setCopied] = useState(false)
 
   const { data, loading, refetch } = useApi<AccountsApiData>(
     `/api/admin/accounts?tab=${tab}`,
@@ -193,9 +195,16 @@ export default function AdminAccountsPage() {
               className={`${btnGhost} ${btnSmall}`}
               onClick={async (e) => {
                 e.stopPropagation()
-                const res = await apiCall<{ password: string }>(`/api/admin/accounts/${r.id}/reset-password`, 'POST', {})
-                if (res.ok) { showToast(`✅ 已重置 ${r.name} 的密码为 ${res.data?.password ?? '（已生成）'}`); refetch() }
-                else showToast(res.message ?? '重置失败')
+                const res = await apiCall<{ password?: string; generated?: boolean }>(`/api/admin/accounts/${r.id}/reset-password`, 'POST', {})
+                if (res.ok) {
+                  if (res.data?.password) {
+                    setCopied(false)
+                    setResetPwd({ name: r.name, password: res.data.password })
+                  } else {
+                    showToast(`✅ 已重置 ${r.name} 的密码`)
+                  }
+                  refetch()
+                } else showToast(res.message ?? '重置失败')
               }}
             >
               重置密码
@@ -290,9 +299,16 @@ export default function AdminAccountsPage() {
               className={`${btnGhost} ${btnSmall}`}
               onClick={async (e) => {
                 e.stopPropagation()
-                const res = await apiCall<{ password: string }>(`/api/admin/accounts/${r.id}/reset-password`, 'POST', {})
-                if (res.ok) { showToast(`✅ 已重置 ${r.name} 的密码为 ${res.data?.password ?? '（已生成）'}`); refetch() }
-                else showToast(res.message ?? '重置失败')
+                const res = await apiCall<{ password?: string; generated?: boolean }>(`/api/admin/accounts/${r.id}/reset-password`, 'POST', {})
+                if (res.ok) {
+                  if (res.data?.password) {
+                    setCopied(false)
+                    setResetPwd({ name: r.name, password: res.data.password })
+                  } else {
+                    showToast(`✅ 已重置 ${r.name} 的密码`)
+                  }
+                  refetch()
+                } else showToast(res.message ?? '重置失败')
               }}
             >
               重置密码
@@ -436,6 +452,63 @@ export default function AdminAccountsPage() {
               }
             }}
           />
+        )}
+      </AdminModal>
+
+      {/* 重置密码明文弹框 */}
+      <AdminModal
+        open={!!resetPwd}
+        onClose={() => setResetPwd(null)}
+        title={`新密码已生成 · ${resetPwd?.name ?? ''}`}
+      >
+        {resetPwd && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div
+              style={{
+                padding: 12,
+                background: 'rgba(239,68,68,.08)',
+                borderRadius: 8,
+                fontSize: 12,
+                color: 'var(--red)',
+                lineHeight: 1.6,
+              }}
+            >
+              ⚠️ 此密码仅显示一次，请立即复制并通过安全渠道发送给用户。关闭弹窗后无法再查看。
+            </div>
+            <div>
+              <label className={labelCls}>新密码</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  className={inputCls}
+                  value={resetPwd.password}
+                  readOnly
+                  style={{ fontFamily: 'monospace', fontSize: 15, letterSpacing: 1 }}
+                  onFocus={(e) => e.currentTarget.select()}
+                />
+                <button
+                  className={btnPrimary}
+                  style={{ whiteSpace: 'nowrap' }}
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(resetPwd.password)
+                      setCopied(true)
+                    } catch {
+                      setCopied(false)
+                      showToast('复制失败，请手动选中复制')
+                    }
+                  }}
+                >
+                  {copied ? '✅ 已复制' : '📋 点击复制'}
+                </button>
+              </div>
+            </div>
+            <button
+              className={`${btnGhost} w-full flex justify-center`}
+              onClick={() => setResetPwd(null)}
+            >
+              我已复制，关闭
+            </button>
+          </div>
         )}
       </AdminModal>
     </div>
