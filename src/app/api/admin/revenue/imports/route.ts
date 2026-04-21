@@ -1,9 +1,10 @@
 import { NextRequest } from 'next/server'
-import { Prisma, RevenuePlatform } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, err, parsePagination, safeHandler } from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
 import { parseCSV } from '@/lib/csv'
+import { isPlatformEnabled } from '@/lib/platforms'
 import { loadRevenueRules, resolveCommissionRatio } from '@/lib/commission'
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
@@ -34,10 +35,6 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
 
   return ok({ list, total, page, pageSize })
 })
-
-const VALID_PLATFORMS = new Set<string>([
-  'qishui', 'qq_music', 'netease', 'spotify', 'apple_music', 'kugou',
-])
 
 interface ParsedRow {
   qishuiSongId: string
@@ -110,6 +107,9 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     const body = await request.json()
     const { fileName, period, platform } = body
     if (!fileName || !platform) return err('fileName, platform 必填')
+    if (typeof platform !== 'string' || !(await isPlatformEnabled(platform, { allowLegacyKeys: true }))) {
+      return err('无效的平台')
+    }
     const record = await prisma.revenueImport.create({
       data: {
         fileName,
@@ -137,7 +137,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   const platformStr = (formData.get('platform') as string | null) ?? 'qishui'
 
   if (!file) return err('请选择 CSV 文件')
-  if (!VALID_PLATFORMS.has(platformStr)) return err('无效的平台')
+  if (!(await isPlatformEnabled(platformStr, { allowLegacyKeys: true }))) return err('无效的平台')
 
   const text = await file.text()
   const { rows: parsed, errors: parseErrors } = parseQishuiCsv(text)
@@ -228,7 +228,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   // 建 import + rows
   const imp = await prisma.revenueImport.create({
     data: {
-      platform: platformStr as RevenuePlatform,
+      platform: platformStr,
       fileName: file.name,
       period: firstPeriod,
       totalRows: parsed.length,

@@ -5,6 +5,7 @@ import { requirePermission, ok, err, safeHandler } from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
 import { DEFAULT_REVENUE_RULES } from '@/lib/commission'
 import { SETTING_KEYS, setSetting, getSettingMasked } from '@/lib/system-settings'
+import { invalidatePlatforms } from '@/lib/platforms'
 
 const DEFAULT_AI_CONFIG = {
   enabled: false,
@@ -121,6 +122,10 @@ export const PUT = safeHandler(async function PUT(request: NextRequest) {
         create: { key: s.key, value: s.value as Prisma.InputJsonValue },
       })
     }
+  }
+
+  if (settings.some((s) => s.key === SETTING_KEYS.PLATFORM_CONFIGS)) {
+    invalidatePlatforms()
   }
 
   await logAdminAction(request, {

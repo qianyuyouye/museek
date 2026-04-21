@@ -5,6 +5,7 @@ import { logAdminAction } from '@/lib/log-action'
 import { invalidate } from '@/lib/cache'
 import { SongStatus } from '@prisma/client'
 import { notify } from '@/lib/notifications'
+import { getEnabledPlatforms } from '@/lib/platforms'
 
 /** 每个 action 允许的来源状态 → 目标状态 */
 const ACTION_TRANSITIONS: Record<string, { from: SongStatus[]; to: SongStatus }> = {
@@ -68,10 +69,27 @@ export const POST = safeHandler(async function POST(
     }
   }
 
-  const updated = await prisma.platformSong.update({
-    where: { id: songId },
-    data: { status: transition.to },
-  })
+  let distributionsCreated = 0
+  if (action === 'publish') {
+    const platforms = await getEnabledPlatforms()
+    const result = await prisma.$transaction(async (tx) => {
+      const song2 = await tx.platformSong.update({
+        where: { id: songId },
+        data: { status: transition.to },
+      })
+      const r = await tx.distribution.createMany({
+        data: platforms.map((p) => ({ songId: song2.id, platform: p, status: 'pending' as const })),
+        skipDuplicates: true,
+      })
+      return { song2, count: r.count }
+    })
+    distributionsCreated = result.count
+  } else {
+    await prisma.platformSong.update({
+      where: { id: songId },
+      data: { status: transition.to },
+    })
+  }
 
   // 看板统计依赖歌曲状态分布，写后立即失效
   invalidate('dashboard')
@@ -95,7 +113,8 @@ export const POST = safeHandler(async function POST(
       copyrightCode: song.copyrightCode,
       from: song.status,
       to: transition.to,
+      ...(action === 'publish' ? { distributionsCreated } : {}),
     },
   })
-  return ok(updated)
+  return ok({ id: songId, status: transition.to, distributionsCreated: action === 'publish' ? distributionsCreated : undefined })
 })

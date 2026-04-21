@@ -6,8 +6,6 @@ import { AdminModal } from '@/components/admin/admin-modal'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
 
-const PLATFORMS = ['QQ音乐', '网易云音乐', 'Spotify', 'Apple Music', '酷狗音乐']
-
 interface DistributionItem {
   songId: number
   songTitle: string
@@ -56,6 +54,8 @@ export default function AdminDistributionsPage() {
     songTitle: s.title,
     platforms: (data?.matrix?.[s.id] ?? {}) as Record<string, 'live' | 'submitted' | 'pending' | 'none'>,
   }))
+
+  const platforms = data?.platforms ?? []
 
   function showToast(msg: string) {
     setToast(msg)
@@ -112,7 +112,7 @@ export default function AdminDistributionsPage() {
               <th className="text-left text-sm font-semibold text-[var(--text2)] px-5 py-3.5 w-[180px]">
                 歌曲
               </th>
-              {PLATFORMS.map((p) => (
+              {platforms.map((p) => (
                 <th
                   key={p}
                   className="text-left text-sm font-semibold text-[var(--text2)] px-5 py-3.5"
@@ -133,7 +133,7 @@ export default function AdminDistributionsPage() {
                     {item.songTitle}
                   </span>
                 </td>
-                {PLATFORMS.map((platform) => {
+                {platforms.map((platform) => {
                   const status = item.platforms[platform] ?? 'none'
                   const cfg = STATUS_CONFIG[status]
                   return (

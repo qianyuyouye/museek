@@ -899,6 +899,7 @@ function PlatformsTab({
                 className={inputCls}
                 value={editing.item.name}
                 disabled={editing.index >= 0}
+                maxLength={50}
                 onChange={(e) => setEditing({ ...editing, item: { ...editing.item, name: e.target.value } })}
               />
             </div>
