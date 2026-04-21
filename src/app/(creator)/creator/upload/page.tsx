@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { apiCall } from '@/lib/use-api'
+import { apiCall, useApi } from '@/lib/use-api'
 import { extractAudioFeatures, type AudioFeatures } from '@/lib/audio-extract'
 import { pageWrap, textPageTitle, cardCls, btnPrimary, btnGhost, btnSuccess, inputCls, labelCls } from '@/lib/ui-tokens'
 
@@ -180,6 +180,13 @@ export default function CreatorUploadPage() {
   const [revisionSongId, setRevisionSongId] = useState<number | null>(null)
   const [prefilling, setPrefilling] = useState(false)
 
+  // 高级信息字段（GAP-CRTR-004）
+  const { data: profile } = useApi<{ realName?: string | null; name?: string | null }>('/api/profile')
+  const [performer, setPerformer] = useState('')
+  const [albumName, setAlbumName] = useState('')
+  const [albumArtist, setAlbumArtist] = useState('')
+  const [advancedOpen, setAdvancedOpen] = useState(false)
+
   const audioRef = useRef<HTMLInputElement>(null)
   const coverRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
@@ -243,6 +250,18 @@ export default function CreatorUploadPage() {
         setPrefilling(false)
       })
   }, [])
+
+  // 预填高级信息 + lyricist/composer（仅在未填时）
+  useEffect(() => {
+    if (!profile) return
+    const fallback = profile.realName?.trim() || profile.name || ''
+    if (!performer) setPerformer(fallback)
+    if (!albumArtist) setAlbumArtist(fallback)
+    if (!albumName) setAlbumName(form.title ?? '')
+    if (!form.lyricist) setForm((f) => ({ ...f, lyricist: fallback }))
+    if (!form.composer) setForm((f) => ({ ...f, composer: fallback }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile, form.title])
 
   const upd = useCallback(
     <K extends keyof UploadForm>(key: K, value: UploadForm[K]) => {
@@ -390,6 +409,9 @@ export default function CreatorUploadPage() {
       audioUrl: form.audioUrl || undefined,
       audioFeatures: form.audioFeatures || undefined,
       coverUrl: form.coverUrl || undefined,
+      performer: performer || undefined,
+      albumName: albumName || undefined,
+      albumArtist: albumArtist || undefined,
     })
 
     if (res.ok) {
@@ -643,6 +665,48 @@ export default function CreatorUploadPage() {
                 onChange={(e) => upd('lyrics', e.target.value)}
                 placeholder="请输入完整歌词（≥20字）"
               />
+            </div>
+
+            {/* Advanced metadata (collapsible) */}
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={() => setAdvancedOpen((v) => !v)}
+                className="text-sm text-[var(--accent)] hover:underline"
+              >
+                {advancedOpen ? '收起' : '展开'}高级信息（演唱者 / 专辑名 / 专辑艺人）
+              </button>
+              {advancedOpen && (
+                <div className="grid grid-cols-2 gap-4 mt-3">
+                  <div>
+                    <label className={labelCls}>演唱者</label>
+                    <input
+                      className={inputCls}
+                      value={performer}
+                      onChange={(e) => setPerformer(e.target.value)}
+                      placeholder="演唱者署名"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>专辑名</label>
+                    <input
+                      className={inputCls}
+                      value={albumName}
+                      onChange={(e) => setAlbumName(e.target.value)}
+                      placeholder="默认同歌名"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>专辑艺人</label>
+                    <input
+                      className={inputCls}
+                      value={albumArtist}
+                      onChange={(e) => setAlbumArtist(e.target.value)}
+                      placeholder="专辑艺人署名"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* AI Declaration block */}
