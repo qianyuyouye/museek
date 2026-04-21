@@ -3,6 +3,7 @@ import { http, adminLogin, creatorLogin, expectOk } from './_helpers'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/password'
 import { fillSongDefaults } from '@/lib/song-defaults'
+import { nextCopyrightCode } from '@/lib/copyright-code'
 
 describe('fillSongDefaults helper (GAP-CRTR-004 / GAP-SCHM-005)', () => {
   const user = { realName: '张三', name: 'zhangsan' }
@@ -33,6 +34,31 @@ describe('fillSongDefaults helper (GAP-CRTR-004 / GAP-SCHM-005)', () => {
   it('空白字符串视作未填', () => {
     const r = fillSongDefaults({ title: '新歌', performer: '   ' }, user)
     expect(r.performer).toBe('张三')
+  })
+})
+
+describe('nextCopyrightCode helper (GAP-ADMIN-029)', () => {
+  it('返回形如 AIMU-YYYY-NNNNNN', async () => {
+    const result = await prisma.$transaction((tx) => nextCopyrightCode(tx))
+    expect(result).toMatch(/^AIMU-\d{4}-\d{6}$/)
+  })
+
+  it('连续调用递增', async () => {
+    const a = await prisma.$transaction((tx) => nextCopyrightCode(tx))
+    const b = await prisma.$transaction((tx) => nextCopyrightCode(tx))
+    const parseNo = (s: string) => parseInt(s.split('-')[2], 10)
+    expect(parseNo(b) - parseNo(a)).toBe(1)
+  })
+
+  it('并发 5 次得到互不相同且步长 1 的序号', async () => {
+    const results = await Promise.all(
+      Array.from({ length: 5 }, () => prisma.$transaction((tx) => nextCopyrightCode(tx))),
+    )
+    const nums = results.map((s) => parseInt(s.split('-')[2], 10)).sort((a, b) => a - b)
+    expect(new Set(nums).size).toBe(5)
+    for (let i = 1; i < nums.length; i++) {
+      expect(nums[i] - nums[i - 1]).toBe(1)
+    }
   })
 })
 
