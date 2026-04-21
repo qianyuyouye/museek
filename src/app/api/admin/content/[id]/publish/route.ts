@@ -24,7 +24,13 @@ export const POST = safeHandler(async function POST(
     return err('action 必须为 publish 或 unpublish')
   }
 
-  const status = action === 'publish' ? 'published' : 'draft'
+  // 发布时：video 类型必须有 videoUrl
+  if (action === 'publish' && existing.type === 'video' && !existing.videoUrl) {
+    return err('视频类型发布时必须先填写视频地址 videoUrl')
+  }
+
+  // unpublish 走 archived（区分于从未发布的 draft）
+  const status = action === 'publish' ? 'published' : 'archived'
 
   const updated = await prisma.cmsContent.update({
     where: { id: contentId },

@@ -497,6 +497,18 @@ model CmsContent {
   content   String?      @db.Text
   // 视频类型专用：视频资源 URL（video 类型时必填）
   videoUrl  String?      @map("video_url") @db.VarChar(500)
+  // 课程大纲（string 数组，JSON 存储）
+  sections  Json?
+  // 视频时长（如 "45分钟"）；文章用 readTime 复用该字段
+  duration  String?      @db.VarChar(50)
+  // 难度级别（入门 / 进阶 / 高级）
+  level     String?      @db.VarChar(20)
+  // 作者/讲师
+  author    String?      @db.VarChar(100)
+  // 标签（逗号分隔字符串）
+  tags      String?      @db.VarChar(500)
+  // 摘要（列表展示）
+  summary   String?      @db.VarChar(500)
   views     Int          @default(0)
   status    ContentStatus @default(draft)
   createdBy Int?         @map("created_by")

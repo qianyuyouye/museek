@@ -1,33 +1,48 @@
 /**
- * 轻量 XSS 过滤：正则实现，覆盖 90% 常见攻击向量。
- * 不依赖 DOMPurify/jsdom（避免 ESM/打包复杂度）。
+ * 富文本 HTML 净化。使用 isomorphic-dompurify（服务端 jsdom + 浏览器原生 DOM）。
  *
- * 覆盖：
- * - 剔除危险标签连同内部内容：script, iframe, object, embed, style, link, meta, form, svg/math（JSON payload 绕过）
- * - 剔除所有 on* 事件属性（含引号变体）
- * - 剔除 href/src 里的 javascript: / data:text/html 协议
+ * 策略：
+ * - 允许常见展示标签（p, h1-h6, br, strong, em, u, s, blockquote, ul/ol/li, a, img, code, pre）
+ * - 允许属性白名单：a.href、img.src/alt/title、class（样式兜底）
+ * - 禁掉 script/iframe/object/embed/style/link/meta/form/svg/math 等危险标签
+ * - 禁掉所有 on* 事件属性
+ * - href/src 只允许 http(s)/mailto/tel/相对路径，拒掉 javascript:/vbscript:/data:text/html
  *
- * 不覆盖（需更专业库）：
- * - 带 base64 payload 的 SVG data URI
- * - 复杂 CSS expression / Mutation XSS
- * 当前 CMS 富文本渲染若使用 dangerouslySetInnerHTML，必须升级为专业库。
+ * TipTap 默认产出的 HTML 完全在白名单内。
  */
+import DOMPurify from 'isomorphic-dompurify'
 
-const DANGEROUS_TAG_RE = /<\s*(script|iframe|object|embed|style|link|meta|form|svg|math)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi
-const DANGEROUS_TAG_VOID_RE = /<\s*(script|iframe|object|embed|style|link|meta|form|svg|math)[^>]*\/?\s*>/gi
-const EVENT_ATTR_RE = /\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi
-const JS_PROTO_RE = /(href|src|action|xlink:href)\s*=\s*(["'])\s*(?:javascript|vbscript|data:text\/html)\s*:[^"']*\2/gi
-const JS_PROTO_UNQUOTED_RE = /(href|src|action|xlink:href)\s*=\s*(?:javascript|vbscript|data:text\/html)\s*:[^\s>]*/gi
+const ALLOWED_TAGS = [
+  'p', 'br', 'hr',
+  'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+  'strong', 'em', 'u', 's', 'del', 'ins', 'sub', 'sup', 'mark',
+  'blockquote', 'code', 'pre',
+  'ul', 'ol', 'li',
+  'a', 'img',
+  'table', 'thead', 'tbody', 'tr', 'th', 'td',
+  'span', 'div',
+]
 
+const ALLOWED_ATTR = [
+  'href', 'target', 'rel',
+  'src', 'alt', 'title', 'width', 'height',
+  'class', 'style',
+  'colspan', 'rowspan',
+]
+
+/** 净化富文本 HTML，返回安全的 HTML 字符串（可直接 dangerouslySetInnerHTML） */
 export function sanitizeHtml(dirty: string): string {
   if (!dirty || typeof dirty !== 'string') return ''
-  let out = dirty
-  out = out.replace(DANGEROUS_TAG_RE, '')
-  out = out.replace(DANGEROUS_TAG_VOID_RE, '')
-  out = out.replace(EVENT_ATTR_RE, '')
-  out = out.replace(JS_PROTO_RE, '$1=""')
-  out = out.replace(JS_PROTO_UNQUOTED_RE, '$1=""')
-  return out
+  return DOMPurify.sanitize(dirty, {
+    ALLOWED_TAGS,
+    ALLOWED_ATTR,
+    // 禁掉 script 协议
+    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|ftp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+    // 强制 target=_blank 时加 noopener
+    ADD_ATTR: ['target'],
+    FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'style', 'link', 'meta', 'form', 'svg', 'math'],
+    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'onkeydown', 'onkeyup', 'onsubmit'],
+  })
 }
 
 /** 完全剥离 HTML，只保留纯文本 */

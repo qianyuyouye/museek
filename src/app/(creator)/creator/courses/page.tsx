@@ -25,23 +25,6 @@ const COVER_GRADIENTS: Record<string, string> = {
 
 const DEFAULT_GRADIENT = 'linear-gradient(135deg, #1a1a2e 0%, #3a3a5e 100%)'
 
-// ── Video Detail Content ────────────────────────────────────────
-
-const VIDEO_DETAILS: Record<number, { sections: string[]; duration: string; level: string }> = {
-  1: { sections: ['Suno 界面介绍与账号设置', 'Prompt 编写技巧与风格控制', '实战：从零生成一首完整歌曲', '常见问题排查与优化建议'], duration: '45分钟', level: '入门' },
-  2: { sections: ['Udio 核心功能解析', '高级参数调节指南', '实战案例：电子音乐创作', '与其他工具对比分析'], duration: '38分钟', level: '进阶' },
-  5: { sections: ['汽水音乐实验室概览', '创作流程详解', '实战：流行歌曲生成', '发行对接操作指南'], duration: '32分钟', level: '入门' },
-  7: { sections: ['AI 节奏生成原理', '鼓点设计与编排技巧', '实战：不同节奏风格制作', '节奏与旋律融合方法'], duration: '28分钟', level: '进阶' },
-  9: { sections: ['提示词结构拆解', '风格标签高级用法', '实战：复杂风格融合创作', '提示词优化与调试技巧'], duration: '52分钟', level: '高级' },
-  11: { sections: ['AI 人声合成技术概览', '主流工具对比评测', '实战：人声克隆与调试', '伦理规范与版权注意事项'], duration: '35分钟', level: '进阶' },
-}
-
-const ARTICLE_DETAILS: Record<number, { sections: string[]; readTime: string }> = {
-  4: { sections: ['混音的基本概念与目标', '均衡器（EQ）使用入门', '压缩与动态处理基础', '空间效果：混响与延迟'], readTime: '15分钟' },
-  6: { sections: ['版权的法律定义与保护范围', '音乐版权的归属规则', '常见版权纠纷案例分析', '创作者如何维护自身权益'], readTime: '12分钟' },
-  8: { sections: ['十二平均律与音名体系', '大调与小调音阶构成', '常用调式及其情感色彩', '调式在创作中的实际运用'], readTime: '18分钟' },
-}
-
 // ── Types ───────────────────────────────────────────────────────
 
 interface CmsItem {
@@ -52,68 +35,49 @@ interface CmsItem {
   cover: string
   status: string
   views: number
-}
-
-// ── Waveform SVG ────────────────────────────────────────────────
-
-function WaveformSVG({ playing }: { playing: boolean }) {
-  return (
-    <svg viewBox="0 0 560 64" className="w-full h-16" preserveAspectRatio="none">
-      {Array.from({ length: 70 }).map((_, i) => {
-        const h = Math.random() * 48 + 8
-        return (
-          <rect
-            key={i}
-            x={i * 8}
-            y={(64 - h) / 2}
-            width={5}
-            rx={2.5}
-            height={h}
-            fill={playing ? 'var(--accent)' : '#c7d2fe'}
-            opacity={playing ? 0.6 + Math.random() * 0.4 : 0.4}
-          >
-            {playing && (
-              <animate
-                attributeName="height"
-                values={`${h};${Math.random() * 48 + 8};${h}`}
-                dur={`${0.4 + Math.random() * 0.6}s`}
-                repeatCount="indefinite"
-              />
-            )}
-          </rect>
-        )
-      })}
-    </svg>
-  )
+  content: string | null
+  videoUrl: string | null
+  sections: string[] | null
+  duration: string | null
+  level: string | null
+  author: string | null
+  tags: string | null
+  summary: string | null
 }
 
 // ── Detail Modal ────────────────────────────────────────────────
 
 function DetailModal({ item, onClose }: { item: CmsItem; onClose: () => void }) {
-  const [playing, setPlaying] = useState(false)
   const isVideo = item.type === 'video'
-  const videoDetail = VIDEO_DETAILS[item.id]
-  const articleDetail = ARTICLE_DETAILS[item.id]
-  const sections = isVideo ? (videoDetail?.sections ?? ['工具介绍', 'Prompt 技巧', '实战案例', '问题排查']) : (articleDetail?.sections ?? ['核心概念', '应用场景'])
+  const sections = Array.isArray(item.sections) && item.sections.length > 0 ? item.sections : null
 
-  // 学习埋点：打开即初始化记录，每 30s 上报 30s 增量，关闭时结算剩余
-  // 停留 ≥30 秒 视为完成（避免误点瞬开瞬关被计入完成数）
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const articleRef = useRef<HTMLDivElement>(null)
   const openedAtRef = useRef(Date.now())
   const tickRef = useRef(Date.now())
+  const maxProgressRef = useRef(0)
+
   useEffect(() => {
     openedAtRef.current = Date.now()
     tickRef.current = Date.now()
+    maxProgressRef.current = 0
     let cancelled = false
-    // 初次 upsert，建立记录（progress=1 代表"开始"）
+
+    // 初次 upsert 建记录
     apiCall('/api/learning', 'POST', { contentId: item.id, progress: 1 }).catch(() => {})
 
+    // 每 30s 上报时长增量 + 当前进度
     const interval = setInterval(() => {
       if (cancelled) return
       const now = Date.now()
       const delta = Math.floor((now - tickRef.current) / 1000)
       if (delta <= 0) return
       tickRef.current = now
-      apiCall('/api/learning', 'POST', { contentId: item.id, durationDelta: delta }).catch(() => {})
+      apiCall('/api/learning', 'POST', {
+        contentId: item.id,
+        durationDelta: delta,
+        progress: maxProgressRef.current > 0 ? maxProgressRef.current : undefined,
+      }).catch(() => {})
     }, 30000)
 
     return () => {
@@ -122,15 +86,51 @@ function DetailModal({ item, onClose }: { item: CmsItem; onClose: () => void }) 
       const now = Date.now()
       const delta = Math.floor((now - tickRef.current) / 1000)
       const totalStayed = Math.floor((now - openedAtRef.current) / 1000)
-      const shouldComplete = totalStayed >= 30
+      const finalProgress = maxProgressRef.current
+      // 视频：播到 >=90% 视为完成；图文：滚到 >=90% 视为完成；兜底：停留 >=30s 视为完成
+      const completed = finalProgress >= 90 || (totalStayed >= 30 && finalProgress === 0)
       apiCall('/api/learning', 'POST', {
         contentId: item.id,
         durationDelta: delta > 0 ? delta : 0,
-        progress: shouldComplete ? 100 : undefined,
-        completed: shouldComplete,
+        progress: completed ? 100 : finalProgress || undefined,
+        completed,
       }).catch(() => {})
     }
   }, [item.id])
+
+  // Video: 每 5s 取一次 currentTime/duration
+  useEffect(() => {
+    if (!isVideo) return
+    const v = videoRef.current
+    if (!v) return
+    function onTime() {
+      if (!v || !v.duration || !isFinite(v.duration)) return
+      const pct = Math.min(100, Math.round((v.currentTime / v.duration) * 100))
+      if (pct > maxProgressRef.current) maxProgressRef.current = pct
+    }
+    v.addEventListener('timeupdate', onTime)
+    return () => v.removeEventListener('timeupdate', onTime)
+  }, [isVideo])
+
+  // Article: 滚动百分比
+  useEffect(() => {
+    if (isVideo) return
+    const el = articleRef.current
+    if (!el) return
+    function onScroll() {
+      if (!el) return
+      const scrollTop = el.scrollTop
+      const scrollHeight = el.scrollHeight - el.clientHeight
+      if (scrollHeight <= 0) {
+        maxProgressRef.current = 100
+        return
+      }
+      const pct = Math.min(100, Math.round((scrollTop / scrollHeight) * 100))
+      if (pct > maxProgressRef.current) maxProgressRef.current = pct
+    }
+    el.addEventListener('scroll', onScroll)
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [isVideo])
 
   return (
     <div
@@ -138,15 +138,15 @@ function DetailModal({ item, onClose }: { item: CmsItem; onClose: () => void }) 
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-2xl w-[640px] max-h-[85vh] overflow-y-auto"
+        className="bg-white rounded-xl shadow-2xl w-[720px] max-h-[85vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Cover */}
         <div
-          className="relative h-[200px] rounded-t-xl flex items-center justify-center"
+          className="relative h-[180px] rounded-t-xl flex items-center justify-center shrink-0"
           style={{ background: COVER_GRADIENTS[item.cover] || DEFAULT_GRADIENT }}
         >
-          <span className="text-[80px] drop-shadow-lg">{item.cover}</span>
+          <span className="text-[72px] drop-shadow-lg">{item.cover}</span>
           <button
             className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 backdrop-blur text-white flex items-center justify-center cursor-pointer hover:bg-white/30 transition border-0 text-lg"
             onClick={onClose}
@@ -155,8 +155,7 @@ function DetailModal({ item, onClose }: { item: CmsItem; onClose: () => void }) 
           </button>
         </div>
 
-        <div className="p-6">
-          {/* Title */}
+        <div ref={articleRef} className="p-6 overflow-y-auto flex-1">
           <h2 className="text-xl font-bold text-[var(--text)] mb-3">{item.title}</h2>
 
           {/* Meta */}
@@ -167,67 +166,103 @@ function DetailModal({ item, onClose }: { item: CmsItem; onClose: () => void }) 
             <span className="px-3 py-1 rounded-full text-xs font-medium bg-[#fef3c7] text-[var(--orange)]">
               {isVideo ? '📹 视频课程' : '📖 图文科普'}
             </span>
+            {item.level && (
+              <span className="px-3 py-1 rounded-full text-xs font-medium bg-[#e0f7fa] text-[var(--green)]">
+                📊 {item.level}
+              </span>
+            )}
+            {item.author && (
+              <span className="text-xs text-[var(--text3)]">👤 {item.author}</span>
+            )}
             <span className="text-xs text-[var(--text3)]">
               👁 {item.views.toLocaleString()} 次浏览
             </span>
           </div>
 
-          {/* Video Player Area */}
-          {isVideo && (
-            <div className="mb-5 bg-[var(--bg4)] rounded-xl p-4 border border-[var(--border)]">
-              <div className="flex items-center gap-3 mb-3">
-                <button
-                  className="w-10 h-10 rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] text-white flex items-center justify-center cursor-pointer border-0 shadow-md hover:shadow-lg transition text-lg"
-                  onClick={() => setPlaying(!playing)}
-                >
-                  {playing ? '⏸' : '▶'}
-                </button>
-                <span className="text-sm text-[var(--text2)]">
-                  {playing ? '正在播放...' : '点击播放'}
-                </span>
-              </div>
-              <WaveformSVG playing={playing} />
+          {/* Summary */}
+          {item.summary && (
+            <p className="text-sm text-[var(--text2)] mb-4 leading-relaxed bg-[#fafbff] px-4 py-3 rounded-lg border border-[var(--border)]">
+              {item.summary}
+            </p>
+          )}
+
+          {/* Video Player */}
+          {isVideo && item.videoUrl && (
+            <div className="mb-5 bg-black rounded-xl overflow-hidden">
+              <video
+                ref={videoRef}
+                src={item.videoUrl}
+                controls
+                className="w-full h-auto max-h-[380px]"
+              >
+                您的浏览器不支持 video 标签
+              </video>
+            </div>
+          )}
+          {isVideo && !item.videoUrl && (
+            <div className="mb-5 p-6 bg-[#fef9ec] rounded-xl border border-[var(--orange)] text-sm text-[var(--text2)] text-center">
+              ⚠️ 本课程暂无视频资源
             </div>
           )}
 
-          {/* Content Sections */}
-          <div className="mb-5">
-            <h3 className="text-sm font-semibold text-[var(--text2)] mb-3">
-              {isVideo ? '课程内容' : '文章大纲'}
-            </h3>
-            <div className="space-y-2">
-              {sections.map((s, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <span className="w-5 h-5 rounded-full bg-[#ede9fe] text-[var(--accent)] text-xs flex items-center justify-center shrink-0 mt-0.5 font-medium">
-                    {i + 1}
-                  </span>
-                  <span className="text-sm text-[var(--text2)]">{s}</span>
-                </div>
-              ))}
+          {/* Sections outline */}
+          {sections && (
+            <div className="mb-5">
+              <h3 className="text-sm font-semibold text-[var(--text2)] mb-3">
+                {isVideo ? '课程内容' : '文章大纲'}
+              </h3>
+              <div className="space-y-2">
+                {sections.map((s, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-[#ede9fe] text-[var(--accent)] text-xs flex items-center justify-center shrink-0 mt-0.5 font-medium">
+                      {i + 1}
+                    </span>
+                    <span className="text-sm text-[var(--text2)]">{s}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Duration / Level */}
-          <div className="flex items-center gap-4 pt-4 border-t border-[var(--border)]">
-            {isVideo && videoDetail && (
-              <>
-                <span className="text-xs text-[var(--text3)]">⏱ 时长：{videoDetail.duration}</span>
-                <span className="text-xs text-[var(--text3)]">📊 难度：{videoDetail.level}</span>
-              </>
-            )}
-            {!isVideo && articleDetail && (
-              <span className="text-xs text-[var(--text3)]">⏱ 阅读时长：{articleDetail.readTime}</span>
-            )}
-            {isVideo && !videoDetail && (
-              <>
-                <span className="text-xs text-[var(--text3)]">⏱ 时长：30分钟</span>
-                <span className="text-xs text-[var(--text3)]">📊 难度：入门</span>
-              </>
-            )}
-            {!isVideo && !articleDetail && (
-              <span className="text-xs text-[var(--text3)]">⏱ 阅读时长：10分钟</span>
-            )}
-          </div>
+          {/* Article body */}
+          {item.content && (
+            <div
+              className="prose prose-sm max-w-none text-[var(--text)] mb-5"
+              dangerouslySetInnerHTML={{ __html: item.content }}
+            />
+          )}
+
+          {/* Tags */}
+          {item.tags && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {item.tags
+                .split(',')
+                .map((t) => t.trim())
+                .filter(Boolean)
+                .map((t) => (
+                  <span
+                    key={t}
+                    className="px-2 py-0.5 rounded text-[11px] bg-[var(--bg4)] text-[var(--text3)] border border-[var(--border)]"
+                  >
+                    #{t}
+                  </span>
+                ))}
+            </div>
+          )}
+
+          {/* Footer meta */}
+          {(item.duration || item.level) && (
+            <div className="flex items-center gap-4 pt-4 border-t border-[var(--border)]">
+              {item.duration && (
+                <span className="text-xs text-[var(--text3)]">
+                  ⏱ {isVideo ? '时长' : '阅读时长'}：{item.duration}
+                </span>
+              )}
+              {item.level && isVideo && (
+                <span className="text-xs text-[var(--text3)]">📊 难度：{item.level}</span>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -242,7 +277,6 @@ function CourseCard({ item, onClick }: { item: CmsItem; onClick: () => void }) {
       className="rounded-xl overflow-hidden bg-white border border-[var(--border)] shadow-[0_2px_8px_rgba(0,0,0,0.06)] cursor-pointer transition-all hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(99,102,241,0.12)] group"
       onClick={onClick}
     >
-      {/* Cover */}
       <div
         className="relative h-[140px] flex items-center justify-center overflow-hidden"
         style={{ background: COVER_GRADIENTS[item.cover] || DEFAULT_GRADIENT }}
@@ -250,17 +284,24 @@ function CourseCard({ item, onClick }: { item: CmsItem; onClick: () => void }) {
         <span className="text-[56px] drop-shadow-md group-hover:scale-110 transition-transform duration-300">
           {item.cover}
         </span>
-        {/* Category badge */}
         <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded text-[10px] font-medium bg-black/30 backdrop-blur-sm text-white">
           {item.category}
         </span>
+        {item.level && (
+          <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded text-[10px] font-medium bg-white/20 backdrop-blur-sm text-white">
+            {item.level}
+          </span>
+        )}
       </div>
-
-      {/* Info */}
       <div className="p-3.5">
         <h3 className="text-[13px] font-semibold text-[var(--text)] leading-snug mb-2 line-clamp-2">
           {item.title}
         </h3>
+        {item.summary && (
+          <p className="text-[11.5px] text-[var(--text3)] line-clamp-2 mb-2 leading-relaxed">
+            {item.summary}
+          </p>
+        )}
         <div className="flex items-center justify-between text-[11px] text-[var(--text3)]">
           <span>{item.type === 'video' ? '📹 视频课程' : '📖 图文科普'}</span>
           <span>👁 {item.views.toLocaleString()}</span>
@@ -277,7 +318,9 @@ export default function CreatorCoursesPage() {
   const [selectedItem, setSelectedItem] = useState<CmsItem | null>(null)
 
   const categoryParam = activeCategory === '全部' ? '' : activeCategory
-  const { data, loading } = useApi<{ list: CmsItem[]; total: number }>(`/api/content?category=${encodeURIComponent(categoryParam)}`)
+  const { data, loading } = useApi<{ list: CmsItem[]; total: number }>(
+    `/api/content?category=${encodeURIComponent(categoryParam)}`
+  )
 
   const filteredItems = data?.list ?? []
 
@@ -291,18 +334,14 @@ export default function CreatorCoursesPage() {
 
   return (
     <div className={pageWrap}>
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className={textPageTitle}>课程中心</h1>
           <p className="text-xs text-[var(--text3)] mt-1">发现优质AI音乐课程与科普内容</p>
         </div>
-        <span className="text-xs text-[var(--text3)]">
-          共 {filteredItems.length} 个内容
-        </span>
+        <span className="text-xs text-[var(--text3)]">共 {filteredItems.length} 个内容</span>
       </div>
 
-      {/* Category Tabs */}
       <div className="flex items-center gap-2">
         {CATEGORIES.map((cat) => (
           <button
@@ -319,18 +358,12 @@ export default function CreatorCoursesPage() {
         ))}
       </div>
 
-      {/* Course Grid */}
       <div className="grid grid-cols-4 gap-5">
         {filteredItems.map((item) => (
-          <CourseCard
-            key={item.id}
-            item={item}
-            onClick={() => setSelectedItem(item)}
-          />
+          <CourseCard key={item.id} item={item} onClick={() => setSelectedItem(item)} />
         ))}
       </div>
 
-      {/* Empty State */}
       {filteredItems.length === 0 && (
         <div className="text-center py-20 text-[var(--text3)]">
           <span className="text-4xl block mb-3">📭</span>
@@ -338,10 +371,7 @@ export default function CreatorCoursesPage() {
         </div>
       )}
 
-      {/* Detail Modal */}
-      {selectedItem && (
-        <DetailModal item={selectedItem} onClose={() => setSelectedItem(null)} />
-      )}
+      {selectedItem && <DetailModal item={selectedItem} onClose={() => setSelectedItem(null)} />}
     </div>
   )
 }

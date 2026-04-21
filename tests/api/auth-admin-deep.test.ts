@@ -252,7 +252,8 @@ describe('/api/admin/content/:id/publish', () => {
       body: { action: 'unpublish' },
     })
     expectOk(unpub, 'unpublish')
-    expect(unpub.json.data.status).toBe('draft')
+    // Theme 9: unpublish 落 archived（draft 保留给"从未发布"）
+    expect(unpub.json.data.status).toBe('archived')
 
     // 清理
     await http(`/api/admin/content/${id}`, { method: 'DELETE', cookie: adminCookie })
