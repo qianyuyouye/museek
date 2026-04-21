@@ -69,7 +69,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // Theme 8: CSRF 严格模式 —— origin 和 referer 都缺失直接 403
-  if (isApiRoute && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method) && !isTestBypass()) {
+  // 注意：TEST_MODE 不绕过 CSRF（测试套件专门构造跨源场景验证 403）
+  if (isApiRoute && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) {
     const origin = request.headers.get('origin')
     const referer = request.headers.get('referer')
     const host = request.headers.get('host')
