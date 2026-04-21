@@ -453,7 +453,7 @@ export default function CreatorUploadPage() {
                   : 'border-[var(--border)] hover:border-[var(--accent)]'
               }`}
               onClick={() => audioRef.current?.click()}
-              onDragOver={(e) => { e.preventDefault() }}
+              onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy' }}
               onDrop={(e) => {
                 e.preventDefault()
                 const f = e.dataTransfer.files?.[0]
@@ -491,7 +491,7 @@ export default function CreatorUploadPage() {
                   : 'border-[var(--border)] hover:border-[var(--accent)]'
               }`}
               onClick={() => coverRef.current?.click()}
-              onDragOver={(e) => { e.preventDefault() }}
+              onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy' }}
               onDrop={(e) => {
                 e.preventDefault()
                 const f = e.dataTransfer.files?.[0]
