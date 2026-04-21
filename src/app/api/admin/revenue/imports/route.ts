@@ -107,6 +107,9 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     const body = await request.json()
     const { fileName, period, platform } = body
     if (!fileName || !platform) return err('fileName, platform 必填')
+    if (typeof platform !== 'string' || !(await isPlatformEnabled(platform, { allowLegacyKeys: true }))) {
+      return err('无效的平台')
+    }
     const record = await prisma.revenueImport.create({
       data: {
         fileName,
