@@ -460,6 +460,7 @@ export default function AdminAccountsPage() {
         open={!!resetPwd}
         onClose={() => setResetPwd(null)}
         title={`新密码已生成 · ${resetPwd?.name ?? ''}`}
+        disableBackdropClose
       >
         {resetPwd && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

@@ -49,12 +49,8 @@ describe('Theme 6 field-contract + defaults + copyright', () => {
     }
 
     it('POST /admin/accounts/:id/reset-password 自动生成时返回 data.password 8+ 位明文', async () => {
-      const listRes = await http('/api/admin/accounts?tab=creator&pageSize=1', { cookie: adminCookie })
-      const target = (listRes.json.data.list as Array<{ id: number }>)[0]
-      expect(target).toBeTruthy()
-
       try {
-        const r = await http(`/api/admin/accounts/${target.id}/reset-password`, {
+        const r = await http(`/api/admin/accounts/${creatorUserId}/reset-password`, {
           method: 'POST',
           body: {},
           cookie: adminCookie,
@@ -66,16 +62,13 @@ describe('Theme 6 field-contract + defaults + copyright', () => {
         expect(/[A-Za-z]/.test(r.json.data.password)).toBe(true)
         expect(/\d/.test(r.json.data.password)).toBe(true)
       } finally {
-        await restorePassword(target.id)
+        await restorePassword(creatorUserId)
       }
     })
 
     it('POST 带 password 参数时不回传明文（管理员已知原值）', async () => {
-      const listRes = await http('/api/admin/accounts?tab=creator&pageSize=1', { cookie: adminCookie })
-      const target = (listRes.json.data.list as Array<{ id: number }>)[0]
-
       try {
-        const r = await http(`/api/admin/accounts/${target.id}/reset-password`, {
+        const r = await http(`/api/admin/accounts/${creatorUserId}/reset-password`, {
           method: 'POST',
           body: { password: 'Admin9999' },
           cookie: adminCookie,
@@ -84,7 +77,7 @@ describe('Theme 6 field-contract + defaults + copyright', () => {
         expect(r.json.data.generated).toBe(false)
         expect(r.json.data.password).toBeUndefined()
       } finally {
-        await restorePassword(target.id)
+        await restorePassword(creatorUserId)
       }
     })
   })

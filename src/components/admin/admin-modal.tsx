@@ -8,15 +8,16 @@ interface AdminModalProps {
   title: string
   children: ReactNode
   width?: number
+  disableBackdropClose?: boolean
 }
 
-export function AdminModal({ open, onClose, title, children, width = 520 }: AdminModalProps) {
+export function AdminModal({ open, onClose, title, children, width = 520, disableBackdropClose = false }: AdminModalProps) {
   if (!open) return null
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[4px]"
-      onClick={onClose}
+      onClick={disableBackdropClose ? undefined : onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
