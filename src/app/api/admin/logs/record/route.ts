@@ -3,7 +3,7 @@ import { requirePermission, ok, err, getClientIp, safeHandler} from '@/lib/api-u
 import { logAction } from '@/lib/log-action'
 
 export const POST = safeHandler(async function POST(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.logs.view')
   if ('error' in auth) return auth.error
 
   const body = await request.json()

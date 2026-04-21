@@ -7,7 +7,7 @@ export const PUT = safeHandler(async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.accounts.edit')
   if ('error' in auth) return auth.error
 
   const { id } = await params
@@ -19,6 +19,13 @@ export const PUT = safeHandler(async function PUT(
 
   const body = await request.json()
   const { type, adminLevel, groupIds } = body
+
+  if (type !== undefined && type !== 'creator' && type !== 'reviewer') {
+    return err('无效的用户类型（仅接受 creator / reviewer）')
+  }
+  if (adminLevel !== undefined && adminLevel !== null && adminLevel !== 'group_admin' && adminLevel !== 'system_admin') {
+    return err('无效的管理级别')
+  }
 
   const result = await prisma.$transaction(async (tx) => {
     // 更新用户类型和管理级别

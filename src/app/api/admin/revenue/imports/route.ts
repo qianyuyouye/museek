@@ -7,7 +7,7 @@ import { parseCSV } from '@/lib/csv'
 import { loadRevenueRules, resolveCommissionRatio } from '@/lib/commission'
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.revenue.view')
   if ('error' in auth) return auth.error
 
   const { searchParams } = request.nextUrl
@@ -100,7 +100,7 @@ function parseQishuiCsv(text: string): { rows: ParsedRow[]; errors: string[] } {
 }
 
 export const POST = safeHandler(async function POST(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.revenue.operate')
   if ('error' in auth) return auth.error
 
   const contentType = request.headers.get('content-type') ?? ''

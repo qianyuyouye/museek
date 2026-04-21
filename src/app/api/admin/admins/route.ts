@@ -5,7 +5,7 @@ import { logAdminAction } from '@/lib/log-action'
 import { hashPassword } from '@/lib/password'
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.admins.view')
   if ('error' in auth) return auth.error
 
   const { searchParams } = request.nextUrl
@@ -44,7 +44,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
 })
 
 export const POST = safeHandler(async function POST(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.admins.manage')
   if ('error' in auth) return auth.error
 
   const body = await request.json()
@@ -58,6 +58,14 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   const existing = await prisma.adminUser.findUnique({ where: { account } })
   if (existing) return err('账号已存在')
 
+  // 超级管理员唯一性：roleId=1（内置超管角色）只允许存在一个
+  if (roleId === 1) {
+    const existingSuper = await prisma.adminUser.count({ where: { roleId: 1 } })
+    if (existingSuper >= 1) {
+      return err('超级管理员已存在，不可重复创建', 409)
+    }
+  }
+
   // 内置角色（超级管理员）唯一性：不允许创建第二个
   const role = await prisma.adminRole.findUnique({
     where: { id: roleId },
@@ -66,7 +74,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   if (!role) return err('角色不存在')
   if (role.isBuiltin) {
     const count = await prisma.adminUser.count({ where: { roleId: role.id } })
-    if (count > 0) return err('内置角色（超级管理员）唯一，不允许创建第二个')
+    if (count > 0) return err('内置角色（超级管理员）唯一，不允许创建第二个', 409)
   }
 
   const passwordHash = await hashPassword(password)

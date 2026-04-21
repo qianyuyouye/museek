@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, safeHandler } from '@/lib/api-utils'
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.revenue.view')
   if ('error' in auth) return auth.error
 
   const users = await prisma.user.findMany({

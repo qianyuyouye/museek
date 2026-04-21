@@ -23,7 +23,7 @@ export const POST = safeHandler(async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.accounts.manage')
   if ('error' in auth) return auth.error
 
   const { id } = await params

@@ -5,7 +5,7 @@ import { logAdminAction } from '@/lib/log-action'
 import { sanitizeHtml } from '@/lib/sanitize'
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.cms.view')
   if ('error' in auth) return auth.error
 
   const { searchParams } = request.nextUrl
@@ -33,7 +33,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
 })
 
 export const POST = safeHandler(async function POST(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.cms.manage')
   if ('error' in auth) return auth.error
 
   const body = await request.json()

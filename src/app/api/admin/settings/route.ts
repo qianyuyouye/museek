@@ -65,7 +65,7 @@ const PRESET_KEYS: Record<string, unknown> = {
 const PATCH_KEYS = new Set<string>([SETTING_KEYS.AI_CONFIG, SETTING_KEYS.STORAGE_CONFIG, SETTING_KEYS.SMS_CONFIG])
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.settings.view')
   if ('error' in auth) return auth.error
 
   const rows = await prisma.systemSetting.findMany()
@@ -85,7 +85,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
 })
 
 export const PUT = safeHandler(async function PUT(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.settings.edit')
   if ('error' in auth) return auth.error
 
   const body = await request.json()

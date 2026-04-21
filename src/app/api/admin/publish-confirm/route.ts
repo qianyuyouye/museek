@@ -6,7 +6,7 @@ import { DistributionStatus } from '@prisma/client'
 const VALID_STATUSES: Set<string> = new Set(Object.values(DistributionStatus))
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.publish_confirm.view')
   if ('error' in auth) return auth.error
 
   const { searchParams } = request.nextUrl

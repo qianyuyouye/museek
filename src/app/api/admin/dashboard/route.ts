@@ -84,7 +84,7 @@ async function loadDashboard() {
 }
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.dashboard.view')
   if ('error' in auth) return auth.error
   const data = await cacheGet('dashboard', DASHBOARD_TTL_MS, loadDashboard)
   return ok(data)

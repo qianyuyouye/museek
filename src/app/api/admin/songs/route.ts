@@ -6,7 +6,7 @@ import { SongStatus } from '@prisma/client'
 const VALID_STATUSES: Set<string> = new Set(Object.values(SongStatus))
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.songs.view')
   if ('error' in auth) return auth.error
 
   const { searchParams } = request.nextUrl

@@ -21,17 +21,50 @@ export function requireAdmin(request: NextRequest) {
 }
 
 /**
- * 按 URL 与 HTTP method 推断权限 key。
- * 约定 /api/admin/{module}/... → admin.{module}.{view|operate|manage}
- * GET → view；DELETE → manage；其他写操作 → operate
+ * 按 URL 与 HTTP method 兜底推断权限 key（6 种 action）。
+ * 推荐所有受保护 API 显式传 key，infer 仅作为兜底。
+ * 约定：/api/admin/{module}/... → admin.{module}.{action}
  */
 function inferPermissionKey(request: NextRequest): string {
   const path = request.nextUrl.pathname
+  const search = request.nextUrl.searchParams
   const method = request.method.toUpperCase()
   const m = path.match(/^\/api\/admin\/([^\/]+)/)
   if (!m) return 'admin.unknown.view'
-  const moduleName = m[1]
-  const action = method === 'GET' ? 'view' : method === 'DELETE' ? 'manage' : 'operate'
+
+  // module 段归一化（连字符 → 下划线；content → cms）
+  const rawModule = m[1]
+  let moduleName =
+    rawModule === 'content' ? 'cms'
+    : rawModule === 'publish-confirm' ? 'publish_confirm'
+    : rawModule === 'batch-download' ? 'batch_download'
+    : rawModule
+
+  // songs 子路径的模块纠偏
+  if (rawModule === 'songs') {
+    if (/\/isrc(\b|\/|$)/.test(path)) moduleName = 'isrc'
+    // agency-pdf 走 songs.export，下面 GET 分支会命中
+  }
+
+  // 按 method + 路径特征定 action
+  const isExport = search.get('export') === '1' || /\/(export|agency-pdf)(\b|\/|$)/.test(path)
+  const isSettle = /\/(pay|settle-status)(\b|\/|$)/.test(path)
+  const isOperate = /\/(status|verify|notify|publish|sync|toggle-status|reset-password)(\b|\/|$)/.test(path)
+
+  let action: string
+  if (method === 'GET') {
+    action = isExport ? 'export' : 'view'
+  } else if (method === 'DELETE') {
+    action = 'manage'
+  } else if (method === 'PUT' || method === 'PATCH') {
+    action = isSettle ? 'settle' : 'edit'
+  } else {
+    // POST
+    if (isSettle) action = 'settle'
+    else if (isOperate) action = 'operate'
+    else action = 'manage'
+  }
+
   return `admin.${moduleName}.${action}`
 }
 

@@ -26,7 +26,7 @@ function revealIdCard(stored: string | null): string | null {
 type RouteContext = { params: Promise<{ id: string }> }
 
 export const GET = safeHandler(async function GET(request: NextRequest, context: RouteContext) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.students.view')
   if ('error' in auth) return auth.error
 
   const { id } = await context.params
@@ -74,7 +74,7 @@ export const GET = safeHandler(async function GET(request: NextRequest, context:
 })
 
 export const PUT = safeHandler(async function PUT(request: NextRequest, context: RouteContext) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.students.edit')
   if ('error' in auth) return auth.error
 
   const { id } = await context.params

@@ -12,7 +12,7 @@ function maskPhone(phone: string): string {
 }
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.students.view')
   if ('error' in auth) return auth.error
 
   const { searchParams } = request.nextUrl

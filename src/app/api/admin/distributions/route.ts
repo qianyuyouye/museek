@@ -5,7 +5,7 @@ import { requirePermission, ok, safeHandler} from '@/lib/api-utils'
 const PLATFORMS = ['QQ音乐', '网易云音乐', 'Spotify', 'Apple Music', '酷狗音乐']
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.distributions.view')
   if ('error' in auth) return auth.error
 
   const songs = await prisma.platformSong.findMany({

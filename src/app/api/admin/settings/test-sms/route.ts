@@ -4,7 +4,7 @@ import { pingSms } from '@/lib/sms'
 import { logAdminAction } from '@/lib/log-action'
 
 export const POST = safeHandler(async function POST(request: NextRequest) {
-  const auth = await requirePermission(request)
+  const auth = await requirePermission(request, 'admin.settings.edit')
   if ('error' in auth) return auth.error
 
   const { phone } = await request.json() as { phone?: string }
