@@ -39,6 +39,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
         userGroups: {
           include: { group: { select: { id: true, name: true } } },
         },
+        _count: { select: { songs: true } },
       },
     }),
   ])
@@ -85,6 +86,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     lastLoginAt: u.lastLoginAt,
     createdAt: u.createdAt,
     groups: u.userGroups.map((ug) => ({ id: ug.group.id, name: ug.group.name })),
+    songCount: u._count.songs,
     ...(tab === 'reviewer' ? (reviewerStats.get(u.id) ?? { reviewCount: 0, avgTimeSeconds: 0, avgScore: 0, recommendRate: 0 }) : {}),
   }))
 
