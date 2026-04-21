@@ -54,6 +54,84 @@ describe('Theme 5 upload-security chain', () => {
     })
     expectCode(r, 400)
   })
+
+  describe('/api/upload/local PUT', () => {
+    async function getToken(type: 'audio' | 'image', fileName: string) {
+      const r = await http('/api/upload/token', {
+        method: 'POST',
+        cookie: creatorCookie,
+        body: { fileName, fileSize: 1024, type },
+      })
+      expectOk(r)
+      return r.json.data as { uploadUrl: string; key: string }
+    }
+
+    it('合法 token + 合法 MP3 头 → 200 + 文件落盘', async () => {
+      const { uploadUrl, key } = await getToken('audio', 'ok.mp3')
+      const body = Buffer.concat([Buffer.from('ID3'), Buffer.alloc(1021)])
+      const res = await fetch(BASE_URL + uploadUrl, {
+        method: 'PUT',
+        headers: { 'Cookie': creatorCookie, 'Origin': BASE_URL },
+        body,
+      })
+      expect(res.status).toBe(200)
+      const fs = await import('fs')
+      const path = await import('path')
+      const root = process.env.STORAGE_ROOT || './storage'
+      expect(fs.existsSync(path.resolve(root, key))).toBe(true)
+    })
+
+    it('SVG 伪装成 mp3 → 400', async () => {
+      const { uploadUrl } = await getToken('audio', 'fake.mp3')
+      const body = Buffer.concat([Buffer.from('<?xml version="1.0"?><svg>'), Buffer.alloc(1000)])
+      const res = await fetch(BASE_URL + uploadUrl, {
+        method: 'PUT',
+        headers: { 'Cookie': creatorCookie, 'Origin': BASE_URL },
+        body,
+      })
+      expect(res.status).toBe(400)
+      const json = await res.json()
+      expect(json.message).toMatch(/不匹配/)
+    })
+
+    it('过期 token PUT → 403', async () => {
+      const { uploadUrl } = await getToken('audio', 'expire.mp3')
+      // 篡改 exp 参数为过去时间
+      const u = new URL(uploadUrl, BASE_URL)
+      u.searchParams.set('exp', '1')
+      const body = Buffer.concat([Buffer.from('ID3'), Buffer.alloc(100)])
+      const res = await fetch(u.toString(), {
+        method: 'PUT',
+        headers: { 'Cookie': creatorCookie, 'Origin': BASE_URL },
+        body,
+      })
+      expect(res.status).toBe(403)
+    })
+
+    it('他人 token（uid 不匹配）PUT → 403', async () => {
+      const { uploadUrl } = await getToken('audio', 'other.mp3')
+      // 用 admin cookie 拿 creator 的 token
+      const body = Buffer.concat([Buffer.from('ID3'), Buffer.alloc(100)])
+      const res = await fetch(BASE_URL + uploadUrl, {
+        method: 'PUT',
+        headers: { 'Cookie': adminCookie, 'Origin': BASE_URL },
+        body,
+      })
+      expect(res.status).toBe(403)
+    })
+
+    it('路径穿越 `..` → 400', async () => {
+      const { uploadUrl } = await getToken('audio', 'trav.mp3')
+      const u = new URL(uploadUrl, BASE_URL)
+      const traverse = u.pathname.replace('uploads/audio', 'uploads/audio/..')
+      const res = await fetch(BASE_URL + traverse + u.search, {
+        method: 'PUT',
+        headers: { 'Cookie': creatorCookie, 'Origin': BASE_URL },
+        body: Buffer.alloc(100),
+      })
+      expect(res.status).toBe(400)
+    })
+  })
 })
 
 import { signPutUrl, signGetUrl, verifyLocalPutSig, verifyLocalGetSig } from '@/lib/signature'
