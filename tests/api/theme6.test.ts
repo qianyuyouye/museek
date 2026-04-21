@@ -226,4 +226,36 @@ describe('Theme 6 field-contract + defaults + copyright', () => {
     })
   })
   // Patch D tests
+  describe('D: /api/creator/upload copyrightCode 格式（GAP-ADMIN-029）', () => {
+    it('POST /creator/upload → copyrightCode 形如 AIMU-YYYY-NNNNNN', async () => {
+      const r = await http('/api/creator/upload', {
+        method: 'POST',
+        cookie: creatorCookie,
+        body: { title: 'D1 测试歌', aiTools: ['Suno'], contribution: 'lead', audioUrl: '/uploads/audio/d1.mp3' },
+      })
+      expectOk(r, 'upload copyrightCode')
+      const code = r.json.data.copyrightCode as string
+      expect(code).toMatch(/^AIMU-\d{4}-\d{6}$/)
+      await prisma.platformSong.delete({ where: { id: r.json.data.id } })
+    })
+
+    it('并发 5 次 upload → 5 个 copyrightCode 唯一且步长 1', async () => {
+      const reqs = Array.from({ length: 5 }, (_, i) =>
+        http('/api/creator/upload', {
+          method: 'POST',
+          cookie: creatorCookie,
+          body: { title: `并发 D2 ${i}`, aiTools: ['Suno'], contribution: 'lead', audioUrl: `/uploads/audio/d2_${i}.mp3` },
+        }),
+      )
+      const results = await Promise.all(reqs)
+      const ids = results.map((r) => r.json.data.id as number)
+      const codes = results.map((r) => r.json.data.copyrightCode as string)
+      const nums = codes.map((c) => parseInt(c.split('-')[2], 10)).sort((a, b) => a - b)
+      expect(new Set(nums).size).toBe(5)
+      for (let i = 1; i < nums.length; i++) {
+        expect(nums[i] - nums[i - 1]).toBe(1)
+      }
+      await prisma.platformSong.deleteMany({ where: { id: { in: ids } } })
+    })
+  })
 })
