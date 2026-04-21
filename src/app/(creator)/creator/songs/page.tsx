@@ -16,7 +16,7 @@ interface Song {
   title: string
   lyricist: string
   composer: string
-  aiTool: string
+  aiTools?: string[] | null
   genre: string
   bpm: number
   status: string
@@ -230,7 +230,7 @@ export default function CreatorSongsPage() {
                 [
                   ['作词', song.lyricist],
                   ['作曲', song.composer],
-                  ['AI工具', song.aiTool],
+                  ['AI工具', (song.aiTools ?? []).join(', ') || '—'],
                   ['流派', song.genre],
                   ['BPM', String(song.bpm)],
                   ['ISRC', song.isrc || '待申报'],

@@ -21,8 +21,8 @@ const btnSmall = 'text-[11px] px-2.5 py-1'
 interface PublishTrack {
   id: number
   songId: number
-  songTitle: string
-  songCover: string
+  title: string
+  coverUrl: string | null
   creatorName: string
   platform: string
   submittedAt: string | null
@@ -129,17 +129,16 @@ export default function PublishConfirmPage() {
 
   const columns: Column<PublishTrack>[] = [
     {
-      key: 'songTitle',
+      key: 'title',
       title: '歌曲',
-      render: (_v, row) => {
-        const t = row as PublishTrack
-        return (
-          <div className="flex items-center gap-2">
-            <span style={{ fontSize: 18 }}>{t.songCover}</span>
-            <span style={{ fontWeight: 600 }}>{t.songTitle}</span>
-          </div>
-        )
-      },
+      render: (_: unknown, t: PublishTrack) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {t.coverUrl ? (
+            <img src={t.coverUrl} alt="" style={{ width: 24, height: 24, borderRadius: 4, objectFit: 'cover' }} />
+          ) : null}
+          <span style={{ fontWeight: 600 }}>{t.title}</span>
+        </div>
+      ),
     },
     {
       key: 'creatorName',
@@ -298,7 +297,7 @@ export default function PublishConfirmPage() {
     const days = daysSince(detailTrack.submittedAt)
 
     const fields: [string, string][] = [
-      ['歌曲', `${detailTrack.songCover} ${detailTrack.songTitle}`],
+      ['歌曲', detailTrack.title],
       ['创作者', detailTrack.creatorName ?? '-'],
       ['平台', detailTrack.platform],
       ['提交日期', detailTrack.submittedAt ? `${detailTrack.submittedAt}（已提交${days}天）` : '-'],

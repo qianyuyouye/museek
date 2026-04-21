@@ -26,6 +26,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
         song: {
           select: {
             title: true,
+            coverUrl: true,
             copyrightCode: true,
             isrc: true,
             userId: true,
@@ -79,6 +80,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
       liveDate: d.liveDate,
       url: d.url,
       title: d.song.title,
+      coverUrl: d.song.coverUrl,
       copyrightCode: d.song.copyrightCode,
       isrc: d.song.isrc,
       creatorName: d.song.user.name,

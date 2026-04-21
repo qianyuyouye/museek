@@ -38,7 +38,7 @@ interface PublishedSong {
   userId: number
   title: string
   genre: string
-  cover: string
+  coverUrl: string | null
   score: number | null
   likeCount: number
   copyrightCode: string
@@ -115,11 +115,13 @@ function SongCard({
       {/* Cover */}
       <div
         className="relative h-[140px] flex items-center justify-center overflow-hidden"
-        style={{ background: COVER_GRADIENTS[song.cover] || DEFAULT_GRADIENT }}
+        style={song.coverUrl ? undefined : { background: DEFAULT_GRADIENT }}
       >
-        <span className="text-[56px] drop-shadow-md group-hover:scale-110 transition-transform duration-300">
-          {song.cover}
-        </span>
+        {song.coverUrl ? (
+          <img src={song.coverUrl} alt={song.title} className="w-full h-full object-cover" />
+        ) : (
+          <span className="text-[56px]">🎵</span>
+        )}
         {/* Score badge */}
         {song.score != null && (
           <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded text-[10px] font-bold bg-black/30 backdrop-blur-sm text-white">

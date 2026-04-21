@@ -15,7 +15,7 @@ interface Notification {
   title: string
   content: string | null
   linkUrl: string | null
-  time: string
+  createdAt: string
   read: boolean
 }
 
@@ -161,7 +161,7 @@ export default function NotificationsPage() {
                   <div className="text-xs text-[var(--text3)] mt-0.5 line-clamp-1">{n.content}</div>
                 )}
                 <div className="mt-1 text-xs text-[var(--text3)]">
-                  {n.time} | {TYPE_LABEL[n.type]}
+                  {new Date(n.createdAt).toLocaleString('zh-CN', { hour12: false })} | {TYPE_LABEL[n.type]}
                 </div>
               </div>
             </div>
