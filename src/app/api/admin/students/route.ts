@@ -24,8 +24,11 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
 
   const where: Prisma.UserWhereInput = {}
 
-  if (type === 'creator' || type === 'reviewer') {
-    where.type = type
+  // 用户档案库默认只返回创作者；显式 type=reviewer 可切换
+  if (type === 'reviewer') {
+    where.type = 'reviewer'
+  } else {
+    where.type = 'creator'
   }
 
   if (realNameStatus) {

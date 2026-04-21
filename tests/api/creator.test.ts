@@ -28,6 +28,14 @@ describe('创作者端', () => {
     expectOk(r, 'needs_revision')
   })
 
+  it('GET /api/creator/songs?status=in_library 合并 reviewed/ready_to_publish/archived', async () => {
+    const r = await http('/api/creator/songs?status=in_library', { cookie })
+    expectOk(r, 'in_library')
+    const list = r.json.data.list as { status: string }[]
+    const allowed = new Set(['reviewed', 'ready_to_publish', 'archived'])
+    expect(list.every((s) => allowed.has(s.status))).toBe(true)
+  })
+
   it('GET /api/creator/songs/:id 详情含评审记录', async () => {
     const r = await http('/api/creator/songs/2', { cookie })
     expect([200, 403, 404]).toContain(r.status)
@@ -42,6 +50,15 @@ describe('创作者端', () => {
     const r = await http('/api/creator/revenue', { cookie })
     expectOk(r, 'revenue')
     expect(r.json.data.stats).toBeTruthy()
+  })
+
+  it('GET /api/creator/revenue 返回 qishuiDetails.list 列表（GAP-CRTR-003）', async () => {
+    const r = await http('/api/creator/revenue', { cookie })
+    expectOk(r, 'qishuiDetails')
+    const qd = r.json.data.qishuiDetails
+    expect(qd).toBeTruthy()
+    expect(Array.isArray(qd.list)).toBe(true)
+    expect(typeof qd.total).toBe('number')
   })
 
   it('GET /api/creator/assignments 列表', async () => {

@@ -68,12 +68,29 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
       : null,
   }))
 
-  // 汽水收益聚合：通过 revenueRows joined via songMappings
-  const qishuiAgg = await prisma.revenueRow.aggregate({
+  // 汽水收益明细：findMany 全量，total + count 在内存聚合（同数据集避免重复扫描）
+  const qishuiRows = await prisma.revenueRow.findMany({
     where: { mapping: { creatorId: userId } },
-    _sum: { totalRevenue: true },
+    orderBy: [{ period: 'desc' }, { id: 'desc' }],
+    select: {
+      id: true,
+      songName: true,
+      period: true,
+      douyinRevenue: true,
+      qishuiRevenue: true,
+      totalRevenue: true,
+    },
   })
-  const qishuiTotal = toNumber(qishuiAgg._sum.totalRevenue)
+  const qishuiDetailsList = qishuiRows.map((row) => ({
+    id: row.id,
+    songName: row.songName,
+    period: row.period,
+    douyinRevenue: toNumber(row.douyinRevenue),
+    qishuiRevenue: toNumber(row.qishuiRevenue),
+    totalRevenue: toNumber(row.totalRevenue),
+  }))
+  const qishuiTotal = qishuiDetailsList.reduce((s, r) => s + r.totalRevenue, 0)
+  const qishuiRowCount = qishuiDetailsList.length
 
   // 统计：用 aggregate 代替全量拉取
   const [totalAgg, paidAgg, pendingAgg] = await Promise.all([
@@ -98,6 +115,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
   return ok({
     settlements: { list: settleList, total: settleTotal, page, pageSize },
     qishuiRevenue: qishuiTotal,
+    qishuiDetails: { list: qishuiDetailsList, total: qishuiRowCount },
     stats: {
       totalEarnings: Math.round(totalEarnings * 100) / 100,
       paidAmount: Math.round(paidAmount * 100) / 100,
