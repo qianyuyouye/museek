@@ -31,4 +31,20 @@ describe('Theme 7 fixes', () => {
       expect(list.every((u) => !u.type || u.type === 'reviewer')).toBe(true)
     })
   })
+
+  describe('/api/admin/students 默认 creator (GAP-ADMIN-051)', () => {
+    it('不传 type 默认只返回 creator', async () => {
+      const r = await http('/api/admin/students?pageSize=100', { cookie: adminCookie })
+      expectOk(r, 'students default creator')
+      const list = r.json.data.list as Array<{ type: string }>
+      expect(list.every((u) => u.type === 'creator')).toBe(true)
+    })
+
+    it('显式 type=reviewer 仍可返回评审', async () => {
+      const r = await http('/api/admin/students?type=reviewer&pageSize=100', { cookie: adminCookie })
+      expectOk(r, 'students explicit reviewer')
+      const list = r.json.data.list as Array<{ type: string }>
+      expect(list.every((u) => u.type === 'reviewer')).toBe(true)
+    })
+  })
 })
