@@ -14,7 +14,11 @@ describe('Theme 6 field-contract + defaults + copyright', () => {
     creatorUserId = login.userId!
   })
 
-  it.skip('placeholder', () => {})
+  it('beforeAll smoke: admin/creator cookie 可用', async () => {
+    expect(adminCookie).toContain('access_token=')
+    expect(creatorCookie).toContain('access_token=')
+    expect(creatorUserId).toBeGreaterThan(0)
+  })
 
   // Patch B1 & B2 tests
   // Patch C tests
