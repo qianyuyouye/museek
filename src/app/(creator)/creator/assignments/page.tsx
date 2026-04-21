@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle, cardCls, btnPrimary, btnGhost, btnSuccess, inputCls, labelCls } from '@/lib/ui-tokens'
 import { formatDate } from '@/lib/format'
@@ -62,6 +62,8 @@ const DEFAULT_FORM_FIELDS: FormFieldDef[] = [
 
 export default function CreatorAssignmentsPage() {
   const { data: assignmentsData, loading, refetch } = useApi<{ list: AssignmentItem[]; total: number }>('/api/creator/assignments')
+  // 高级信息预填来源（GAP-CRTR-004）
+  const { data: profile } = useApi<{ realName?: string | null; name?: string | null }>('/api/profile')
   const [activeAssignment, setActiveAssignment] = useState<number | null>(null)
   const [submittedView, setSubmittedView] = useState<number | null>(null)
   const [formFields, setFormFields] = useState<FormFieldDef[]>(DEFAULT_FORM_FIELDS)
@@ -79,6 +81,23 @@ export default function CreatorAssignmentsPage() {
     setToast(msg)
     setTimeout(() => setToast(''), 3000)
   }, [])
+
+  // 预填高级信息：performer / lyricist / composer / albumArtist 用 realName / name，albumName 用 songTitle（仅在字段存在且未填时）
+  useEffect(() => {
+    if (!profile || activeAssignment === null) return
+    const fallback = profile.realName?.trim() || profile.name || ''
+    const hasKey = (k: string) => formFields.some((f) => f.key === k)
+    setFormData((prev) => {
+      const next = { ...prev }
+      if (hasKey('performer') && !next.performer) next.performer = fallback
+      if (hasKey('lyricist') && !next.lyricist) next.lyricist = fallback
+      if (hasKey('composer') && !next.composer) next.composer = fallback
+      if (hasKey('albumArtist') && !next.albumArtist) next.albumArtist = fallback
+      if (hasKey('albumName') && !next.albumName) next.albumName = (prev.songTitle as string) || ''
+      return next
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile, activeAssignment, formFields, formData.songTitle])
 
   async function handleAudioUpload(file: File) {
     setUploading(true)
