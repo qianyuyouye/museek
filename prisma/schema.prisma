@@ -604,3 +604,12 @@ model LikeRecord {
   @@index([songId])
   @@map("like_records")
 }
+
+// 年度版权号递增计数器（GAP-ADMIN-029）
+model CopyrightSequence {
+  year      Int      @id
+  counter   Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@map("copyright_sequences")
+}
