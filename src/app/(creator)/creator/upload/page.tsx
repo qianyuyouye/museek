@@ -285,7 +285,7 @@ export default function CreatorUploadPage() {
         return
       }
 
-      const { uploadUrl, fileUrl, headers: extraHeaders } = tokenJson.data
+      const { uploadUrl, key, headers: extraHeaders } = tokenJson.data
 
       // 2. 直接 PUT 文件到上传地址
       const putRes = await fetch(uploadUrl, {
@@ -311,9 +311,9 @@ export default function CreatorUploadPage() {
           : file.size >= 1024
             ? Math.round(file.size / 1024) + ' KB'
             : file.size + ' B'
-        setForm(prev => ({ ...prev, audioUploaded: true, audioUrl: fileUrl, audioFileName: file.name, audioSize: sizeLabel, audioFeatures: features }))
+        setForm(prev => ({ ...prev, audioUploaded: true, audioUrl: key, audioFileName: file.name, audioSize: sizeLabel, audioFeatures: features }))
       } else {
-        setForm(prev => ({ ...prev, coverUploaded: true, coverUrl: fileUrl }))
+        setForm(prev => ({ ...prev, coverUploaded: true, coverUrl: key }))
       }
       showToast(`✅ ${file.name} 上传成功`)
     } catch {

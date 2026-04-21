@@ -132,6 +132,39 @@ describe('Theme 5 upload-security chain', () => {
       expect(res.status).toBe(400)
     })
   })
+
+  describe('creator/upload 写入 key 协议', () => {
+    it('POST /api/creator/upload 接收 audioUrl=key（无前导 /），落库即 key', async () => {
+      const key = 'uploads/audio/testkey_' + Date.now() + '.mp3'
+      const r = await http('/api/creator/upload', {
+        method: 'POST',
+        cookie: creatorCookie,
+        body: {
+          title: '测试 Theme 5 key 协议',
+          lyricist: '张三',
+          composer: '张三',
+          performer: '张三',
+          genre: '流行',
+          bpm: 120,
+          contribution: 'lead',
+          audioUrl: key,
+          coverUrl: null,
+          aiTools: ['suno'],
+          styleDesc: 'test',
+          creationDesc: 'test',
+          lyrics: 'test',
+        },
+      })
+      expectOk(r, 'creator upload')
+      const song = await prisma.platformSong.findFirst({
+        where: { userId: creatorUserId, title: '测试 Theme 5 key 协议' },
+        orderBy: { id: 'desc' },
+      })
+      expect(song?.audioUrl).toBe(key)
+      // 清理
+      if (song) await prisma.platformSong.delete({ where: { id: song.id } })
+    })
+  })
 })
 
 import { signPutUrl, signGetUrl, verifyLocalPutSig, verifyLocalGetSig } from '@/lib/signature'

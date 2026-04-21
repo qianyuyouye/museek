@@ -113,7 +113,7 @@ export default function CreatorAssignmentsPage() {
         return
       }
 
-      const { uploadUrl, fileUrl, headers: extraHeaders } = tokenJson.data
+      const { uploadUrl, key, headers: extraHeaders } = tokenJson.data
 
       const putRes = await fetch(uploadUrl, {
         method: 'PUT',
@@ -127,7 +127,7 @@ export default function CreatorAssignmentsPage() {
       }
 
       setAudioUploaded(true)
-      setAudioUrl(fileUrl)
+      setAudioUrl(key)
       setAudioFileName(file.name)
       setAudioSize((file.size / 1024 / 1024).toFixed(1) + 'MB')
       showToast(`✅ ${file.name} 上传成功`)
