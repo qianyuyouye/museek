@@ -28,6 +28,14 @@ describe('创作者端', () => {
     expectOk(r, 'needs_revision')
   })
 
+  it('GET /api/creator/songs?status=in_library 合并 reviewed/ready_to_publish/archived', async () => {
+    const r = await http('/api/creator/songs?status=in_library', { cookie })
+    expectOk(r, 'in_library')
+    const list = r.json.data.list as { status: string }[]
+    const allowed = new Set(['reviewed', 'ready_to_publish', 'archived'])
+    expect(list.every((s) => allowed.has(s.status))).toBe(true)
+  })
+
   it('GET /api/creator/songs/:id 详情含评审记录', async () => {
     const r = await http('/api/creator/songs/2', { cookie })
     expect([200, 403, 404]).toContain(r.status)

@@ -4,6 +4,7 @@ import { getCurrentUser, ok, err, parsePagination, safeHandler} from '@/lib/api-
 import { SongStatus } from '@prisma/client'
 
 const VALID_STATUSES: Set<string> = new Set(Object.values(SongStatus))
+const IN_LIBRARY_STATUSES: SongStatus[] = ['reviewed', 'ready_to_publish', 'archived'] as SongStatus[]
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
   const { userId, portal } = getCurrentUser(request)
@@ -13,13 +14,17 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
   const { page, pageSize, skip } = parsePagination(searchParams)
   const status = searchParams.get('status')
 
-  if (status && status !== 'all' && !VALID_STATUSES.has(status)) {
+  if (status && status !== 'all' && status !== 'in_library' && !VALID_STATUSES.has(status)) {
     return err('无效的状态值')
   }
 
   const where = {
     userId,
-    ...(status && status !== 'all' ? { status: status as SongStatus } : {}),
+    ...(status === 'in_library'
+      ? { status: { in: IN_LIBRARY_STATUSES } }
+      : status && status !== 'all'
+        ? { status: status as SongStatus }
+        : {}),
   }
 
   const [songs, total] = await Promise.all([
