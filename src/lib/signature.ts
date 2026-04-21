@@ -67,7 +67,6 @@ export async function signPutUrl(key: string, opts: SignedPutOptions): Promise<S
   const mode = await resolveMode()
   const ttl = opts.ttlSec ?? 300
   if (mode === 'oss') {
-    // @ts-expect-error Task A2 会创建 oss-client
     const { getOssClient } = await import('./oss-client')
     const client = await getOssClient()
     const uploadUrl = client.signatureUrl(key, {
@@ -90,7 +89,6 @@ export async function signGetUrl(key: string, opts: SignedGetOptions = {}): Prom
   const mode = await resolveMode()
   const ttl = opts.ttlSec ?? 3600
   if (mode === 'oss') {
-    // @ts-expect-error Task A2 会创建 oss-client
     const { getOssClient } = await import('./oss-client')
     const client = await getOssClient()
     return client.signatureUrl(key, { method: 'GET', expires: ttl })
