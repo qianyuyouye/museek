@@ -25,7 +25,6 @@ interface Song {
   isrc: string | null
   likeCount: number
   createdAt: string
-  cover: string
   audioUrl?: string | null
 }
 
@@ -212,7 +211,7 @@ export default function CreatorSongsPage() {
             {/* Cover + status + title */}
             <div className="flex items-center gap-4 mb-4">
               <div className="text-[56px] w-20 h-20 bg-[#f0f4fb] rounded-xl flex items-center justify-center">
-                {song.cover}
+                <span>🎵</span>
               </div>
               <div>
                 <Badge status={song.status} />
@@ -401,7 +400,7 @@ export default function CreatorSongsPage() {
           >
             {/* Cover */}
             <div className="text-5xl text-center py-4 bg-[#f0f4fb] rounded-[10px] mb-2.5">
-              {s.cover}
+              <span>🎵</span>
             </div>
 
             {/* Badge */}
