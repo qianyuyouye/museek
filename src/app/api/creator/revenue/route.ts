@@ -68,12 +68,36 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
       : null,
   }))
 
-  // 汽水收益聚合：通过 revenueRows joined via songMappings
-  const qishuiAgg = await prisma.revenueRow.aggregate({
-    where: { mapping: { creatorId: userId } },
-    _sum: { totalRevenue: true },
-  })
+  // 汽水收益聚合与明细：通过 revenueRows joined via songMappings
+  const [qishuiAgg, qishuiRows, qishuiRowCount] = await Promise.all([
+    prisma.revenueRow.aggregate({
+      where: { mapping: { creatorId: userId } },
+      _sum: { totalRevenue: true },
+    }),
+    prisma.revenueRow.findMany({
+      where: { mapping: { creatorId: userId } },
+      orderBy: { id: 'desc' },
+      select: {
+        id: true,
+        songName: true,
+        period: true,
+        douyinRevenue: true,
+        qishuiRevenue: true,
+        totalRevenue: true,
+      },
+    }),
+    prisma.revenueRow.count({ where: { mapping: { creatorId: userId } } }),
+  ])
   const qishuiTotal = toNumber(qishuiAgg._sum.totalRevenue)
+  const qishuiDetailsList = qishuiRows.map((row) => ({
+    id: row.id,
+    songName: row.songName,
+    period: row.period,
+    month: row.period,
+    douyinRevenue: toNumber(row.douyinRevenue),
+    qishuiRevenue: toNumber(row.qishuiRevenue),
+    totalRevenue: toNumber(row.totalRevenue),
+  }))
 
   // 统计：用 aggregate 代替全量拉取
   const [totalAgg, paidAgg, pendingAgg] = await Promise.all([
@@ -98,6 +122,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
   return ok({
     settlements: { list: settleList, total: settleTotal, page, pageSize },
     qishuiRevenue: qishuiTotal,
+    qishuiDetails: { list: qishuiDetailsList, total: qishuiRowCount },
     stats: {
       totalEarnings: Math.round(totalEarnings * 100) / 100,
       paidAmount: Math.round(paidAmount * 100) / 100,

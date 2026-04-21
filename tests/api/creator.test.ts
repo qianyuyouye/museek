@@ -52,6 +52,15 @@ describe('创作者端', () => {
     expect(r.json.data.stats).toBeTruthy()
   })
 
+  it('GET /api/creator/revenue 返回 qishuiDetails.list 列表（GAP-CRTR-003）', async () => {
+    const r = await http('/api/creator/revenue', { cookie })
+    expectOk(r, 'qishuiDetails')
+    const qd = r.json.data.qishuiDetails
+    expect(qd).toBeTruthy()
+    expect(Array.isArray(qd.list)).toBe(true)
+    expect(typeof qd.total).toBe('number')
+  })
+
   it('GET /api/creator/assignments 列表', async () => {
     const r = await http('/api/creator/assignments', { cookie })
     expectOk(r, 'assignments')
