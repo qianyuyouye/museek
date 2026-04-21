@@ -2,19 +2,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, ok, err, safeHandler} from '@/lib/api-utils'
 import { fillSongDefaults } from '@/lib/song-defaults'
-
-/** 生成唯一的 copyrightCode */
-async function generateCopyrightCode(): Promise<string> {
-  for (let i = 0; i < 10; i++) {
-    const code = `AIMU-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000000)).padStart(6, '0')}`
-    const exists = await prisma.platformSong.findUnique({
-      where: { copyrightCode: code },
-      select: { id: true },
-    })
-    if (!exists) return code
-  }
-  throw new Error('无法生成唯一的版权编码')
-}
+import { nextCopyrightCode } from '@/lib/copyright-code'
 
 export const POST = safeHandler(async function POST(
   request: NextRequest,
@@ -107,9 +95,8 @@ export const POST = safeHandler(async function POST(
     })
   }
 
-  const copyrightCode = await generateCopyrightCode()
-
   const result = await prisma.$transaction(async (tx) => {
+    const copyrightCode = await nextCopyrightCode(tx)
     const song = await tx.platformSong.create({
       data: {
         copyrightCode,

@@ -258,4 +258,60 @@ describe('Theme 6 field-contract + defaults + copyright', () => {
       await prisma.platformSong.deleteMany({ where: { id: { in: ids } } })
     })
   })
+
+  describe('D: /api/creator/assignments/:id/submit copyrightCode 格式', () => {
+    it('作业提交 → copyrightCode 形如 AIMU-YYYY-NNNNNN', async () => {
+      const assignment = await prisma.assignment.findFirst({
+        where: { status: 'active', group: { userGroups: { some: { userId: creatorUserId } } } },
+        select: { id: true },
+      })
+      if (!assignment) {
+        console.warn('[T-D4] 无 active 作业，跳过')
+        return
+      }
+      await prisma.assignmentSubmission.deleteMany({
+        where: { assignmentId: assignment.id, userId: creatorUserId },
+      })
+      const r = await http(`/api/creator/assignments/${assignment.id}/submit`, {
+        method: 'POST',
+        cookie: creatorCookie,
+        body: { title: 'D4 作业测试', aiTools: ['Suno'] },
+      })
+      expectOk(r, 'assignment submit copyrightCode')
+      const code = r.json.data.copyrightCode as string
+      expect(code).toMatch(/^AIMU-\d{4}-\d{6}$/)
+      // cleanup
+      await prisma.assignmentSubmission.deleteMany({ where: { assignmentId: assignment.id, userId: creatorUserId } })
+      await prisma.platformSong.deleteMany({ where: { id: r.json.data.songId } })
+    })
+
+    it('并发 3 次 submit → copyrightCode 互不相同', async () => {
+      const assignments = await prisma.assignment.findMany({
+        where: { status: 'active', group: { userGroups: { some: { userId: creatorUserId } } } },
+        take: 3,
+      })
+      if (assignments.length < 3) {
+        console.warn('[T-D4] 可提交 active 作业少于 3 个，跳过')
+        return
+      }
+      for (const a of assignments) {
+        await prisma.assignmentSubmission.deleteMany({ where: { assignmentId: a.id, userId: creatorUserId } })
+      }
+      const results = await Promise.all(
+        assignments.map((a, i) =>
+          http(`/api/creator/assignments/${a.id}/submit`, {
+            method: 'POST',
+            cookie: creatorCookie,
+            body: { title: `并发 D4 ${i}`, aiTools: ['Suno'] },
+          }),
+        ),
+      )
+      const codes = results.map((r) => r.json.data.copyrightCode as string)
+      expect(new Set(codes).size).toBe(3)
+      for (let i = 0; i < assignments.length; i++) {
+        await prisma.assignmentSubmission.deleteMany({ where: { assignmentId: assignments[i].id, userId: creatorUserId } })
+        await prisma.platformSong.deleteMany({ where: { id: results[i].json.data.songId } })
+      }
+    })
+  })
 })
