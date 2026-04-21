@@ -87,3 +87,6 @@ README.zip
 /public/uploads
 # Git worktrees（superpowers 隔离工作区）
 /.worktrees/
+# Theme 5: 本地上传文件目录（生产用 OSS 或持久卷）
+/storage/uploads/*
+!/storage/uploads/.gitkeep
