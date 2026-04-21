@@ -106,27 +106,37 @@ export async function signGetUrl(key: string, opts: SignedGetOptions = {}): Prom
 // ── 验签 PUT ───────────────────────────────────────────────────
 
 export function verifyLocalPutSig(key: string, query: URLSearchParams, currentUserId: number): string | null {
-  const exp = parseInt(query.get('exp') ?? '', 10)
-  const uid = parseInt(query.get('uid') ?? '', 10)
+  const expRaw = query.get('exp')
+  const uidRaw = query.get('uid')
   const type = query.get('type')
   const sig = query.get('sig') ?? ''
-  if (!exp || !uid || !type || !sig) return '签名参数缺失'
+  if (!expRaw || !uidRaw || !type || !sig) return '签名参数缺失'
+  const exp = parseInt(expRaw, 10)
+  const uid = parseInt(uidRaw, 10)
+  if (isNaN(exp) || isNaN(uid)) return '签名参数缺失'
   if (exp < Math.floor(Date.now() / 1000)) return '上传链接已过期'
   if (uid !== currentUserId) return '用户不匹配'
   if (type !== 'audio' && type !== 'image') return '类型无效'
   if (!keyDirMatchesType(key, type)) return '类型与目录不符'
   const expectSig = computeSig([key, uid, type, exp])
-  if (!crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expectSig, 'hex'))) return '签名无效'
+  if (sig.length !== 64) return '签名无效'
+  try {
+    if (!crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expectSig, 'hex'))) return '签名无效'
+  } catch {
+    return '签名无效'
+  }
   return null
 }
 
 // ── 验签 GET ───────────────────────────────────────────────────
 
 export function verifyLocalGetSig(key: string, query: URLSearchParams): string | null {
-  const exp = parseInt(query.get('exp') ?? '', 10)
+  const expRaw = query.get('exp')
   const sig = query.get('sig') ?? ''
   const uidRaw = query.get('uid')
-  if (!exp || !sig) return '签名参数缺失'
+  if (!expRaw || !sig) return '签名参数缺失'
+  const exp = parseInt(expRaw, 10)
+  if (isNaN(exp)) return '签名参数缺失'
   if (exp < Math.floor(Date.now() / 1000)) return '文件链接已过期'
   const expectSig = computeSig([key, uidRaw ?? '', '', exp])
   if (sig.length !== 64) return '签名无效'

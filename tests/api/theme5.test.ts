@@ -97,4 +97,11 @@ describe('lib/signature HMAC local mode', () => {
     q.set('sig', '0'.repeat(64))
     expect(verifyLocalGetSig(key, q)).toMatch(/签名|无效/)
   })
+
+  it('verifyLocalPutSig 篡改 sig 为非 hex 返回错误不抛异常', async () => {
+    const { uploadUrl } = await signPutUrl(key, { userId: 42, type: 'audio' })
+    const q = new URL(uploadUrl, 'http://x').searchParams
+    q.set('sig', 'zzzz')
+    expect(verifyLocalPutSig(key, q, 42)).toMatch(/签名|无效/)
+  })
 })
