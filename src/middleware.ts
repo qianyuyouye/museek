@@ -19,6 +19,7 @@ const PUBLIC_PATHS = [
   // 公开只读接口（作品广场 + 已发布内容）
   '/api/content',
   '/api/songs/published',
+  '/api/files',
 ]
 
 function getLoginPath(pathname: string): string {

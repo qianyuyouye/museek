@@ -133,6 +133,68 @@ describe('Theme 5 upload-security chain', () => {
     })
   })
 
+  describe('/api/files GET 网关', () => {
+    it('合法签名 → 200 + 正确 Content-Type', async () => {
+      // 先上传一个文件
+      const tokenR = await http('/api/upload/token', {
+        method: 'POST',
+        cookie: creatorCookie,
+        body: { fileName: 'getme.mp3', fileSize: 1024, type: 'audio' },
+      })
+      expectOk(tokenR)
+      const { uploadUrl, key } = tokenR.json.data
+      const body = Buffer.concat([Buffer.from('ID3'), Buffer.alloc(1021)])
+      const putRes = await fetch(BASE_URL + uploadUrl, {
+        method: 'PUT',
+        headers: { 'Cookie': creatorCookie, 'Origin': BASE_URL },
+        body,
+      })
+      expect(putRes.status).toBe(200)
+
+      // signGetUrl 生成 GET 链接
+      const { signGetUrl } = await import('@/lib/signature')
+      const getUrl = await signGetUrl(key, { userId: creatorUserId })
+
+      const getRes = await fetch(BASE_URL + getUrl)
+      expect(getRes.status).toBe(200)
+      expect(getRes.headers.get('content-type')).toContain('audio/mpeg')
+    })
+
+    it('过期签名 → 403', async () => {
+      const { signGetUrl } = await import('@/lib/signature')
+      const url = await signGetUrl('uploads/audio/x.mp3', { ttlSec: -1 })
+      const res = await fetch(BASE_URL + url)
+      expect(res.status).toBe(403)
+    })
+
+    it('篡改 sig → 403', async () => {
+      const { signGetUrl } = await import('@/lib/signature')
+      const url = await signGetUrl('uploads/audio/x.mp3')
+      const tampered = url.replace(/sig=[0-9a-f]+/, 'sig=' + '0'.repeat(64))
+      const res = await fetch(BASE_URL + tampered)
+      expect(res.status).toBe(403)
+    })
+
+    it('路径 `..` → 400', async () => {
+      const { signGetUrl } = await import('@/lib/signature')
+      // 先拿一个合法 key 的签名参数，再手动拼入含 .. 的路径（不走 URL 构造函数，避免 normalize）
+      const url = await signGetUrl('uploads/audio/x.mp3')
+      const qStart = url.indexOf('?')
+      const qs = qStart !== -1 ? url.slice(qStart) : ''
+      // 直接拼接，绕过 URL normalize
+      const rawUrl = BASE_URL + '/api/files/uploads/../secret.env' + qs
+      const res = await fetch(rawUrl)
+      expect(res.status).toBe(400)
+    })
+
+    it('文件不存在 → 404', async () => {
+      const { signGetUrl } = await import('@/lib/signature')
+      const url = await signGetUrl('uploads/audio/nonexistent_' + Date.now() + '.mp3')
+      const res = await fetch(BASE_URL + url)
+      expect(res.status).toBe(404)
+    })
+  })
+
   describe('creator/upload 写入 key 协议', () => {
     it('POST /api/creator/upload 接收 audioUrl=key（无前导 /），落库即 key', async () => {
       const key = 'uploads/audio/testkey_' + Date.now() + '.mp3'
