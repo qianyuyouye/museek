@@ -23,6 +23,37 @@ describe('Theme 5 upload-security chain', () => {
     expect(creatorUserId).toBeGreaterThan(0)
   })
   // Patch A/B/C/D/E 各组测试分别追加
+
+  it('POST /api/upload/token 返回 uploadUrl + key', async () => {
+    const r = await http('/api/upload/token', {
+      method: 'POST',
+      cookie: creatorCookie,
+      body: { fileName: 'demo.mp3', fileSize: 1024, type: 'audio' },
+    })
+    expectOk(r, '获取 upload token')
+    expect(r.json.data.key).toMatch(/^uploads\/audio\/\d{8}_[0-9a-f]{16}\.mp3$/)
+    expect(r.json.data.uploadUrl).toContain('/api/upload/local/' + r.json.data.key)
+    expect(r.json.data.uploadUrl).toMatch(/sig=[0-9a-f]{64}/)
+    expect(r.json.data.method).toBe('PUT')
+  })
+
+  it('POST /api/upload/token 非法扩展名 400', async () => {
+    const r = await http('/api/upload/token', {
+      method: 'POST',
+      cookie: creatorCookie,
+      body: { fileName: 'demo.exe', fileSize: 1024, type: 'audio' },
+    })
+    expectCode(r, 400)
+  })
+
+  it('POST /api/upload/token 超大尺寸 400', async () => {
+    const r = await http('/api/upload/token', {
+      method: 'POST',
+      cookie: creatorCookie,
+      body: { fileName: 'demo.mp3', fileSize: 100 * 1024 * 1024, type: 'audio' },
+    })
+    expectCode(r, 400)
+  })
 })
 
 import { signPutUrl, signGetUrl, verifyLocalPutSig, verifyLocalGetSig } from '@/lib/signature'
