@@ -19,7 +19,7 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - ./storage:/app/storage
+      - storage_uploads:/app/storage
     restart: unless-stopped
 
   # 首次初始化：建表 + 种子数据（用 builder 阶段镜像，含完整 node_modules）
@@ -56,3 +56,4 @@ services:
 
 volumes:
   mysql_data:
+  storage_uploads:

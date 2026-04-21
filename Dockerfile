@@ -47,8 +47,8 @@ COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 # seed 依赖
 COPY --from=builder /app/node_modules/bcryptjs ./node_modules/bcryptjs
 
-# 上传目录
-RUN mkdir -p public/uploads && chown -R nextjs:nodejs public/uploads
+# Theme 5: 本地上传落盘目录（生产切 OSS 后此目录空）
+RUN mkdir -p storage/uploads/audio storage/uploads/images && chown -R nextjs:nodejs storage
 
 USER nextjs
 EXPOSE 3000
