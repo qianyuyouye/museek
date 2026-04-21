@@ -2,6 +2,39 @@ import { describe, it, expect, beforeAll } from 'vitest'
 import { http, adminLogin, creatorLogin, expectOk } from './_helpers'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/password'
+import { fillSongDefaults } from '@/lib/song-defaults'
+
+describe('fillSongDefaults helper (GAP-CRTR-004 / GAP-SCHM-005)', () => {
+  const user = { realName: '张三', name: 'zhangsan' }
+
+  it('空字段回落 realName', () => {
+    const r = fillSongDefaults({ title: '新歌' }, user)
+    expect(r.performer).toBe('张三')
+    expect(r.lyricist).toBe('张三')
+    expect(r.composer).toBe('张三')
+    expect(r.albumArtist).toBe('张三')
+  })
+
+  it('空 albumName 回落 title', () => {
+    const r = fillSongDefaults({ title: '新歌' }, user)
+    expect(r.albumName).toBe('新歌')
+  })
+
+  it('非空字段保留', () => {
+    const r = fillSongDefaults({ title: '新歌', performer: '编曲师' }, user)
+    expect(r.performer).toBe('编曲师')
+  })
+
+  it('realName 为空时用 name', () => {
+    const r = fillSongDefaults({ title: '新歌' }, { realName: null, name: 'zhangsan' })
+    expect(r.performer).toBe('zhangsan')
+  })
+
+  it('空白字符串视作未填', () => {
+    const r = fillSongDefaults({ title: '新歌', performer: '   ' }, user)
+    expect(r.performer).toBe('张三')
+  })
+})
 
 let adminCookie = ''
 let creatorCookie = ''
