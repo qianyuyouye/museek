@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, ok, err, safeHandler} from '@/lib/api-utils'
+import { fillSongDefaults } from '@/lib/song-defaults'
 
 /** 生成唯一的 copyrightCode */
 async function generateCopyrightCode(): Promise<string> {
@@ -55,6 +56,13 @@ export const POST = safeHandler(async function POST(
 
   if (!title) return err('标题不能为空')
 
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { realName: true, name: true },
+  })
+  if (!user) return err('用户不存在', 404)
+  const defaults = fillSongDefaults({ title, performer, lyricist, composer, albumName, albumArtist }, { realName: user.realName, name: user.name ?? '' })
+
   // 重新提交分支：复用旧 platform_song（version+1，清空评分/评语），更新 submission
   if (existing && existing.platformSongId) {
     const result = await prisma.$transaction(async (tx) => {
@@ -63,15 +71,15 @@ export const POST = safeHandler(async function POST(
         data: {
           title,
           aiTools: aiTools ?? undefined,
-          performer,
-          lyricist,
-          composer,
+          performer: defaults.performer,
+          lyricist: defaults.lyricist,
+          composer: defaults.composer,
           lyrics,
           styleDesc,
           genre,
           bpm: bpm ? parseInt(bpm, 10) : undefined,
-          albumName,
-          albumArtist,
+          albumName: defaults.albumName,
+          albumArtist: defaults.albumArtist,
           status: 'pending_review',
           score: null,
           reviewComment: null,
@@ -108,15 +116,15 @@ export const POST = safeHandler(async function POST(
         userId,
         title,
         aiTools: aiTools ?? undefined,
-        performer,
-        lyricist,
-        composer,
+        performer: defaults.performer,
+        lyricist: defaults.lyricist,
+        composer: defaults.composer,
         lyrics,
         styleDesc,
         genre,
         bpm: bpm ? parseInt(bpm, 10) : undefined,
-        albumName,
-        albumArtist,
+        albumName: defaults.albumName,
+        albumArtist: defaults.albumArtist,
         source: 'assignment',
         assignmentId,
         status: 'pending_review',

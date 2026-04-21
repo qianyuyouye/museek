@@ -162,5 +162,42 @@ describe('Theme 6 field-contract + defaults + copyright', () => {
       await prisma.platformSong.delete({ where: { id } })
     })
   })
+  describe('C: /api/creator/assignments/:id/submit 默认字段填充', () => {
+    it('作业提交不传 performer → DB 行 performer = user.realName', async () => {
+      const assignment = await prisma.assignment.findFirst({
+        where: { status: 'active', group: { userGroups: { some: { userId: creatorUserId } } } },
+        select: { id: true },
+      })
+      if (!assignment) {
+        console.warn('[T-C3] 无 active 作业，跳过')
+        return
+      }
+
+      // 清残留
+      await prisma.assignmentSubmission.deleteMany({
+        where: { assignmentId: assignment.id, userId: creatorUserId },
+      })
+
+      const user = await prisma.user.findUnique({
+        where: { id: creatorUserId },
+        select: { realName: true, name: true },
+      })
+      const expected = (user!.realName?.trim() || user!.name || '').trim()
+
+      const r = await http(`/api/creator/assignments/${assignment.id}/submit`, {
+        method: 'POST',
+        cookie: creatorCookie,
+        body: { title: '作业默认测试', aiTools: ['Suno'] },
+      })
+      expectOk(r, 'assignment submit default')
+      const songId = r.json.data.songId
+      const song = await prisma.platformSong.findUnique({ where: { id: songId } })
+      expect(song?.performer).toBe(expected)
+      expect(song?.albumName).toBe('作业默认测试')
+      // cleanup
+      await prisma.assignmentSubmission.deleteMany({ where: { assignmentId: assignment.id, userId: creatorUserId } })
+      await prisma.platformSong.deleteMany({ where: { id: songId } })
+    })
+  })
   // Patch D tests
 })
