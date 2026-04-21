@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI音乐平台 - 评审端</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f7fe;--bg2:#edf0f9;--bg3:#ffffff;--bg4:#f8faff;
+  --text:#1e293b;--text2:#64748b;--text3:#94a3b8;
+  --accent:#6366f1;--accent2:#4f46e5;--accent-glow:rgba(99,102,241,.09);
+  --green:#0694a2;--green2:#16a34a;--orange:#d97706;--red:#e53e3e;--pink:#ec4899;
+  --border:#e8edf5;--border2:#d1dae8;
+  --radius:10px;--radius-lg:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans SC',sans-serif;background:linear-gradient(135deg,#d6e4f7 0%,#e8eef8 40%,#f0f4fb 70%,#f8faff 100%) fixed;color:var(--text);overflow-x:hidden;min-height:100vh;}
+::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-track{background:#f0f4fb;} ::-webkit-scrollbar-thumb{background:#c8d5e0;border-radius:3px;}
+input,select,textarea,button{font-family:inherit;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes waveAnim{0%{height:8px}50%{height:24px}100%{height:8px}}
+@keyframes modalIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .4s ease both;}
+.slide-in{animation:slideIn .3s ease both;}
+.modal-in{animation:modalIn .3s ease both;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useCallback,useMemo,useRef,createContext,useContext}=React;
+
+
+// ═══════════════════════════════════════════
+// MOCK DATA
+// ═══════════════════════════════════════════
+const MOCK={
+  // ★ 用户组
+  userGroups:[
+    {id:1,name:'三明医学科技职业技术学院',description:'三明医学科技职业技术学院AI音乐创作班',inviteCode:'SMYKJZY',inviteLink:'https://aimusic.com/join/SMYKJZY',memberCount:45,status:'active',createdBy:10,createdAt:'2026-01-05'},
+    {id:2,name:'社会组',description:'面向社会公众的AI音乐创作组',inviteCode:'SOCIAL26',inviteLink:'https://aimusic.com/join/SOCIAL26',memberCount:28,status:'active',createdBy:10,createdAt:'2026-01-05'},
+    {id:3,name:'评审专家组',description:'平台签约评审专家团队',inviteCode:'REVIEW26',inviteLink:'https://aimusic.com/join/REVIEW26',memberCount:5,status:'active',createdBy:10,createdAt:'2025-12-20'},
+    {id:4,name:'内部运营团队',description:'平台运营管理团队',inviteCode:'OPS2026',inviteLink:'https://aimusic.com/join/OPS2026',memberCount:3,status:'active',createdBy:10,createdAt:'2025-12-01'},
+    {id:5,name:'合作机构A-试点组',description:'与合作音乐机构A的试点班级',inviteCode:'PARTA01',inviteLink:'https://aimusic.com/join/PARTA01',memberCount:12,status:'paused',createdBy:10,createdAt:'2026-02-10'},
+  ],
+  // ★ 作业表单字段默认配置模板
+  defaultFormFields:[
+    {key:'aiTool',label:'创作工具',type:'multi_select',options:['汽水创作实验室','Suno'],required:true,defaultValue:[]},
+    {key:'songTitle',label:'歌曲标题',type:'text',required:true,defaultValue:''},
+    {key:'performer',label:'表演者',type:'text',required:true,defaultValue:'{realName}'},
+    {key:'lyricist',label:'词作者',type:'text',required:true,defaultValue:'{realName}'},
+    {key:'composer',label:'曲作者',type:'text',required:true,defaultValue:'{realName}'},
+    {key:'lyrics',label:'歌词',type:'textarea',required:true,defaultValue:''},
+    {key:'styleDesc',label:'风格描述',type:'text',required:false,defaultValue:''},
+    {key:'albumName',label:'专辑名称',type:'text',required:false,defaultValue:'{songTitle}'},
+    {key:'albumArtist',label:'专辑歌手',type:'text',required:false,defaultValue:'{realName}'},
+  ],
+  // ★ 作业任务
+  assignments:[
+    {id:1,groupId:1,title:'第一次AI音乐创作作业',description:'使用AI工具创作一首原创歌曲，主题不限。要求完整填写元数据信息，上传音频文件。',deadline:'2026-04-30',status:'active',createdAt:'2026-03-01',submissionCount:5,totalMembers:45,
+      formFields:[
+        {key:'aiTool',label:'创作工具',type:'multi_select',options:['汽水创作实验室','Suno'],required:true,defaultValue:[]},
+        {key:'songTitle',label:'歌曲标题',type:'text',required:true,defaultValue:''},
+        {key:'performer',label:'表演者',type:'text',required:true,defaultValue:'{realName}'},
+        {key:'lyricist',label:'词作者',type:'text',required:true,defaultValue:'{realName}'},
+        {key:'composer',label:'曲作者',type:'text',required:true,defaultValue:'{realName}'},
+        {key:'lyrics',label:'歌词',type:'textarea',required:true,defaultValue:''},
+        {key:'styleDesc',label:'风格描述',type:'text',required:true,defaultValue:''},
+        {key:'albumName',label:'专辑名称',type:'text',required:false,defaultValue:'{songTitle}'},
+        {key:'albumArtist',label:'专辑歌手',type:'text',required:false,defaultValue:'{realName}'},
+      ]},
+    {id:2,groupId:1,title:'第二次AI音乐创作作业',description:'以"春天"为主题创作一首歌曲，注意旋律与歌词的配合。',deadline:'2026-05-31',status:'active',createdAt:'2026-04-01',submissionCount:0,totalMembers:45,
+      formFields:[
+        {key:'aiTool',label:'创作工具',type:'multi_select',options:['汽水创作实验室','Suno'],required:true,defaultValue:[]},
+        {key:'songTitle',label:'歌曲标题',type:'text',required:true,defaultValue:''},
+        {key:'performer',label:'表演者',type:'text',required:true,defaultValue:'{realName}'},
+        {key:'lyricist',label:'词作者',type:'text',required:true,defaultValue:'{realName}'},
+        {key:'composer',label:'曲作者',type:'text',required:true,defaultValue:'{realName}'},
+        {key:'lyrics',label:'歌词',type:'textarea',required:true,defaultValue:''},
+        {key:'styleDesc',label:'风格描述',type:'text',required:false,defaultValue:''},
+        {key:'albumName',label:'专辑名称',type:'text',required:false,defaultValue:'{songTitle}'},
+        {key:'albumArtist',label:'专辑歌手',type:'text',required:false,defaultValue:'{realName}'},
+      ]},
+    {id:3,groupId:2,title:'社会组首次作品征集',description:'面向社会组成员的首次AI音乐作品征集，题材风格不限。',deadline:'2026-06-30',status:'active',createdAt:'2026-03-15',submissionCount:1,totalMembers:28,
+      formFields:[
+        {key:'aiTool',label:'创作工具',type:'multi_select',options:['汽水创作实验室','Suno'],required:true,defaultValue:[]},
+        {key:'songTitle',label:'歌曲标题',type:'text',required:true,defaultValue:''},
+        {key:'performer',label:'表演者',type:'text',required:false,defaultValue:'{realName}'},
+        {key:'lyricist',label:'词作者',type:'text',required:false,defaultValue:'{realName}'},
+        {key:'composer',label:'曲作者',type:'text',required:false,defaultValue:'{realName}'},
+        {key:'lyrics',label:'歌词',type:'textarea',required:true,defaultValue:''},
+        {key:'styleDesc',label:'风格描述',type:'text',required:false,defaultValue:''},
+        {key:'albumName',label:'专辑名称',type:'text',required:false,defaultValue:'{songTitle}'},
+        {key:'albumArtist',label:'专辑歌手',type:'text',required:false,defaultValue:'{realName}'},
+      ]},
+  ],
+  // ★ 作业提交记录（与 songs 数据对应：source:'assignment' 的 song 必须有对应 submission）
+  assignmentSubmissions:[
+    // assignment:1 已完成评审的历史提交（对应 songs id:10,11,12,13,14）
+    {id:1,assignmentId:1,userId:1,data:{aiTool:['汽水创作实验室'],songTitle:'父爱的魔法',performer:'张小明',lyricist:'张小明',composer:'张小明',lyrics:'一双粗糙的手\n托起了我的整个世界...',styleDesc:'暖心流行 warm pop',albumName:'父爱的魔法',albumArtist:'张小明'},audioUrl:'demo.wav',status:'reviewed',score:86,submittedAt:'2026-01-25 14:30'},
+    {id:2,assignmentId:1,userId:3,data:{aiTool:['Suno'],songTitle:'虚假客户',performer:'王强',lyricist:'王强',composer:'王强',lyrics:'穿着笔挺的西装\n说着违心的话...',styleDesc:'讽刺职场 hip-hop',albumName:'虚假客户',albumArtist:'王强'},audioUrl:'demo2.wav',status:'reviewed',score:81,submittedAt:'2026-01-28 10:15'},
+    // assignment:1 待评审提交（对应 songs id:9）
+    {id:3,assignmentId:1,userId:8,data:{aiTool:['Suno','汽水创作实验室'],songTitle:'晨光序曲',performer:'林志远',lyricist:'林志远',composer:'林志远',lyrics:'第一缕阳光穿过窗帘\n新的一天悄然来临...',styleDesc:'轻快流行 upbeat pop',albumName:'晨光序曲',albumArtist:'林志远'},audioUrl:'demo3.wav',status:'pending_review',score:null,submittedAt:'2026-04-05 09:00'},
+    // assignment:1 待评审（对应 songs id:4）
+    {id:5,assignmentId:1,userId:2,data:{aiTool:['Suno'],songTitle:'雨后彩虹',performer:'李芳',lyricist:'李芳',composer:'李芳',lyrics:'雨过天晴的清晨\n一道彩虹挂天边...',styleDesc:'明快流行 upbeat pop',albumName:'雨后彩虹',albumArtist:'李芳'},audioUrl:'demo5.wav',status:'pending_review',score:null,submittedAt:'2026-03-20 11:30'},
+    // assignment:2 待评审（对应 songs id:6）
+    {id:6,assignmentId:2,userId:3,data:{aiTool:['汽水创作实验室'],songTitle:'数字黄昏',performer:'王强',lyricist:'王强',composer:'王强',lyrics:'霓虹灯下的余晖\n数字化的黄昏...',styleDesc:'赛博朋克 synthwave',albumName:'数字黄昏',albumArtist:'王强'},audioUrl:'demo6.wav',status:'pending_review',score:null,submittedAt:'2026-04-01 15:00'},
+    // assignment:3 待评审（对应 songs id:8）
+    {id:4,assignmentId:3,userId:4,data:{aiTool:['Suno'],songTitle:'初次尝试',performer:'陈雨',lyricist:'陈雨',composer:'陈雨',lyrics:'第一次张开嘴唱歌\n声音在空气中飘荡...',styleDesc:'简单流行 simple pop',albumName:'初次尝试',albumArtist:'陈雨'},audioUrl:'demo4.wav',status:'pending_review',score:null,submittedAt:'2026-04-02 16:00'},
+    // assignment:2 需修改（张小明参与第二次作业被退回，对应 songs id:5；修正UNIQUE约束：每人每作业仅一条记录）
+    {id:7,assignmentId:2,userId:1,data:{aiTool:['Suno'],songTitle:'深海之歌',performer:'张小明',lyricist:'张小明',composer:'张小明',lyrics:'深海的低鸣\n那是遥远的呼唤...',styleDesc:'环境音乐 ambient',albumName:'深海之歌',albumArtist:'张小明'},audioUrl:'demo7.wav',status:'needs_revision',score:65,submittedAt:'2026-03-15 16:00'},
+  ],
+  // ★ 汽水音乐收益导入批次
+  qishuiImports:[
+    {id:1,fileName:'汽水音乐_2026年2月_收益报表.csv',period:'2026-02',dateRange:'2026/02/01 - 2026/02/28',totalRows:91,idMatched:4,namePending:1,unmatched:86,duplicateRows:0,totalRevenue:0.10,douyinRevenue:0,qishuiRevenue:0.10,status:'completed',importedAt:'2026-03-15 10:30'},
+    {id:2,fileName:'汽水音乐_2026年3月_收益报表.csv',period:'2026-03',dateRange:'2026/03/01 - 2026/03/31',totalRows:95,idMatched:5,namePending:3,unmatched:85,duplicateRows:2,totalRevenue:2.58,douyinRevenue:0.85,qishuiRevenue:1.73,status:'completed',importedAt:'2026-04-08 14:20'},
+  ],
+  // ★ 歌曲ID映射关系表（核心：持久化的 歌曲ID↔创作者 绑定）
+  songIdMappings:[
+    {id:1,qishuiSongId:'7602080980514474020',songName:'父爱的魔法',userId:1,userName:'张小明',match_type:'auto_exact',status:'confirmed',confirmedAt:'2026-03-15',confirmedBy:'系统管理员'},
+    {id:2,qishuiSongId:'7602093224405043242',songName:'虚假客户',userId:3,userName:'王强',match_type:'auto_exact',status:'confirmed',confirmedAt:'2026-03-15',confirmedBy:'系统管理员'},
+    {id:3,qishuiSongId:'7601415163228784683',songName:'沉重肩膀',userId:1,userName:'张小明',match_type:'auto_exact',status:'confirmed',confirmedAt:'2026-03-16',confirmedBy:'系统管理员'},
+    {id:4,qishuiSongId:'7599610106842400778',songName:'霓虹下的隐形人',userId:8,userName:'林志远',match_type:'manual',status:'confirmed',confirmedAt:'2026-03-16',confirmedBy:'运营管理员'},
+    {id:5,qishuiSongId:'7600215683615787034',songName:'地下的河流',userId:3,userName:'王强',match_type:'manual',status:'confirmed',confirmedAt:'2026-03-20',confirmedBy:'运营管理员'},
+    {id:6,qishuiSongId:'7599593583864318002',songName:'末班车',userId:null,userName:null,match_type:'auto_fuzzy',status:'suspect',confirmedAt:null,confirmedBy:null},
+    {id:7,qishuiSongId:'7604694471591200818',songName:'身旁空位',userId:2,userName:'李芳',match_type:'auto_fuzzy',status:'suspect',confirmedAt:null,confirmedBy:null},
+    {id:8,qishuiSongId:'7603203433717516334',songName:'睡前碎碎念',userId:null,userName:null,match_type:'none',status:'pending',confirmedAt:null,confirmedBy:null},
+    {id:9,qishuiSongId:'7600799131529070630',songName:'出售我的青春',userId:null,userName:null,match_type:'none',status:'pending',confirmedAt:null,confirmedBy:null},
+  ],
+  // ★ 汽水音乐收益明细 — matchStatus: id_confirmed(映射表命中) / name_pending(歌名匹配待确认) / unmatched
+  qishuiDetails:[
+    {id:1,importId:1,qishuiSongId:'7602080980514474020',songName:'父爱的魔法',period:'2026-02',douyinRevenue:0,qishuiRevenue:0.04,totalRevenue:0.04,matchedUserId:1,matchedUserName:'张小明',matchStatus:'matched'},
+    {id:2,importId:1,qishuiSongId:'7602093224405043242',songName:'虚假客户',period:'2026-02',douyinRevenue:0,qishuiRevenue:0.01,totalRevenue:0.01,matchedUserId:3,matchedUserName:'王强',matchStatus:'matched'},
+    {id:3,importId:1,qishuiSongId:'7601415163228784683',songName:'沉重肩膀',period:'2026-02',douyinRevenue:0,qishuiRevenue:0.01,totalRevenue:0.01,matchedUserId:1,matchedUserName:'张小明',matchStatus:'matched'},
+    {id:4,importId:1,qishuiSongId:'7599610106842400778',songName:'霓虹下的隐形人',period:'2026-02',douyinRevenue:0,qishuiRevenue:0.01,totalRevenue:0.01,matchedUserId:8,matchedUserName:'林志远',matchStatus:'matched'},
+    {id:5,importId:1,qishuiSongId:'7599593583864318002',songName:'末班车',period:'2026-02',douyinRevenue:0,qishuiRevenue:0.02,totalRevenue:0.02,matchedUserId:null,matchedUserName:null,matchStatus:'suspect'},
+    {id:6,importId:1,qishuiSongId:'7604694471591200818',songName:'身旁空位',period:'2026-02',douyinRevenue:0,qishuiRevenue:0.01,totalRevenue:0.01,matchedUserId:null,matchedUserName:null,matchStatus:'unmatched'},
+    {id:7,importId:2,qishuiSongId:'7602080980514474020',songName:'父爱的魔法',period:'2026-03',douyinRevenue:0.35,qishuiRevenue:0.42,totalRevenue:0.77,matchedUserId:1,matchedUserName:'张小明',matchStatus:'matched'},
+    {id:8,importId:2,qishuiSongId:'7602093224405043242',songName:'虚假客户',period:'2026-03',douyinRevenue:0.12,qishuiRevenue:0.18,totalRevenue:0.30,matchedUserId:3,matchedUserName:'王强',matchStatus:'matched'},
+    {id:9,importId:2,qishuiSongId:'7601415163228784683',songName:'沉重肩膀',period:'2026-03',douyinRevenue:0.08,qishuiRevenue:0.15,totalRevenue:0.23,matchedUserId:1,matchedUserName:'张小明',matchStatus:'matched'},
+    {id:10,importId:2,qishuiSongId:'7599610106842400778',songName:'霓虹下的隐形人',period:'2026-03',douyinRevenue:0.20,qishuiRevenue:0.68,totalRevenue:0.88,matchedUserId:8,matchedUserName:'林志远',matchStatus:'matched'},
+    {id:11,importId:2,qishuiSongId:'7600215683615787034',songName:'地下的河流',period:'2026-03',douyinRevenue:0.10,qishuiRevenue:0.30,totalRevenue:0.40,matchedUserId:3,matchedUserName:'王强',matchStatus:'matched'},
+    {id:12,importId:2,qishuiSongId:'7604694471591200818',songName:'身旁空位',period:'2026-03',douyinRevenue:0,qishuiRevenue:0.01,totalRevenue:0.01,matchedUserId:2,matchedUserName:'李芳',matchStatus:'suspect'},
+    {id:13,importId:2,qishuiSongId:'7603203433717516334',songName:'睡前碎碎念',period:'2026-03',douyinRevenue:0,qishuiRevenue:0,totalRevenue:0,matchedUserId:null,matchedUserName:null,matchStatus:'unmatched'},
+  ],
+  // ★ 用户属性: role=creator|reviewer|admin, adminLevel=null|group_admin|system_admin
+  students:[
+    {id:1,name:'张小明',phone:'138****1234',email:'zhangxm@test.com',role:'creator',adminLevel:null,realNameStatus:'verified',realName:'张小明',idCard:'310***********1234',verifiedPhone:'138****1234',agencyContract:true,signedAt:'2026-01-15',songCount:8,totalRevenue:2450.80,avatar:'🎵',groupIds:[1]},
+    {id:2,name:'李芳',phone:'139****5678',email:'lifang@test.com',role:'creator',adminLevel:null,realNameStatus:'pending',realName:'李芳',idCard:'320***********5678',verifiedPhone:'139****5678',agencyContract:false,signedAt:null,songCount:3,totalRevenue:0,avatar:'🎶',groupIds:[1]},
+    {id:3,name:'王强',phone:'137****9012',email:'wangq@test.com',role:'creator',adminLevel:null,realNameStatus:'verified',realName:'王强',idCard:'110***********9012',verifiedPhone:'137****9012',agencyContract:true,signedAt:'2026-02-20',songCount:12,totalRevenue:5280.50,avatar:'🎸',groupIds:[1,2]},
+    {id:4,name:'陈雨',phone:'136****3456',email:'chenyu@test.com',role:'creator',adminLevel:null,realNameStatus:'rejected',realName:'',idCard:'',verifiedPhone:'',agencyContract:false,signedAt:null,songCount:1,totalRevenue:0,avatar:'🎤',groupIds:[2]},
+    {id:8,name:'林班长',phone:'138****2222',email:'linbz@ai.com',role:'creator',adminLevel:'group_admin',realNameStatus:'verified',realName:'林志远',idCard:'350***********2222',verifiedPhone:'138****2222',agencyContract:true,signedAt:'2026-01-10',songCount:15,totalRevenue:6800.00,avatar:'⭐',groupIds:[1]},
+  ],
+  songs:[
+    // 自由上传的作品
+    {id:1,userId:1,title:'星河漫步',lyricist:'张小明',composer:'AI协作',aiTool:'Suno',prompt:'dreamy synth pop with ethereal vocals, 120bpm, space theme',genre:'电子',bpm:120,status:'published',score:92,copyrightCode:'AIMU-2026-000001',isrc:'CNF121200001',likeCount:234,createdAt:'2026-01-20',cover:'🌌',source:'upload'},
+    {id:2,userId:1,title:'城市灯火',lyricist:'张小明',composer:'AI协作',aiTool:'Suno',prompt:'lo-fi hip hop beat, city night vibes, melancholic',genre:'Hip-Hop',bpm:85,status:'ready_to_publish',score:88,copyrightCode:'AIMU-2026-000002',isrc:null,likeCount:0,createdAt:'2026-02-10',cover:'🏙️',source:'upload'},
+    {id:3,userId:3,title:'春风十里',lyricist:'王强',composer:'AI协作',aiTool:'Udio',prompt:'chinese folk pop, spring breeze, warm guitar',genre:'民谣',bpm:95,status:'published',score:85,copyrightCode:'AIMU-2026-000003',isrc:'CNF121200003',likeCount:189,createdAt:'2026-02-15',cover:'🌸',source:'upload'},
+    {id:7,userId:1,title:'梦境边缘',lyricist:'张小明',composer:'AI协作',aiTool:'Suno',prompt:'dream pop shoegaze layered reverb',genre:'Rock',bpm:100,status:'reviewed',score:78,copyrightCode:'AIMU-2026-000007',isrc:null,likeCount:0,createdAt:'2026-03-10',cover:'💫',source:'upload'},
+    // 作业提交 → 同步进入歌曲库
+    {id:4,userId:2,title:'雨后彩虹',lyricist:'李芳',composer:'李芳',aiTool:'Suno',prompt:'upbeat pop, rainbow after rain',genre:'Pop',bpm:128,status:'pending_review',score:null,copyrightCode:'AIMU-2026-000004',isrc:null,likeCount:0,createdAt:'2026-03-20',cover:'🌈',source:'assignment',assignmentId:1},
+    {id:5,userId:1,title:'深海之歌',lyricist:'张小明',composer:'张小明',aiTool:'Suno',prompt:'ambient ocean sounds, orchestral',genre:'古典',bpm:72,status:'needs_revision',score:65,copyrightCode:'AIMU-2026-000005',isrc:null,likeCount:0,createdAt:'2026-03-15',cover:'🌊',source:'assignment',assignmentId:2,reviewComment:'混音需要大幅优化，低频过重导致人声被遮盖。建议调整EQ平衡后重新提交。'},
+    {id:6,userId:3,title:'数字黄昏',lyricist:'王强',composer:'王强',aiTool:'汽水创作实验室',prompt:'synthwave 80s sunset',genre:'电子',bpm:110,status:'pending_review',score:null,copyrightCode:'AIMU-2026-000006',isrc:null,likeCount:0,createdAt:'2026-03-22',cover:'🌅',source:'assignment',assignmentId:2},
+    {id:8,userId:4,title:'初次尝试',lyricist:'陈雨',composer:'陈雨',aiTool:'Suno',prompt:'simple acoustic pop',genre:'Pop',bpm:100,status:'pending_review',score:null,copyrightCode:'AIMU-2026-000008',isrc:null,likeCount:0,createdAt:'2026-03-25',cover:'🎵',source:'assignment',assignmentId:3},
+    {id:9,userId:8,title:'晨光序曲',lyricist:'林志远',composer:'林志远',aiTool:'Suno',prompt:'upbeat pop morning light',genre:'Pop',bpm:118,status:'pending_review',score:null,copyrightCode:'AIMU-2026-000009',isrc:null,likeCount:0,createdAt:'2026-04-05',cover:'🌅',source:'assignment',assignmentId:1},
+    // 作业提交 → 已评审 → 已发行 → 汽水音乐有收益的歌曲
+    {id:10,userId:1,title:'父爱的魔法',lyricist:'张小明',composer:'张小明',aiTool:'汽水创作实验室',prompt:'warm father love story',genre:'Pop',bpm:92,status:'published',score:86,copyrightCode:'AIMU-2026-000010',isrc:'CNF121200010',likeCount:45,createdAt:'2026-01-25',cover:'👨‍👦',source:'assignment',assignmentId:1},
+    {id:11,userId:3,title:'虚假客户',lyricist:'王强',composer:'王强',aiTool:'Suno',prompt:'sarcastic office life',genre:'Hip-Hop',bpm:95,status:'published',score:81,copyrightCode:'AIMU-2026-000011',isrc:'CNF121200011',likeCount:28,createdAt:'2026-01-28',cover:'🤵',source:'assignment',assignmentId:1},
+    {id:12,userId:1,title:'沉重肩膀',lyricist:'张小明',composer:'张小明',aiTool:'汽水创作实验室',prompt:'heavy burden on shoulders',genre:'民谣',bpm:78,status:'published',score:83,copyrightCode:'AIMU-2026-000012',isrc:'CNF121200012',likeCount:32,createdAt:'2026-02-05',cover:'💪',source:'assignment',assignmentId:1},
+    {id:13,userId:8,title:'霓虹下的隐形人',lyricist:'林志远',composer:'林志远',aiTool:'Suno',prompt:'invisible man under neon lights',genre:'电子',bpm:115,status:'published',score:88,copyrightCode:'AIMU-2026-000013',isrc:'CNF121200013',likeCount:67,createdAt:'2026-02-08',cover:'🌃',source:'assignment',assignmentId:1},
+    {id:14,userId:3,title:'地下的河流',lyricist:'王强',composer:'王强',aiTool:'汽水创作实验室',prompt:'underground river flowing',genre:'Rock',bpm:105,status:'published',score:84,copyrightCode:'AIMU-2026-000014',isrc:'CNF121200014',likeCount:41,createdAt:'2026-02-12',cover:'🌊',source:'assignment',assignmentId:1},
+  ],
+  reviews:[
+    {id:1,songId:1,teacherId:1,technique:90,creativity:95,commercial:88,total:92,comment:'非常出色的太空电子音乐作品！旋律设计精巧，Prompt运用得当，音色选择富有想象力。副歌部分记忆点强烈，具有较高的商业传播潜力。',recommendation:'strongly_recommend',duration:480,markers:[{time:45,label:'副歌精彩',type:'highlight'},{time:120,label:'音色出彩',type:'highlight'}]},
+    {id:2,songId:5,teacherId:1,technique:60,creativity:72,commercial:58,total:65,comment:'旋律基础不错，但混音需要大幅优化，低频过重导致人声被遮盖。建议调整EQ平衡后重新提交。',recommendation:'recommend_after_revision',duration:360,markers:[{time:30,label:'低频过重',type:'issue'},{time:80,label:'人声被遮盖',type:'issue'}]},
+  ],
+  courses:[
+    {id:1,title:'Suno AI音乐制作入门',type:'course_video',category:'AI工具教程',cover:'🎹',views:1280,status:'published'},
+    {id:2,title:'Udio高级Prompt技巧',type:'course_video',category:'AI工具教程',cover:'🎼',views:890,status:'published'},
+    {id:3,title:'基础乐理：和弦进行',type:'article',category:'基础乐理',cover:'📖',views:2100,status:'published'},
+    {id:4,title:'AI音乐版权法律指南',type:'article',category:'版权知识',cover:'⚖️',views:1560,status:'published'},
+    {id:5,title:'流行音乐流派解析',type:'article',category:'音乐流派',cover:'🎧',views:980,status:'published'},
+    {id:6,title:'Prompt工程：从描述到音乐',type:'course_video',category:'AI工具教程',cover:'💡',views:1450,status:'draft'},
+  ],
+  settlements:[
+    {id:1,songId:1,songTitle:'星河漫步',platform:'QQ音乐',plays:12500,rawRevenue:625.00,creatorRatio:0.7,creatorAmount:437.50,period:'2026-Q1',status:'paid'},
+    {id:2,songId:1,songTitle:'星河漫步',platform:'网易云',plays:8200,rawRevenue:410.00,creatorRatio:0.7,creatorAmount:287.00,period:'2026-Q1',status:'confirmed'},
+    {id:3,songId:3,songTitle:'春风十里',platform:'QQ音乐',plays:15800,rawRevenue:790.00,creatorRatio:0.7,creatorAmount:553.00,period:'2026-Q1',status:'exported'},
+    {id:4,songId:1,songTitle:'星河漫步',platform:'Spotify',plays:5600,rawRevenue:280.00,creatorRatio:0.7,creatorAmount:196.00,period:'2026-Q1',status:'pending'},
+  ],
+  teachers:[
+    {id:1,name:'刘老师',role:'reviewer',adminLevel:null,groupIds:[3],reviewCount:45,avgDuration:420,avgScore:81.5,recommendRate:0.42},
+    {id:2,name:'陈老师',role:'reviewer',adminLevel:null,groupIds:[3],reviewCount:32,avgDuration:390,avgScore:78.2,recommendRate:0.38},
+    {id:9,name:'周组长',role:'reviewer',adminLevel:'group_admin',groupIds:[3],reviewCount:50,avgDuration:380,avgScore:82.0,recommendRate:0.45},
+  ],
+  notifications:[
+    {id:1,type:'作品动态',title:'《星河漫步》已在QQ音乐上架',time:'2026-03-25 14:30',read:false},
+    {id:2,type:'收益通知',title:'2026-Q1收益结算已完成',time:'2026-03-20 10:00',read:false},
+    {id:3,type:'作品动态',title:'《深海之歌》评审完成，需要修改',time:'2026-03-18 16:45',read:true},
+    {id:4,type:'系统消息',title:'平台新增Udio教程课程',time:'2026-03-15 09:00',read:true},
+  ],
+  distributions:[
+    {songId:1,platform:'QQ音乐',status:'live',url:'#',submittedAt:'2026-02-25',liveDate:'2026-03-01'},
+    {songId:1,platform:'网易云音乐',status:'live',url:'#',submittedAt:'2026-02-26',liveDate:'2026-03-02'},
+    {songId:1,platform:'Spotify',status:'live',url:'#',submittedAt:'2026-02-28',liveDate:'2026-03-05'},
+    {songId:1,platform:'Apple Music',status:'submitted',url:null,submittedAt:'2026-04-05',liveDate:null},
+    {songId:3,platform:'QQ音乐',status:'live',url:'#',submittedAt:'2026-03-05',liveDate:'2026-03-10'},
+    {songId:3,platform:'网易云音乐',status:'live',url:'#',submittedAt:'2026-03-06',liveDate:'2026-03-11'},
+    {songId:3,platform:'Spotify',status:'pending',url:null,submittedAt:null,liveDate:null},
+    {songId:10,platform:'Apple Music',status:'submitted',url:null,submittedAt:'2026-02-20',liveDate:null},
+    {songId:11,platform:'酷狗音乐',status:'submitted',url:null,submittedAt:'2026-03-08',liveDate:null},
+  ],
+  revenueImports:[
+    {id:1,platform:'QQ音乐',fileName:'QQ音乐_2026Q1_收益报表.xlsx',totalRows:156,matchedRows:142,unmatchedRows:14,totalRevenue:28500.00,status:'completed',date:'2026-03-20'},
+    {id:2,platform:'网易云音乐',fileName:'网易云_2026Q1_结算明细.csv',totalRows:98,matchedRows:89,unmatchedRows:9,totalRevenue:15200.00,status:'completed',date:'2026-03-22'},
+    {id:3,platform:'Spotify',fileName:'Spotify_Q1_royalty_report.xlsx',totalRows:45,matchedRows:38,unmatchedRows:7,totalRevenue:8900.00,status:'matching',date:'2026-03-26'},
+  ],
+};
+
+
+const STATUS_MAP={
+  pending_review:{label:'待评分',color:'#d97706',bg:'#fef9ec'},
+  needs_revision:{label:'需修改',color:'#e53e3e',bg:'#fff0f0'},
+  reviewed:{label:'已评分',color:'#6366f1',bg:'#eef2ff'},
+  archived:{label:'已归档',color:'#64748b',bg:'#f1f5f9'},
+  ready_to_publish:{label:'待发行',color:'#0694a2',bg:'#e0f7fa'},
+  published:{label:'已发行',color:'#16a34a',bg:'#f0fdf4'},
+};
+
+const SETTLE_STATUS={pending:{l:'待确认',c:'var(--orange)'},confirmed:{l:'已确认',c:'var(--accent2)'},exported:{l:'已导出',c:'var(--green)'},paid:{l:'已打款',c:'var(--green2)'}};
+
+// ═══════════════════════════════════════════
+// CONTEXT & STATE
+// ═══════════════════════════════════════════
+const AppContext=createContext();
+
+function useApp(){return useContext(AppContext);}
+
+// ═══════════════════════════════════════════
+
+// SHARED COMPONENTS
+// ═══════════════════════════════════════════
+const css={
+  btn:`display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;`,
+  btnPrimary:`background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;box-shadow:0 2px 8px rgba(99,102,241,.25);`,
+  btnGhost:`background:transparent;color:var(--text2);border:1px solid var(--border);`,
+  btnSuccess:`background:linear-gradient(135deg,#16a34a,#0694a2);color:#fff;`,
+  btnDanger:`background:linear-gradient(135deg,#e53e3e,#c53030);color:#fff;`,
+  card:`background:#fff;border:1px solid #e8edf5;border-radius:var(--radius-lg);padding:20px;box-shadow:0 1px 4px rgba(99,102,241,.06);`,
+  input:`width:100%;padding:10px 14px;background:#fff;border:1.5px solid #e8edf5;border-radius:8px;color:#1e293b;font-size:14px;outline:none;transition:border-color .2s;`,
+  label:`display:block;font-size:13px;color:var(--text2);margin-bottom:6px;font-weight:500;`,
+  badge:(c,bg)=>`display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500;color:${c};background:${bg};`,
+  stat:`text-align:center;padding:16px;`,
+};
+
+function Btn({children,variant='primary',onClick,style='',disabled=false}){
+  const v={primary:css.btnPrimary,ghost:css.btnGhost,success:css.btnSuccess,danger:css.btnDanger};
+  return <button disabled={disabled} style={{...parseStyle(css.btn+v[variant]+style),opacity:disabled?.5:1}} onClick={onClick} onMouseOver={e=>{if(!disabled)e.target.style.transform='translateY(-1px)';e.target.style.boxShadow='0 4px 12px rgba(0,0,0,.3)'}} onMouseOut={e=>{e.target.style.transform='';e.target.style.boxShadow=''}}>{children}</button>;
+}
+
+function Badge({status}){const s=STATUS_MAP[status];return s?<span style={parseStyle(css.badge(s.color,s.bg))}>{s.label}</span>:null;}
+
+function StatCard({icon,label,value,sub,color='var(--accent2)'}){
+  return <div style={{background:'#fff',border:'1px solid var(--border)',borderRadius:'var(--radius-lg)',padding:'20px 16px',textAlign:'center',transition:'all .2s',position:'relative',overflow:'hidden'}} onMouseOver={e=>{e.currentTarget.style.borderColor=color;e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow=`0 8px 24px rgba(0,0,0,.3)`}} onMouseOut={e=>{e.currentTarget.style.borderColor='var(--border)';e.currentTarget.style.transform='';e.currentTarget.style.boxShadow=''}}>
+    <div style={{position:'absolute',top:0,left:0,right:0,height:3,background:color,opacity:.6}}/>
+    <div style={{fontSize:28,marginBottom:6}}>{icon}</div>
+    <div style={{fontSize:26,fontWeight:700,color,lineHeight:1.2}}>{value}</div>
+    <div style={{fontSize:13,color:'var(--text2)',marginTop:6,fontWeight:500}}>{label}</div>
+    {sub&&<div style={{fontSize:11,color:'var(--text3)',marginTop:3}}>{sub}</div>}
+  </div>;
+}
+
+function Tab({tabs,active,onChange}){
+  return <div style={{display:'flex',gap:4,background:'#f0f4fb',borderRadius:10,padding:3,marginBottom:20,flexWrap:'wrap'}}>
+    {tabs.map(t=><button key={t.key} onClick={()=>onChange(t.key)} style={{padding:'8px 16px',borderRadius:8,border:'none',fontSize:13,fontWeight:500,cursor:'pointer',transition:'all .2s',background:active===t.key?'var(--accent)':'transparent',color:active===t.key?'#fff':'var(--text2)',whiteSpace:'nowrap'}}>{t.label}{t.count!=null&&<span style={{marginLeft:6,fontSize:11,opacity:.7}}>({t.count})</span>}</button>)}
+  </div>;
+}
+
+function Modal({title,open,onClose,children,width=520}){
+  if(!open)return null;
+  return <div style={{position:'fixed',inset:0,zIndex:1000}}>
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',backdropFilter:'blur(4px)'}} onClick={onClose}/>
+    <div style={{position:'fixed',inset:0,overflowY:'auto'}} onClick={onClose}>
+      <div style={{minHeight:'100%',display:'flex',alignItems:'center',justifyContent:'center',padding:'48px 16px'}}>
+        <div className="modal-in" style={{position:'relative',background:'#fff',border:'1px solid var(--border)',borderRadius:'var(--radius-lg)',padding:24,width,maxWidth:'90vw',flexShrink:0,boxShadow:'0 20px 60px rgba(99,102,241,.12)'}} onClick={e=>e.stopPropagation()}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+            <h3 style={{fontSize:18,fontWeight:600}}>{title}</h3>
+            <button onClick={onClose} style={{background:'none',border:'none',color:'var(--text3)',fontSize:20,cursor:'pointer',padding:'4px 8px',borderRadius:4}} onMouseOver={e=>e.currentTarget.style.color='var(--red)'} onMouseOut={e=>e.currentTarget.style.color='var(--text3)'}>✕</button>
+          </div>
+          {children}
+        </div>
+      </div>
+    </div>
+  </div>;
+}
+
+function WaveformPlayer({small=false}){
+  const bars=small?20:40;
+  const heights=useMemo(()=>Array.from({length:bars}).map(()=>8+Math.random()*(small?22:42)),[bars,small]);
+  const delays=useMemo(()=>Array.from({length:bars}).map(()=>[0.5+Math.random()*0.8,Math.random()*0.5]),[bars]);
+  return <div style={{display:'flex',alignItems:'end',gap:small?2:3,height:small?30:50,padding:'8px 0'}}>
+    {heights.map((h,i)=><div key={i} style={{width:small?3:4,borderRadius:2,background:`linear-gradient(to top, #6366f1, #818cf8)`,animation:`waveAnim ${delays[i][0]}s ease-in-out ${delays[i][1]}s infinite`,height:h}}/>)}
+    <div style={{marginLeft:8,fontSize:12,color:'var(--text2)',whiteSpace:'nowrap'}}>{small?'0:30':'3:24'} / {small?'0:30':'3:24'}</div>
+  </div>;
+}
+
+function SearchBar({placeholder='搜索...',value,onChange}){
+  return <div style={{position:'relative'}}>
+    <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',fontSize:16,color:'var(--text3)'}}>🔍</span>
+    <input style={{...parseStyle(css.input),paddingLeft:38}} placeholder={placeholder} value={value||''} onChange={e=>onChange&&onChange(e.target.value)}/>
+  </div>;
+}
+
+function Table({columns,data,onRowClick}){
+  return <div style={{overflowX:'auto'}}>
+    <table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}>
+      <thead><tr>{columns.map((c,i)=><th key={i} style={{padding:'10px 12px',textAlign:'left',color:'var(--text2)',fontWeight:500,borderBottom:'1px solid var(--border)',whiteSpace:'nowrap',fontSize:12,textTransform:'uppercase',letterSpacing:'.5px'}}>{c.title}</th>)}</tr></thead>
+      <tbody>{data.map((row,ri)=><tr key={ri} onClick={()=>onRowClick&&onRowClick(row)} style={{cursor:onRowClick?'pointer':'default',transition:'background .15s'}} onMouseOver={e=>e.currentTarget.style.background='#f8faff'} onMouseOut={e=>e.currentTarget.style.background='transparent'}>
+        {columns.map((c,ci)=><td key={ci} style={{padding:'12px',borderBottom:'1px solid var(--border)',color:'var(--text)'}}>{c.render?c.render(row[c.key],row):row[c.key]}</td>)}
+      </tr>)}</tbody>
+    </table>
+  </div>;
+}
+
+function parseStyle(str){
+  if(typeof str!=='string')return str;
+  const obj={};
+  str.split(';').forEach(p=>{
+    const [k,v]=p.split(':').map(s=>s&&s.trim());
+    if(k&&v){
+      const key=k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase());
+      obj[key]=v;
+    }
+  });
+  return obj;
+}
+
+function Toast({message,type='success'}){
+  if(!message)return null;
+  const colors={success:'var(--green)',error:'var(--red)',info:'var(--accent2)'};
+  return <div className="fade-in" style={{position:'fixed',top:20,right:20,zIndex:9999,padding:'12px 24px',borderRadius:10,background:'#fff',border:`1px solid ${colors[type]}`,color:colors[type],fontSize:14,fontWeight:500,boxShadow:'0 8px 32px rgba(0,0,0,.4)'}}>
+    {type==='success'?'✅':type==='error'?'❌':'ℹ️'} {message}
+  </div>;
+}
+
+function Empty({text='暂无数据'}){
+  return <div style={{textAlign:'center',padding:60,color:'var(--text3)'}}>
+    <div style={{fontSize:48,marginBottom:12}}>📭</div>
+    <div>{text}</div>
+  </div>;
+}
+
+// ═══════════════════════════════════════════
+// LAYOUT
+// ═══════════════════════════════════════════
+function Sidebar({items,active,onNav,role,onLogout}){
+  const roleColors={student:'var(--accent)',teacher:'var(--green)',admin:'var(--orange)'};
+  const roleLabels={student:'创作者端',teacher:'评审端',admin:'管理端'};
+  return <div style={{width:160,height:'100vh',background:'#fff',borderRight:'1px solid var(--border)',display:'flex',flexDirection:'column',position:'fixed',left:0,top:0,zIndex:100}}>
+    <div style={{padding:'15px 12px 13px',borderBottom:'1px solid #f0f4fb'}}>
+      <div style={{fontSize:13,fontWeight:700,color:'#1e293b',display:'flex',alignItems:'center',gap:9}}>
+        <span style={{width:34,height:34,borderRadius:10,background:'linear-gradient(135deg,#f97316,#ef4444)',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0,boxShadow:'0 4px 10px rgba(239,68,68,.22)'}}>🎵</span><span>AI音乐平台</span>
+      </div>
+      <div style={{marginTop:4,fontSize:10,padding:'2px 7px',borderRadius:20,background:'#eef2ff',color:'#6366f1',display:'inline-block',fontWeight:600}}>{roleLabels[role]}</div>
+    </div>
+    <nav style={{flex:1,padding:'6px 8px 8px',overflowY:'auto',minHeight:0}}>
+      {items.map(item=>{
+        if(item.divider)return <div key={item.key} style={{padding:'10px 6px 3px',fontSize:11,color:'#94a3b8',fontWeight:500}}>{item.label}</div>;
+        return <button key={item.key} onClick={()=>onNav(item.key)} style={{width:'100%',display:'flex',alignItems:'center',gap:7,padding:'8px 10px',border:'none',fontSize:12.5,cursor:'pointer',transition:'all .15s',background:active===item.key?'rgba(99,102,241,.09)':'transparent',color:active===item.key?'#6366f1':'#64748b',borderRadius:8,fontWeight:active===item.key?600:400,margin:'0 0 1px'}}>
+          <span style={{fontSize:16,width:22,textAlign:'center'}}>{item.icon}</span>{item.label}
+          {item.badge>0&&<span style={{marginLeft:'auto',background:'#e53e3e',color:'#fff',fontSize:9,borderRadius:10,padding:'1px 7px',fontWeight:600}}>{item.badge}</span>}
+        </button>;
+      })}
+    </nav>
+    <div style={{padding:12,borderTop:'1px solid var(--border)',background:'#f0f4fb',flexShrink:0}}>
+      <button onClick={()=>{if(window.confirm('确认退出登录？退出后需要重新登录。'))onLogout();}} style={{width:'100%',padding:'8px 12px',border:'1px solid #e8edf5',borderRadius:8,background:'transparent',color:'#94a3b8',fontSize:12,cursor:'pointer',display:'flex',alignItems:'center',gap:8,transition:'all .15s'}} onMouseOver={e=>{e.currentTarget.style.borderColor='#fca5a5';e.currentTarget.style.color='#e53e3e';e.currentTarget.style.background='#fff5f5';}} onMouseOut={e=>{e.currentTarget.style.borderColor='#e8edf5';e.currentTarget.style.color='#94a3b8';e.currentTarget.style.background='transparent';}}>
+        🚪 退出登录
+      </button>
+    </div>
+  </div>;
+}
+
+function PageLayout({title,subtitle,actions,children}){
+  return <div style={{marginLeft:160,minHeight:'100vh',background:'linear-gradient(135deg,#d6e4f7 0%,#e8eef8 35%,#f0f4fb 65%,#f8faff 100%)'}}>
+    <div className="fade-in" style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:24}}>
+      <div>
+        <h1 style={{fontSize:18,fontWeight:700,color:'#1e293b',margin:0}}>{title}{subtitle&&<span style={{fontSize:12,color:'#94a3b8',fontWeight:400,marginLeft:8}}>{subtitle}</span>}</h1>
+      </div>
+      {actions&&<div style={{display:'flex',gap:8}}>{actions}</div>}
+    </div>
+    <div className="fade-in" style={{animationDelay:'.1s'}}>{children}</div>
+  </div>;
+}
+
+// ═══════════════════════════════════════════
+// LOGIN PAGE
+// ═══════════════════════════════════════════
+
+
+// ═══════════════════════════════════════════
+// 评审端登录页（仅登录，账号由管理员创建）
+// ═══════════════════════════════════════════
+function LoginPage({onLogin}){
+  const [showPwd,setShowPwd]=useState(false);
+  const [forgotOpen,setForgotOpen]=useState(false);
+  const [attempts,setAttempts]=useState(0);
+  const [tip,setTip]=useState('');
+
+  const iStyle={width:'100%',padding:'11px 14px',background:'#fff',border:'1.5px solid #e2e8f0',borderRadius:9,color:'#1e293b',fontSize:14,outline:'none',transition:'border-color .2s'};
+  const fi=e=>e.target.style.borderColor='#6366f1';
+  const fo=e=>e.target.style.borderColor='#e2e8f0';
+
+  return (
+    <div style={{minHeight:'100vh',display:'flex',background:'linear-gradient(140deg,#dce6f8 0%,#e2e9f8 30%,#e8ecf8 55%,#dce9f8 80%,#deeef9 100%)'}}>
+
+      {/* LEFT HERO */}
+      <div style={{flex:'1 1 56%',display:'flex',flexDirection:'column',justifyContent:'center',padding:'56px 56px 40px',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',top:38,left:38,display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:10,opacity:.45}}>
+          {Array.from({length:10}).map((_,i)=>(<div key={i} style={{width:5,height:5,borderRadius:'50%',background:'#0694a2'}}/>))}
+        </div>
+        <div className="fade-in" style={{position:'relative',zIndex:1}}>
+          <h1 style={{fontSize:44,fontWeight:900,color:'#1a1d35',lineHeight:1.22,marginBottom:14,letterSpacing:'-0.5px'}}>
+            专业评审，<br/>发现优秀音乐作品
+          </h1>
+          <p style={{fontSize:16,color:'#4a5568',lineHeight:1.65}}>聆听、评分、反馈，帮助创作者成长</p>
+          <div style={{marginTop:32,display:'flex',flexDirection:'column',gap:14}}>
+            {[
+              {icon:'🎧',text:'专业音频播放器，精准标注评审要点'},
+              {icon:'⭐',text:'多维度评分系统：技术·创意·商业潜力'},
+              {icon:'📊',text:'实时绩效看板，清晰展示评审成果'},
+            ].map((f,i)=>(
+              <div key={i} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 16px',background:'rgba(255,255,255,.6)',borderRadius:12,backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,.8)'}}>
+                <span style={{fontSize:22}}>{f.icon}</span>
+                <span style={{fontSize:13.5,color:'#374151',fontWeight:500}}>{f.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT CARD */}
+      <div style={{flex:'0 0 42%',display:'flex',alignItems:'center',justifyContent:'center',padding:'40px 44px'}}>
+        <div className="fade-in" style={{width:'100%',maxWidth:336,background:'#fff',borderRadius:18,padding:'28px 26px',boxShadow:'0 8px 40px rgba(6,148,162,.12),0 2px 8px rgba(0,0,0,.05)'}}>
+
+          <div style={{textAlign:'center',marginBottom:24}}>
+            <div style={{width:50,height:50,borderRadius:14,background:'linear-gradient(135deg,#0694a2,#0e7490)',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:24,marginBottom:10,boxShadow:'0 6px 18px rgba(6,148,162,.3)'}}>🎧</div>
+            <div style={{fontSize:14.5,fontWeight:700,color:'#1e293b',marginBottom:3}}>AI音乐教学与版权代理平台</div>
+            <div style={{fontSize:11.5,color:'#94a3b8'}}>评审端 · 专业评审工作台</div>
+          </div>
+
+          {/* 无注册入口，仅登录标题 */}
+          <div style={{fontSize:15,fontWeight:600,color:'#1e293b',marginBottom:16,paddingBottom:12,borderBottom:'1px solid #f0f4fb'}}>
+            评审账号登录
+          </div>
+
+          <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:8,padding:'10px 12px',marginBottom:16,fontSize:12,color:'#166534'}}>
+            ℹ️ 评审账号由平台管理员统一创建，如需账号请联系管理员
+          </div>
+
+          {attempts>=3&&(
+            <div style={{padding:'7px 10px',background:'#fff0f0',border:'1px solid #fca5a5',borderRadius:7,marginBottom:10,fontSize:12,color:'#e53e3e'}}>
+              ⚠️ 已连续错误 {attempts} 次{attempts>=5?'，账号已锁定':'，5次后锁定'}
+            </div>
+          )}
+
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            <input style={iStyle} placeholder="手机号 / 邮箱" defaultValue="teacher@ai.com" onFocus={fi} onBlur={fo}/>
+            <div style={{position:'relative'}}>
+              <input style={iStyle} type={showPwd?'text':'password'} placeholder="密码" onFocus={fi} onBlur={fo}/>
+              <button onClick={()=>setShowPwd(v=>!v)} style={{position:'absolute',right:11,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',fontSize:14,color:'#94a3b8'}}>
+                {showPwd?'🙈':'👁'}
+              </button>
+            </div>
+          </div>
+
+          <button style={{width:'100%',marginTop:14,padding:'13px',border:'none',borderRadius:10,background:'linear-gradient(135deg,#0694a2,#0e7490)',color:'#fff',fontSize:15,fontWeight:600,cursor:'pointer',boxShadow:'0 4px 16px rgba(6,148,162,.35)',transition:'all .2s'}}
+            onClick={()=>{setAttempts(v=>v+1);onLogin('teacher');}}
+            onMouseOver={e=>e.currentTarget.style.transform='translateY(-1px)'}
+            onMouseOut={e=>e.currentTarget.style.transform=''}>
+            登录
+          </button>
+
+          <div style={{textAlign:'center',marginTop:12}}>
+            <a href="#" onClick={e=>{e.preventDefault();setForgotOpen(true);}} style={{fontSize:12,color:'#0694a2',textDecoration:'none'}}>忘记密码？</a>
+          </div>
+        </div>
+      </div>
+
+      {/* 找回密码弹窗 */}
+      {forgotOpen&&(
+        <div style={{position:'fixed',inset:0,zIndex:999,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{position:'absolute',inset:0,background:'rgba(15,23,42,.25)',backdropFilter:'blur(8px)'}} onClick={()=>setForgotOpen(false)}/>
+          <div className="modal-in" style={{position:'relative',background:'#fff',borderRadius:16,padding:28,width:440,maxWidth:'90vw',boxShadow:'0 20px 60px rgba(6,148,162,.14)'}}>
+            <h3 style={{fontSize:16,fontWeight:600,marginBottom:16}}>找回密码</h3>
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              <input style={iStyle} placeholder="注册手机号 / 邮箱" onFocus={fi} onBlur={fo}/>
+              <div style={{display:'flex',gap:8}}>
+                <input style={{...iStyle,flex:1}} placeholder="验证码" onFocus={fi} onBlur={fo}/>
+                <button style={{padding:'11px 10px',border:'1.5px solid #e2e8f0',borderRadius:9,background:'#fff',color:'#64748b',fontSize:11.5,cursor:'pointer',whiteSpace:'nowrap'}}>发送验证码</button>
+              </div>
+              <input style={iStyle} type="password" placeholder="新密码（≥8位）" onFocus={fi} onBlur={fo}/>
+              <input style={iStyle} type="password" placeholder="确认新密码" onFocus={fi} onBlur={fo}/>
+              <button onClick={()=>{setForgotOpen(false);setTip('✅ 密码重置成功');setTimeout(()=>setTip(''),3000);}} style={{padding:'12px',border:'none',borderRadius:10,background:'linear-gradient(135deg,#0694a2,#0e7490)',color:'#fff',fontSize:14,fontWeight:600,cursor:'pointer',boxShadow:'0 4px 12px rgba(6,148,162,.3)'}}>确认重置</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tip&&(<div className="fade-in" style={{position:'fixed',top:20,right:20,zIndex:9999,padding:'10px 16px',borderRadius:10,background:'#fff',border:'1.5px solid #99f6e4',color:'#0694a2',fontSize:13,fontWeight:500,boxShadow:'0 4px 20px rgba(6,148,162,.15)'}}>{tip}</div>)}
+    </div>
+  );
+}
+
+
+function TeacherDashboard(){
+  const {nav,songs}=useApp();
+  const pending=songs.filter(s=>s.status==='pending_review');
+  return <PageLayout title="评审工作台" subtitle="刘老师，你好" actions={<Btn onClick={()=>nav('teacher_queue')}>📋 进入评审列表 →</Btn>}>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16,marginBottom:24}}>
+      <StatCard icon="📋" label="待评审" value={pending.length} color="var(--orange)"/>
+      <StatCard icon="✅" label="本月已完成" value="45" color="var(--green2)"/>
+      <StatCard icon="⏱" label="平均用时" value="7分钟" color="var(--accent2)"/>
+      <StatCard icon="📊" label="平均评分" value="81.5" color="var(--pink)"/>
+    </div>
+    <div style={parseStyle(css.card)}>
+      <h3 style={{fontSize:15,fontWeight:600,marginBottom:16}}>📊 本月评审趋势</h3>
+      <div style={{display:'flex',alignItems:'end',gap:6,height:120,padding:'0 12px'}}>
+        {[8,12,6,15,10,9,14,11,7,13,8,12,10,15,6,9,11,14,8,12,10,7,15,13,9,11,8,14].map((v,i)=>
+          <div key={i} style={{flex:1,background:`linear-gradient(to top, #6366f1, #818cf8)`,borderRadius:'3px 3px 0 0',height:`${v*7}px`,opacity:.6+v/30,transition:'all .2s'}} onMouseOver={e=>e.target.style.opacity='1'} onMouseOut={e=>e.target.style.opacity=''+(0.6+v/30)}/>
+        )}
+      </div>
+      <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'var(--text3)',marginTop:6,padding:'0 12px'}}><span>3月1日</span><span>3月28日</span></div>
+    </div>
+  </PageLayout>;
+}
+
+function TeacherQueue(){
+  const {nav,setReviewSong,songs}=useApp();
+  const pending=songs.filter(s=>s.status==='pending_review');
+  const [filter,setFilter]=useState({genre:'',name:''});
+  const filtered=pending.filter(s=>(!filter.genre||s.genre===filter.genre)&&(!filter.name||MOCK.students.find(st=>st.id===s.userId)?.name.includes(filter.name)));
+
+  return <PageLayout title="待评审列表" subtitle={`${filtered.length} 首歌曲等待评审`}>
+    <div style={{display:'flex',gap:12,marginBottom:20}}>
+      <div style={{flex:1}}><SearchBar placeholder="搜索创作者姓名" value={filter.name} onChange={v=>setFilter(p=>({...p,name:v}))}/></div>
+      <select style={{...parseStyle(css.input),width:160}} value={filter.genre} onChange={e=>setFilter(p=>({...p,genre:e.target.value}))}>
+        <option value="">全部流派</option><option>Pop</option><option>Rock</option><option>电子</option><option>Hip-Hop</option><option>民谣</option><option>古典</option>
+      </select>
+    </div>
+    <div style={parseStyle(css.card)}>
+      <Table columns={[
+        {key:'cover',title:'',render:(v,r)=><span style={{fontSize:24}}>{r.cover}</span>},
+        {key:'title',title:'歌曲名',render:(v,r)=><span style={{fontWeight:600}}>{v}</span>},
+        {key:'userId',title:'创作者',render:v=>MOCK.students.find(s=>s.id===v)?.name},
+        {key:'source',title:'来源',render:v=>v==='assignment'?<span style={{fontSize:11,padding:'2px 8px',borderRadius:10,background:'rgba(108,92,231,.12)',color:'var(--accent2)'}}>📝 作业</span>:<span style={{fontSize:11,padding:'2px 8px',borderRadius:10,background:'rgba(0,206,201,.12)',color:'var(--green)'}}>⬆️ 自由上传</span>},
+        {key:'genre',title:'流派'},
+        {key:'aiTool',title:'创作工具'},
+        {key:'createdAt',title:'提交时间'},
+        {key:'id',title:'操作',render:(v,r)=><Btn onClick={()=>{setReviewSong(r);nav('teacher_review');}}>开始评审 →</Btn>},
+      ]} data={filtered}/>
+      {filtered.length===0&&<Empty text="暂无待评审歌曲"/>}
+    </div>
+  </PageLayout>;
+}
+
+function TeacherReview(){
+  const {reviewSong,nav,showToast,songs,setSongs,setAssignmentSubs,setReviewSong}=useApp();
+  const [scores,setScores]=useState({technique:75,creativity:80,commercial:70});
+  const [comment,setComment]=useState('');
+  const [quickTags,setQuickTags]=useState([]);
+  const [recommendation,setRecommendation]=useState('strongly_recommend');
+  const [markers]=useState([]);
+  const song=reviewSong||songs.find(s=>s.status==='pending_review');
+  const student=MOCK.students.find(s=>s.id===song?.userId);
+  const total=(scores.technique*0.3+scores.creativity*0.4+scores.commercial*0.3).toFixed(1);
+  const tags=['编曲结构完整','旋律记忆点强','人声融合度高','歌词有深度','建议优化混音','建议调整BPM','Prompt技巧有进步','建议丰富流派元素'];
+
+  if(!song)return <PageLayout title="评审"><Empty text="请从待评审列表选择歌曲"/><Btn onClick={()=>nav('teacher_queue')}>返回列表</Btn></PageLayout>;
+
+  return <PageLayout title="歌曲评审" subtitle={`${song.title} · ${student?.name}`} actions={<Btn variant="ghost" onClick={()=>nav('teacher_queue')}>← 返回列表</Btn>}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
+      {/* Left: Song Info + Player */}
+      <div>
+        <div style={parseStyle(css.card)}>
+          <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:16}}>
+            <div style={{fontSize:48,width:72,height:72,background:'#f0f4fb',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center'}}>{song.cover}</div>
+            <div>
+              <div style={{fontSize:18,fontWeight:600}}>{song.title}</div>
+              <div style={{fontSize:13,color:'var(--text3)'}}>by {student?.name} · {song.genre} · {song.bpm} BPM</div>
+            </div>
+          </div>
+          <div style={{padding:16,background:'#f0f4fb',borderRadius:10,marginBottom:14}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+              <div style={{display:'flex',gap:8}}>
+                <button onClick={()=>showToast('▶ 播放中（原型演示）')} style={{background:'var(--accent)',border:'none',borderRadius:'50%',width:36,height:36,color:'#fff',fontSize:16,cursor:'pointer'}}>▶</button>
+                <button onClick={()=>showToast('A-B循环标记已设置')} style={{background:'#f8faff',border:'none',borderRadius:6,padding:'0 12px',color:'var(--text2)',fontSize:12,cursor:'pointer'}}>A-B循环</button>
+              </div>
+              <select style={{background:'#f8faff',border:'none',borderRadius:6,padding:'4px 8px',color:'var(--text2)',fontSize:12}}>
+                <option>1.0x</option><option>0.5x</option><option>0.75x</option><option>1.25x</option><option>1.5x</option>
+              </select>
+            </div>
+            <WaveformPlayer/>
+          </div>
+          <div style={{fontSize:13}}>
+            <div style={{marginBottom:10}}><span style={{color:'var(--text3)'}}>AI工具：</span>{song.aiTool}</div>
+            <div style={{marginBottom:10}}><span style={{color:'var(--text3)'}}>Prompt：</span><div style={{padding:8,background:'#f0f4fb',borderRadius:6,marginTop:4,fontSize:12,color:'var(--text2)',lineHeight:1.6}}>{song.prompt}</div></div>
+            <div><span style={{color:'var(--text3)'}}>歌词：</span><div style={{padding:8,background:'#f0f4fb',borderRadius:6,marginTop:4,fontSize:12,color:'var(--text2)',lineHeight:1.6,maxHeight:120,overflow:'auto'}}>这里是歌词内容预览区域...\n每一句歌词都会在这里显示\n方便老师边听边看歌词</div></div>
+          </div>
+          {/* AI Analysis Panel */}
+          <details style={{marginTop:16}}>
+            <summary style={{cursor:'pointer',fontSize:13,color:'var(--accent2)',padding:'8px 0'}}>🤖 AI预分析报告（仅供参考）</summary>
+            <div style={{padding:12,background:'#f0f4fb',borderRadius:8,marginTop:8,fontSize:12,display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+              {[['检测BPM',`${song.bpm} ✅ 一致`],['调性','C Major'],['响度','-14.2 LUFS'],['频谱','中频突出'],['段落','前奏-主歌-副歌-间奏-副歌-尾奏'],['制作度','中等偏上']].map(([k,v])=>
+                <div key={k} style={{padding:6,background:'#fff',borderRadius:4}}><span style={{color:'var(--text3)'}}>{k}：</span>{v}</div>
+              )}
+            </div>
+          </details>
+        </div>
+      </div>
+
+      {/* Right: Scoring Form */}
+      <div>
+        <div style={parseStyle(css.card)}>
+          <h3 style={{fontSize:16,fontWeight:600,marginBottom:20}}>📝 评分表单</h3>
+          {/* Score Sliders */}
+          {[{key:'technique',label:'技术熟练度',weight:'30%'},{key:'creativity',label:'创意立意',weight:'40%'},{key:'commercial',label:'商业传播潜力',weight:'30%'}].map(dim=>
+            <div key={dim.key} style={{marginBottom:20}}>
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:13,marginBottom:6}}>
+                <span>{dim.label} <span style={{color:'var(--text3)'}}>({dim.weight})</span></span>
+                <span style={{fontWeight:700,color:scores[dim.key]>=80?'var(--green2)':scores[dim.key]>=60?'var(--orange)':'var(--red)',fontSize:18}}>{scores[dim.key]}</span>
+              </div>
+              <input type="range" min="0" max="100" value={scores[dim.key]} onChange={e=>setScores(p=>({...p,[dim.key]:+e.target.value}))} style={{width:'100%',accentColor:'var(--accent)'}}/>
+            </div>
+          )}
+          <div style={{textAlign:'center',padding:16,background:'linear-gradient(135deg,rgba(108,92,231,.15),rgba(0,206,201,.1))',borderRadius:12,marginBottom:20}}>
+            <div style={{fontSize:12,color:'var(--text3)'}}>加权总分</div>
+            <div style={{fontSize:42,fontWeight:700,color:total>=80?'var(--green2)':total>=60?'var(--orange)':'var(--red)'}}>{total}</div>
+          </div>
+
+          {/* Quick Tags */}
+          <div style={{marginBottom:16}}>
+            <label style={parseStyle(css.label)}>快捷评语（点击插入）</label>
+            <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+              {tags.map(t=><button key={t} onClick={()=>{setQuickTags(p=>p.includes(t)?p.filter(x=>x!==t):[...p,t]);if(!quickTags.includes(t))setComment(c=>c+(c?'；':'')+t);}} style={{padding:'4px 12px',borderRadius:16,border:`1px solid ${quickTags.includes(t)?'var(--accent)':'var(--border)'}`,background:quickTags.includes(t)?'var(--accent-glow)':'transparent',color:quickTags.includes(t)?'var(--accent2)':'var(--text3)',fontSize:12,cursor:'pointer',transition:'all .2s'}}>{t}</button>)}
+            </div>
+          </div>
+
+          {/* Comment */}
+          <div style={{marginBottom:16}}>
+            <label style={parseStyle(css.label)}>专业评语 <span style={{color:'var(--text3)'}}>（≥20字）</span></label>
+            <textarea style={{...parseStyle(css.input),height:100,resize:'vertical'}} value={comment} onChange={e=>setComment(e.target.value)} placeholder="请输入详细的专业指导评语..."/>
+          </div>
+
+          {/* Recommendation */}
+          <div style={{marginBottom:20}}>
+            <label style={parseStyle(css.label)}>发行建议</label>
+            {[{v:'strongly_recommend',l:'🌟 强烈推荐发行',c:'var(--green2)'},{v:'recommend_after_revision',l:'📝 建议修改后发行',c:'var(--orange)'},{v:'not_recommend',l:'⏸ 暂不推荐',c:'var(--text3)'}].map(o=>
+              <label key={o.v} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 12px',marginBottom:4,borderRadius:8,cursor:'pointer',background:recommendation===o.v?'var(--bg2)':'transparent',border:`1px solid ${recommendation===o.v?'var(--border2)':'transparent'}`,fontSize:13,color:o.c,transition:'all .15s'}}>
+                <input type="radio" name="rec" value={o.v} checked={recommendation===o.v} onChange={()=>setRecommendation(o.v)}/>{o.l}
+              </label>
+            )}
+          </div>
+
+          <Btn variant="success" style="width:100%;justify-content:center;padding:14px;font-size:15px;" onClick={()=>{
+            if(comment.length<20){showToast('❌ 评语至少20字');return;}
+            const score=+total;
+            // 根据推荐等级和分数决定新状态
+            const newStatus=
+              recommendation==='strongly_recommend'&&score>=80?'ready_to_publish':
+              recommendation==='recommend_after_revision'?'needs_revision':'reviewed';
+            // 更新 songs state
+            setSongs(prev=>prev.map(s=>s.id===song.id?{
+              ...s,status:newStatus,score,
+              reviewComment:recommendation==='recommend_after_revision'?comment:s.reviewComment
+            }:s));
+            // 同步更新 assignmentSubs（若是作业来源）
+            if(song.source==='assignment'){
+              setAssignmentSubs(prev=>prev.map(sub=>
+                sub.assignmentId===song.assignmentId&&sub.userId===song.userId
+                  ?{...sub,status:newStatus==='needs_revision'?'needs_revision':'reviewed',score}
+                  :sub
+              ));
+            }
+            setReviewSong(null);
+            const statusLabel={ready_to_publish:'已流转至待发行 🚀',needs_revision:'已发回修改 📝',reviewed:'已入库待发行 📋'}[newStatus];
+            showToast(`✅ 评审完成！总分 ${score} — ${statusLabel}`);
+            nav('teacher_queue');
+          }}>✅ 提交评审</Btn>
+        </div>
+      </div>
+    </div>
+  </PageLayout>;
+}
+
+function TeacherStats(){
+  return <PageLayout title="我的绩效" subtitle="2026年3月">
+    <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16,marginBottom:24}}>
+      <StatCard icon="📝" label="批改数量" value="45" color="var(--accent2)"/>
+      <StatCard icon="⏱" label="总评审时长" value="5.2h" color="var(--green)"/>
+      <StatCard icon="📊" label="平均评分" value="81.5" color="var(--orange)"/>
+      <StatCard icon="🚀" label="推荐发行率" value="42%" color="var(--pink)"/>
+    </div>
+    <div style={parseStyle(css.card)}>
+      <h3 style={{fontSize:15,fontWeight:600,marginBottom:16}}>历史评审记录</h3>
+      <Table columns={[
+        {key:'title',title:'歌曲'},
+        {key:'student',title:'创作者'},
+        {key:'score',title:'总分',render:v=><span style={{fontWeight:600,color:v>=80?'var(--green2)':'var(--orange)'}}>{v}</span>},
+        {key:'rec',title:'建议'},
+        {key:'duration',title:'用时'},
+        {key:'date',title:'日期'},
+      ]} data={[
+        {title:'星河漫步',student:'张小明',score:92,rec:'🌟 强烈推荐',duration:'8分钟',date:'2026-01-22'},
+        {title:'深海之歌',student:'张小明',score:65,rec:'📝 建议修改',duration:'6分钟',date:'2026-03-16'},
+        {title:'春风十里',student:'王强',score:85,rec:'🌟 强烈推荐',duration:'7分钟',date:'2026-02-18'},
+      ]}/>
+    </div>
+  </PageLayout>;
+}
+
+function TeacherProfile(){
+  const {showToast}=useApp();
+  const [pwdModal,setPwdModal]=useState(false);
+  const [editModal,setEditModal]=useState(false);
+  return <PageLayout title="个人中心" subtitle="老师账户管理">
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
+      <div style={parseStyle(css.card)}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+          <h3 style={{fontSize:15,fontWeight:600}}>👤 基本信息</h3>
+          <Btn variant="ghost" style="font-size:12px;padding:4px 12px;" onClick={()=>setEditModal(true)}>✏️ 编辑</Btn>
+        </div>
+        <div style={{display:'grid',gap:10,fontSize:13}}>
+          {[['姓名','刘老师'],['手机号','135****8888'],['邮箱','teacher@ai.com'],['用户属性','🎧 评审'],['所属用户组','评审专家组'],['入职时间','2025-12-01']].map(([k,v])=>
+            <div key={k} style={{display:'flex',justifyContent:'space-between',padding:'8px 12px',background:'#f0f4fb',borderRadius:6}}>
+              <span style={{color:'var(--text3)'}}>{k}</span><span>{v}</span>
+            </div>
+          )}
+        </div>
+        <div style={{marginTop:16,display:'flex',gap:8}}>
+          <Btn variant="ghost" onClick={()=>setPwdModal(true)}>🔒 修改密码</Btn>
+        </div>
+      </div>
+      <div>
+        <div style={{...parseStyle(css.card),marginBottom:16}}>
+          <h3 style={{fontSize:15,fontWeight:600,marginBottom:12}}>📊 本月绩效摘要</h3>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            {[['批改数量','45'],['平均用时','7分钟'],['平均评分','81.5'],['推荐发行率','42%']].map(([k,v])=>
+              <div key={k} style={{padding:10,background:'#f0f4fb',borderRadius:6,textAlign:'center'}}>
+                <div style={{fontSize:18,fontWeight:700,color:'var(--accent2)'}}>{v}</div>
+                <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>{k}</div>
+              </div>
+            )}
+          </div>
+        </div>
+        <div style={parseStyle(css.card)}>
+          <h3 style={{fontSize:15,fontWeight:600,marginBottom:12}}>🕐 登录日志</h3>
+          <div style={{fontSize:12}}>
+            {[['2026-03-28 08:30','10.0.0.5','Chrome / Mac'],['2026-03-27 09:00','10.0.0.5','Chrome / Mac'],['2026-03-26 08:45','10.0.0.8','Firefox / Windows']].map(([t,ip,ua],i)=>
+              <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid var(--border)',color:'var(--text2)'}}>
+                <span>{t}</span><span>{ip}</span><span style={{color:'var(--text3)'}}>{ua}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+    <Modal title="编辑个人信息" open={editModal} onClose={()=>setEditModal(false)}>
+      <div style={{display:'flex',flexDirection:'column',gap:14}}>
+        <div><label style={parseStyle(css.label)}>姓名</label><input style={parseStyle(css.input)} defaultValue="刘老师"/></div>
+        <div><label style={parseStyle(css.label)}>邮箱</label><input style={parseStyle(css.input)} defaultValue="teacher@ai.com"/></div>
+        <Btn style="width:100%;justify-content:center;" onClick={()=>{setEditModal(false);showToast('信息已更新')}}>保存</Btn>
+      </div>
+    </Modal>
+    <Modal title="修改密码" open={pwdModal} onClose={()=>setPwdModal(false)}>
+      <div style={{display:'flex',flexDirection:'column',gap:14}}>
+        <div><label style={parseStyle(css.label)}>当前密码</label><input style={parseStyle(css.input)} type="password" placeholder="请输入当前密码"/></div>
+        <div><label style={parseStyle(css.label)}>新密码</label><input style={parseStyle(css.input)} type="password" placeholder="≥8位，含字母+数字"/></div>
+        <div><label style={parseStyle(css.label)}>确认新密码</label><input style={parseStyle(css.input)} type="password" placeholder="再次输入新密码"/></div>
+        <Btn style="width:100%;justify-content:center;" onClick={()=>{setPwdModal(false);showToast('密码修改成功')}}>确认修改</Btn>
+      </div>
+    </Modal>
+  </PageLayout>;
+}
+
+// ═══════════════════════════════════════════
+// ADMIN PAGES
+// ═══════════════════════════════════════════
+
+
+function App(){
+  const [role,setRole]=useState(null);
+  const [page,setPage]=useState('teacher_dashboard');
+  const [toast,setToast]=useState('');
+  const [reviewSong,setReviewSong]=useState(null);
+  const [songs,setSongs]=useState(()=>MOCK.songs.map(s=>({...s})));
+  const [assignmentSubs,setAssignmentSubs]=useState(()=>MOCK.assignmentSubmissions.map(s=>({...s})));
+  const showToast=useCallback((msg)=>{setToast(msg);setTimeout(()=>setToast(''),3000);},[]);
+  const nav=useCallback((p)=>{setPage(p);window.scrollTo(0,0);},[]);
+  useEffect(()=>{ if(role==='teacher')setPage('teacher_dashboard'); },[role]);
+  const ctx=useMemo(()=>({nav,showToast,reviewSong,setReviewSong,songs,setSongs,assignmentSubs,setAssignmentSubs}),[nav,showToast,reviewSong,songs,assignmentSubs]);
+  if(!role)return <LoginPage onLogin={r=>setRole(r)}/>;
+  const menus=[
+    {key:'d1',label:'工作',divider:true},
+    {key:'teacher_dashboard',label:'工作台',icon:'📊'},
+    {key:'teacher_queue',label:'待评审列表',icon:'📋',badge:songs.filter(s=>s.status==='pending_review').length},
+    {key:'teacher_review',label:'评审页面',icon:'🎧'},
+    {key:'d2',label:'统计',divider:true},
+    {key:'teacher_stats',label:'我的绩效',icon:'📈'},
+    {key:'d3',label:'个人',divider:true},
+    {key:'teacher_profile',label:'个人中心',icon:'👤'},
+  ];
+  const pages={teacher_dashboard:<TeacherDashboard/>,teacher_queue:<TeacherQueue/>,teacher_review:<TeacherReview/>,teacher_stats:<TeacherStats/>,teacher_profile:<TeacherProfile/>};
+  return <AppContext.Provider value={ctx}>
+    <Sidebar items={menus} active={page} onNav={nav} role="teacher" onLogout={()=>{setRole(null);setPage('teacher_dashboard');}}/>
+    {pages[page]||<PageLayout title="页面不存在"><Empty text="请从侧边栏选择功能"/></PageLayout>}
+    <Toast message={toast}/>
+  </AppContext.Provider>;
+}
+ReactDOM.render(<App/>,document.getElementById('root'));
+
+</script>
+</body>
+</html>
