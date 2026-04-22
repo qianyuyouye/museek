@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { CheckCircle2, Clipboard, FileAudio, Download, FileText } from 'lucide-react'
 import { PageHeader } from '@/components/ui/page-header'
+import { PromptModal } from '@/components/ui/confirm-modal'
 import { StatCard } from '@/components/ui/stat-card'
 import { DataTable, Column } from '@/components/ui/data-table'
 import { useRef } from 'react'
@@ -35,6 +36,9 @@ export default function AdminIsrcPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [dragOver, setDragOver] = useState(false)
   const [importing, setImporting] = useState(false)
+  const [isrcPrompt, setIsrcPrompt] = useState<{ song: SongItem } | null>(null)
+  const [bulkPrompt, setBulkPrompt] = useState(false)
+  const [bulkDefault, setBulkDefault] = useState('')
   const backfillInputRef = useRef<HTMLInputElement>(null)
 
   async function handleBackfillFile(file: File) {
@@ -126,22 +130,9 @@ export default function AdminIsrcPage() {
         return (
           <button
             className="text-[var(--accent)] hover:text-[var(--accent2)] text-sm font-medium cursor-pointer bg-transparent border-0"
-            onClick={async (e) => {
+            onClick={(e) => {
               e.stopPropagation()
-              const input = window.prompt(`请输入「${song.title}」的 ISRC 编码\n（12 位格式，如：CN-A01-24-00001 或 CNA0124000001）`)
-              if (!input) return
-              const cleaned = input.replace(/-/g, '').trim().toUpperCase()
-              if (!/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/.test(cleaned)) {
-                showToast('ISRC 格式错误：应为 2 位国家码 + 3 位注册码 + 7 位数字')
-                return
-              }
-              const res = await apiCall(`/api/admin/songs/${song.id}/isrc`, 'POST', { isrc: cleaned })
-              if (res.ok) {
-                showToast(`已录入「${song.title}」的 ISRC：${cleaned}`)
-                refetch()
-              } else {
-                showToast(res.message ?? '录入失败')
-              }
+              setIsrcPrompt({ song })
             }}
           >
             录入 ISRC
@@ -254,28 +245,10 @@ export default function AdminIsrcPage() {
             <div className="flex items-center gap-2">
               <button
                 className={btnGhost}
-                onClick={async () => {
+                onClick={() => {
                   if (pendingSongs.length === 0) { showToast('没有待申报歌曲'); return }
-                  const input = window.prompt(
-                    `将为 ${pendingSongs.length} 首歌批量录入 ISRC。\n每行格式：歌曲ID,ISRC（如 12,CNA0124000001），空行跳过：`,
-                    pendingSongs.map((s) => `${s.id},`).join('\n'),
-                  )
-                  if (!input) return
-                  const lines = input.split('\n').map((l) => l.trim()).filter(Boolean)
-                  let ok = 0, fail = 0
-                  for (const line of lines) {
-                    const [idStr, rawCode] = line.split(',').map((s) => s.trim())
-                    const id = parseInt(idStr, 10)
-                    const cleaned = (rawCode ?? '').replace(/-/g, '').trim().toUpperCase()
-                    if (isNaN(id) || !/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/.test(cleaned)) {
-                      fail++
-                      continue
-                    }
-                    const res = await apiCall(`/api/admin/songs/${id}/isrc`, 'POST', { isrc: cleaned })
-                    if (res.ok) ok++; else fail++
-                  }
-                  showToast(`批量录入完成：成功 ${ok} · 失败 ${fail}`)
-                  refetch()
+                  setBulkDefault(pendingSongs.map((s) => `${s.id},`).join('\n'))
+                  setBulkPrompt(true)
                 }}
               >
                 批量录入 ISRC
@@ -356,6 +329,67 @@ export default function AdminIsrcPage() {
           </div>
         </div>
       </div>
+
+      {/* 单个录入 ISRC Prompt */}
+      <PromptModal
+        open={isrcPrompt !== null}
+        title="录入 ISRC"
+        message={isrcPrompt ? `请输入「${isrcPrompt.song.title}」的 ISRC 编码（12 位格式，如：CN-A01-24-00001 或 CNA0124000001）` : ''}
+        placeholder="CNA0124000001"
+        onConfirm={(value) => {
+          if (!isrcPrompt) return
+          const cleaned = value.replace(/-/g, '').trim().toUpperCase()
+          if (!/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/.test(cleaned)) {
+            showToast('ISRC 格式错误：应为 2 位国家码 + 3 位注册码 + 7 位数字')
+            return
+          }
+          apiCall(`/api/admin/songs/${isrcPrompt.song.id}/isrc`, 'POST', { isrc: cleaned }).then((res) => {
+            if (res.ok) {
+              showToast(`已录入「${isrcPrompt.song.title}」的 ISRC：${cleaned}`)
+              refetch()
+            } else {
+              showToast(res.message ?? '录入失败')
+            }
+          })
+          setIsrcPrompt(null)
+        }}
+        onCancel={() => setIsrcPrompt(null)}
+      />
+
+      {/* 批量录入 ISRC Prompt */}
+      <PromptModal
+        open={bulkPrompt}
+        title="批量录入 ISRC"
+        message={`将为 ${pendingSongs.length} 首歌批量录入 ISRC。\n每行格式：歌曲ID,ISRC（如 12,CNA0124000001），空行跳过`}
+        defaultValue={bulkDefault}
+        placeholder="12,CNA0124000001"
+        multiline
+        onConfirm={(value) => {
+          const lines = value.split('\n').map((l) => l.trim()).filter(Boolean)
+          let ok = 0, fail = 0
+          const processNext = async (idx: number) => {
+            if (idx >= lines.length) {
+              showToast(`批量录入完成：成功 ${ok} · 失败 ${fail}`)
+              refetch()
+              return
+            }
+            const [idStr, rawCode] = lines[idx].split(',').map((s) => s.trim())
+            const id = parseInt(idStr, 10)
+            const cleaned = (rawCode ?? '').replace(/-/g, '').trim().toUpperCase()
+            if (isNaN(id) || !/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/.test(cleaned)) {
+              fail++
+              processNext(idx + 1)
+              return
+            }
+            const res = await apiCall(`/api/admin/songs/${id}/isrc`, 'POST', { isrc: cleaned })
+            if (res.ok) ok++; else fail++
+            processNext(idx + 1)
+          }
+          processNext(0)
+          setBulkPrompt(false)
+        }}
+        onCancel={() => setBulkPrompt(false)}
+      />
     </div>
   )
 }

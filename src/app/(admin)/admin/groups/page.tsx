@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { CheckCircle2, Pause, Pencil, Clipboard, Users } from 'lucide-react'
 import { useConfirm } from '@/components/ui/confirm-dialog'
+import { PromptModal } from '@/components/ui/confirm-modal'
 import { PageHeader } from '@/components/ui/page-header'
 import { StatCard } from '@/components/ui/stat-card'
 import { DataTable, Column } from '@/components/ui/data-table'
@@ -47,6 +48,9 @@ export default function AdminGroupsPage() {
   const [createModal, setCreateModal] = useState(false)
   const [inviteModal, setInviteModal] = useState<Group | null>(null)
   const [toast, setToast] = useState('')
+  const [namePrompt, setNamePrompt] = useState<{ g: Group } | null>(null)
+  const [descPrompt, setDescPrompt] = useState<{ g: Group } | null>(null)
+  const [pendingName, setPendingName] = useState('')
 
   const { data: groupsData, loading, refetch } = useApi<{ list: Group[]; total: number }>('/api/admin/groups?pageSize=100')
   const groups = groupsData?.list ?? []
@@ -180,21 +184,9 @@ export default function AdminGroupsPage() {
             <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
               <button
                 className={btnGhost}
-                onClick={async () => {
-                  const newName = window.prompt('修改组名', g.name)
-                  if (!newName || newName.trim() === g.name) return
-                  const newDesc = window.prompt('修改组描述（留空保持不变）', g.description ?? '') ?? undefined
-                  const res = await apiCall(`/api/admin/groups/${g.id}`, 'PUT', {
-                    name: newName.trim(),
-                    ...(newDesc !== undefined ? { description: newDesc } : {}),
-                  })
-                  if (res.ok) {
-                    showToast('组信息已更新')
-                    refetchDetail()
-                    refetch()
-                  } else {
-                    showToast(res.message || '更新失败')
-                  }
+                onClick={() => {
+                  setPendingName(g.name)
+                  setNamePrompt({ g })
                 }}
               >
                 <Pencil className="inline w-3.5 h-3.5 mr-1" />编辑
@@ -466,6 +458,63 @@ export default function AdminGroupsPage() {
           />
         )}
       </AdminModal>
+
+      {/* 编辑组名 Prompt */}
+      <PromptModal
+        open={namePrompt !== null}
+        title="修改组名"
+        message="请输入新的组名"
+        defaultValue={pendingName}
+        placeholder="如：2026秋季创作班"
+        onConfirm={async (value) => {
+          if (!namePrompt) return
+          const trimmed = value.trim()
+          if (!trimmed || trimmed === namePrompt.g.name) {
+            setNamePrompt(null)
+            return
+          }
+          // 保存组名，然后打开描述 Prompt
+          const res = await apiCall(`/api/admin/groups/${namePrompt.g.id}`, 'PUT', {
+            name: trimmed,
+          })
+          if (res.ok) {
+            showToast('组名已更新')
+            refetchDetail()
+            refetch()
+          } else {
+            showToast(res.message || '更新失败')
+            setNamePrompt(null)
+            return
+          }
+          setNamePrompt(null)
+          setDescPrompt({ g: { ...namePrompt.g, name: trimmed } })
+        }}
+        onCancel={() => setNamePrompt(null)}
+      />
+
+      {/* 编辑组描述 Prompt */}
+      <PromptModal
+        open={descPrompt !== null}
+        title="修改组描述"
+        message="请输入组描述（留空保持不变）"
+        defaultValue={descPrompt?.g.description ?? ''}
+        placeholder="简单描述该用户组的用途"
+        onConfirm={async (value) => {
+          if (!descPrompt) return
+          const res = await apiCall(`/api/admin/groups/${descPrompt.g.id}`, 'PUT', {
+            description: value || undefined,
+          })
+          if (res.ok) {
+            showToast('组描述已更新')
+            refetchDetail()
+            refetch()
+          } else {
+            showToast(res.message || '更新失败')
+          }
+          setDescPrompt(null)
+        }}
+        onCancel={() => setDescPrompt(null)}
+      />
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { FileText, ChevronRight, ChevronLeft, ChevronDown } from 'lucide-react'
 import { PageHeader } from '@/components/ui/page-header'
 import { AdminModal } from '@/components/ui/modal'
+import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { RichTextEditor } from '@/components/admin/rich-text-editor'
 import { FileUploader } from '@/components/admin/file-uploader'
 import { useApi, apiCall } from '@/lib/use-api'
@@ -83,6 +84,7 @@ export default function AdminContentPage() {
   const [toast, setToast] = useState<{ msg: string; kind: 'ok' | 'err' }>({ msg: '', kind: 'ok' })
   const [modalOpen, setModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<CmsItem | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
 
   // Step state
   const [step, setStep] = useState(1)
@@ -216,7 +218,7 @@ export default function AdminContentPage() {
   }
 
   async function handleDelete(id: number) {
-    if (!window.confirm('确认删除该内容？学习记录也会一并清除。')) return
+    setDeleteConfirm(null)
     const res = await apiCall(`/api/admin/content/${id}`, 'DELETE')
     if (res.ok) {
       showToast('已删除')
@@ -353,7 +355,7 @@ export default function AdminContentPage() {
                   <div className="flex gap-1">
                     <button className="px-3 py-1 border-0 rounded-md bg-transparent text-[var(--accent)] text-xs font-medium cursor-pointer transition-colors hover:bg-[var(--bg4)]" onClick={() => openEditModal(row)}>编辑</button>
                     <button className={`px-3 py-1 border-0 rounded-md bg-transparent text-xs font-medium cursor-pointer transition-colors hover:bg-[var(--bg4)] ${row.status === 'published' ? 'text-[var(--text2)]' : 'text-[var(--green2)]'}`} onClick={() => toggleStatus(row.id)}>{row.status === 'published' ? '下架' : '发布'}</button>
-                    <button className="px-3 py-1 border-0 rounded-md bg-transparent text-[var(--red)] text-xs font-medium cursor-pointer transition-colors hover:bg-[rgba(255,107,107,.06)]" onClick={() => handleDelete(row.id)}>删除</button>
+                    <button className="px-3 py-1 border-0 rounded-md bg-transparent text-[var(--red)] text-xs font-medium cursor-pointer transition-colors hover:bg-[rgba(255,107,107,.06)]" onClick={() => setDeleteConfirm(row.id)}>删除</button>
                   </div>
                 </td>
               </tr>
@@ -518,6 +520,16 @@ export default function AdminContentPage() {
           )}
         </div>
       </AdminModal>
+
+      <ConfirmModal
+        open={deleteConfirm !== null}
+        message="确认删除该内容？学习记录也会一并清除。"
+        confirmText="删除"
+        cancelText="取消"
+        danger
+        onConfirm={() => deleteConfirm !== null && handleDelete(deleteConfirm)}
+        onCancel={() => setDeleteConfirm(null)}
+      />
     </div>
   )
 }

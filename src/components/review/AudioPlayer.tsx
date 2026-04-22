@@ -2,6 +2,7 @@
 
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { X } from 'lucide-react'
+import { PromptModal } from '@/components/ui/confirm-modal'
 
 export interface AudioMark {
   t: number
@@ -43,6 +44,8 @@ const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(function Aud
   const [abEnd, setAbEnd] = useState<number | null>(null)
   const [abLoopOn, setAbLoopOn] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [promptOpen, setPromptOpen] = useState(false)
+  const [pendingMark, setPendingMark] = useState<{ t: number } | null>(null)
 
   const bars = useMemo(
     () => Array.from({ length: BAR_COUNT }, () => 0.2 + Math.random() * 0.8),
@@ -127,10 +130,8 @@ const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(function Aud
     const ratio = (e.clientX - rect.left) / rect.width
     const t = Math.max(0, Math.min(duration, ratio * duration))
     if (e.shiftKey) {
-      const note = window.prompt(`为 ${formatTime(t)} 添加注记：`, '')
-      if (note && note.trim()) {
-        onMarksChange([...marks, { t, note: note.trim() }].sort((a, b) => a.t - b.t))
-      }
+      setPendingMark({ t })
+      setPromptOpen(true)
       return
     }
     const audio = audioRef.current
@@ -293,7 +294,7 @@ const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(function Aud
             {marks.map((m, i) => (
               <div
                 key={`mark-${m.t}-${i}`}
-                className="flex items-center gap-2 text-xs bg-white rounded px-2 py-1"
+                className="flex items-center gap-2 text-xs bg-[var(--bg4)] rounded px-2 py-1"
               >
                 <button
                   type="button"
@@ -318,6 +319,24 @@ const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(function Aud
           </div>
         </div>
       )}
+
+      <PromptModal
+        open={promptOpen}
+        title="添加注记"
+        message={pendingMark ? `为 ${formatTime(pendingMark.t)} 添加注记：` : ''}
+        placeholder="请输入注记内容"
+        onConfirm={(value) => {
+          if (pendingMark && value.trim()) {
+            onMarksChange([...marks, { t: pendingMark.t, note: value.trim() }].sort((a, b) => a.t - b.t))
+          }
+          setPromptOpen(false)
+          setPendingMark(null)
+        }}
+        onCancel={() => {
+          setPromptOpen(false)
+          setPendingMark(null)
+        }}
+      />
     </div>
   )
 })

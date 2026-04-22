@@ -1,9 +1,11 @@
 'use client'
 
+import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { Music, LogOut } from 'lucide-react'
+import { ConfirmModal } from '@/components/ui/confirm-modal'
 
 export interface MenuItem {
   key: string
@@ -23,9 +25,10 @@ interface SidebarProps {
 
 export function Sidebar({ items, portalLabel, portalColor, onLogout }: SidebarProps) {
   const pathname = usePathname()
+  const [logoutConfirm, setLogoutConfirm] = useState(false)
 
   const handleLogout = async () => {
-    if (!window.confirm('确定要退出登录吗？')) return
+    setLogoutConfirm(false)
     await fetch('/api/auth/logout', { method: 'POST' })
     onLogout()
     const loginMap: Record<string, string> = {
@@ -38,6 +41,7 @@ export function Sidebar({ items, portalLabel, portalColor, onLogout }: SidebarPr
   }
 
   return (
+    <>
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-[220px] flex-col bg-[var(--bg2)] border-r border-[var(--border)]">
       {/* Header */}
       <div className="flex flex-col items-center justify-center gap-1 px-4 py-4 border-b border-[var(--border)]">
@@ -90,12 +94,21 @@ export function Sidebar({ items, portalLabel, portalColor, onLogout }: SidebarPr
       {/* Footer */}
       <div className="border-t border-[var(--border)] p-3">
         <button
-          onClick={handleLogout}
+          onClick={() => setLogoutConfirm(true)}
           className="flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-[12px] text-[var(--text3)] transition-colors hover:bg-[var(--bg4)] hover:text-[var(--text)]"
         >
           <LogOut size={14} /> 退出登录
         </button>
       </div>
     </aside>
+    <ConfirmModal
+      open={logoutConfirm}
+      message="确定要退出登录吗？"
+      confirmText="退出登录"
+      cancelText="取消"
+      onConfirm={handleLogout}
+      onCancel={() => setLogoutConfirm(false)}
+    />
+    </>
   )
 }
