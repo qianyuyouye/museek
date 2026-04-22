@@ -21,6 +21,11 @@ open http://localhost:3000/admin/login
 
 默认管理员：`admin` / `Abc12345`（首次登录后请修改密码）
 
+**升级已有部署**：代码更新后重新运行 init 容器以同步新表：
+```bash
+docker compose --profile init run init
+```
+
 ### 本地开发
 
 ```bash

@@ -102,6 +102,16 @@ docker compose --profile init run init       # 首次建表+种子
 
 默认管理员：`admin` / `Abc12345`
 
+### 从旧版本升级
+
+如果已有运行中的部署，升级代码后需要执行 `prisma db push` 同步新增表（如 `auth_rate_limits` 等 Theme 8+ 新增表）：
+
+```bash
+docker compose --profile init run init
+```
+
+init 容器内的 `npx prisma db push` 是幂等的：已存在的表不会删除，只新增缺失的表。
+
 ## Theme 5 部署步骤（上传安全链）
 
 **首次部署或升级到 Theme 5+ 时执行**：
