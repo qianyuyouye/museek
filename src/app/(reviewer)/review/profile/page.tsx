@@ -24,7 +24,8 @@ interface LoginLogItem {
 
 export default function ReviewerProfilePage() {
   const { data: profile, refetch: refetchProfile } = useApi<ProfileData>('/api/profile')
-  const { data: loginLogs } = useApi<LoginLogItem[]>('/api/profile/login-logs')
+  const { data: loginLogsData } = useApi<{ list: LoginLogItem[]; total: number }>('/api/profile/login-logs?pageSize=10')
+  const loginLogs = loginLogsData?.list ?? []
   const [modal, setModal] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
   const [editEmail, setEditEmail] = useState('')
@@ -63,9 +64,10 @@ export default function ReviewerProfilePage() {
   const user = {
     name: profile?.name ?? '—',
     phone: profile?.phone ?? '—',
-    email: profile?.email ?? '—',
+    email: profile?.email ?? '',
     role: '评审',
     registeredAt: profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('zh-CN') : '—',
+    // Note: profile.createdAt comes from /api/profile which returns User.createdAt for creator/reviewer
   }
 
   async function sendOldCode() {

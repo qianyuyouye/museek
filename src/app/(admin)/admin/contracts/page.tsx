@@ -33,7 +33,12 @@ const PAGE_SIZE = 8
 function downloadCSV(data: Record<string, unknown>[], filename: string) {
   if (data.length === 0) return
   const headers = Object.keys(data[0])
-  const csv = [headers.join(','), ...data.map(row => headers.map(h => `"${String(row[h] ?? '')}"`).join(','))].join('\n')
+  const escape = (v: unknown) => {
+    const s = v === null || v === undefined ? '' : String(v)
+    const sanitized = s.startsWith('=') || s.startsWith('+') || s.startsWith('-') || s.startsWith('@') ? "'" + s : s
+    return `"${sanitized.replace(/"/g, '""')}"`
+  }
+  const csv = [headers.join(','), ...data.map(row => headers.map(h => escape(row[h])).join(','))].join('\n')
   const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -99,11 +104,14 @@ export default function AdminContractsPage() {
     {
       key: 'id',
       title: '分成比例',
-      render: () => (
-        <span>
-          学生70% <span style={{ color: 'var(--text3)' }}>·</span> 平台30%
-        </span>
-      ),
+      render: (_v, row) => {
+        const r = row as Student
+        return (
+          <span>
+            {r.agencySignedAt ? '学生70%' : '未签署'} <span style={{ color: 'var(--text3)' }}>·</span> 平台{r.agencySignedAt ? '30%' : '—'}
+          </span>
+        )
+      },
     },
     {
       key: 'songCount',
@@ -215,7 +223,7 @@ export default function AdminContractsPage() {
               const exportData = agencyStudents.map((s) => ({
                 '创作者姓名': s.name,
                 '手机号': s.phone,
-                '签署时间': s.agencySignedAt ?? '',
+                '签署时间': s.agencySignedAt ? new Date(s.agencySignedAt).toLocaleString('zh-CN') : '',
                 '协议版本': 'v1.0',
                 '分成比例': '学生70% · 平台30%',
               }))
@@ -284,7 +292,7 @@ export default function AdminContractsPage() {
               { k: '签署时间', v: detail.agencySignedAt ?? '未签署' },
               { k: '协议类型', v: TABS.find((t) => t.key === activeTab)?.label ?? '—' },
               { k: '协议版本', v: 'v1.0' },
-              { k: '分成比例', v: '学生 70% · 平台 30%' },
+              { k: '分成比例', v: detail.agencySignedAt ? '学生 70% · 平台 30%' : '未签署，无分成' },
               { k: '作品数', v: String(detail.songCount ?? 0) },
               { k: '协议状态', v: detail.agencyContract ? '✅ 已签署' : '未签署' },
             ].map((row) => (

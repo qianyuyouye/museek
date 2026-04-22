@@ -14,14 +14,7 @@ const rowCls =
 
 // ── 固定文案数据（协议条款内容，非 API 数据） ──────────────────
 
-const PLATFORM_AGREEMENTS = [
-  { name: '《平台用户服务协议》', signedAt: '2026-01-10' },
-  { name: '《隐私政策》', signedAt: '2026-01-10' },
-]
-
-const CONTRACT_DETAILS_STATIC: [string, string][] = [
-  ['协议版本', 'v1.0'],
-  ['分成比例', '创作者70% / 平台30%'],
+const CONTRACT_TERMS: [string, string][] = [
   ['代理期限', '3年'],
   ['代理范围', '全平台'],
   ['是否独家', '是'],
@@ -47,6 +40,7 @@ interface UserProfile {
   realNameStatus: string
   agencyContract: boolean
   agencySignedAt: string | null
+  createdAt: string
   groupIds?: number[]
 }
 
@@ -117,9 +111,17 @@ function Toast({
 
 // ── Page ─────────────────────────────────────────────────────────
 
+interface AgreementItem {
+  name: string
+  signedAt: string
+  signed: boolean
+}
+
 export default function CreatorProfile() {
   const { data: user, loading, refetch } = useApi<UserProfile>('/api/profile')
-  const { data: loginLogs } = useApi<LoginLogItem[]>('/api/profile/login-logs')
+  const { data: loginLogsData } = useApi<{ list: LoginLogItem[]; total: number }>('/api/profile/login-logs?pageSize=10')
+  const loginLogs = loginLogsData?.list ?? []
+  const { data: agreements } = useApi<AgreementItem[]>('/api/profile/agreements')
 
   // Modal states
   const [editModal, setEditModal] = useState(false)
@@ -127,6 +129,7 @@ export default function CreatorProfile() {
   const [verifyModal, setVerifyModal] = useState(false)
   const [contractModal, setContractModal] = useState(false)
   const [signAgencyModal, setSignAgencyModal] = useState(false)
+  const [phoneModal, setPhoneModal] = useState(false)
 
   // Avatar hover + upload
   const [avatarHover, setAvatarHover] = useState(false)
@@ -149,6 +152,13 @@ export default function CreatorProfile() {
   // Sign agency checkbox
   const [agencyRead, setAgencyRead] = useState(false)
 
+  // Phone change form
+  const [oldCode, setOldCode] = useState('')
+  const [newPhone, setNewPhone] = useState('')
+  const [newCode, setNewCode] = useState('')
+  const [oldCodeCooldown, setOldCodeCooldown] = useState(0)
+  const [newCodeCooldown, setNewCodeCooldown] = useState(0)
+
   // Real-name form
   const [rnName, setRnName] = useState('')
   const [rnIdCard, setRnIdCard] = useState('')
@@ -161,6 +171,57 @@ export default function CreatorProfile() {
       setEditEmail(user.email)
     }
   }, [user])
+
+  // Cooldown timers for phone change
+  useEffect(() => {
+    if (oldCodeCooldown <= 0) return
+    const t = setTimeout(() => setOldCodeCooldown((x) => x - 1), 1000)
+    return () => clearTimeout(t)
+  }, [oldCodeCooldown])
+  useEffect(() => {
+    if (newCodeCooldown <= 0) return
+    const t = setTimeout(() => setNewCodeCooldown((x) => x - 1), 1000)
+    return () => clearTimeout(t)
+  }, [newCodeCooldown])
+
+  async function sendOldCode() {
+    if (!user?.phone) return
+    const res = await apiCall('/api/auth/sms/send', 'POST', { phone: user.phone, purpose: 'change_phone' })
+    if (res.ok) {
+      showToast('✅ 旧手机验证码已发送')
+      setOldCodeCooldown(60)
+    } else {
+      showToast(res.message || '发送失败')
+    }
+  }
+  async function sendNewCode() {
+    if (!newPhone || !/^1[3-9]\d{9}$/.test(newPhone)) {
+      showToast('❌ 请先填写正确的新手机号'); return
+    }
+    const res = await apiCall('/api/auth/sms/send', 'POST', { phone: newPhone, purpose: 'change_phone' })
+    if (res.ok) {
+      showToast('✅ 新手机验证码已发送')
+      setNewCodeCooldown(60)
+    } else {
+      showToast(res.message || '发送失败')
+    }
+  }
+  async function submitPhoneChange() {
+    if (!user?.phone || !oldCode || !newPhone || !newCode) {
+      showToast('❌ 请填写完整'); return
+    }
+    const res = await apiCall('/api/profile/phone', 'POST', {
+      oldPhone: user.phone, oldCode, newPhone, newCode,
+    })
+    if (res.ok) {
+      showToast('✅ 手机号已更新，下次登录请使用新号码')
+      setPhoneModal(false)
+      setOldCode(''); setNewCode(''); setNewPhone('')
+      refetch()
+    } else {
+      showToast(res.message || '更新失败')
+    }
+  }
 
   async function handleAvatarFile(file: File) {
     if (avatarUploading) return
@@ -291,7 +352,7 @@ export default function CreatorProfile() {
                 <span className="text-[var(--text3)]">📱 手机号</span>
                 <span className="text-[var(--text)] font-medium">{user.phone}</span>
               </div>
-              <button className={btnGhost}>更换手机</button>
+              <button className={btnGhost} onClick={() => setPhoneModal(true)}>更换手机</button>
             </div>
             <div className="flex items-center justify-between px-3 py-2 bg-[#f9fafb] rounded-md border border-[var(--border)]">
               <div className="flex items-center gap-2 text-[13px]">
@@ -303,7 +364,7 @@ export default function CreatorProfile() {
             <div className="flex items-center justify-between px-3 py-2 bg-[#f9fafb] rounded-md border border-[var(--border)]">
               <div className="flex items-center gap-2 text-[13px]">
                 <span className="text-[var(--text3)]">📧 邮箱</span>
-                <span className="text-[var(--text)] font-medium">{user.email}</span>
+                <span className="text-[var(--text)] font-medium">{user.email || ''}</span>
               </div>
               <button className={btnGhost} onClick={() => setEditModal(true)}>更换邮箱</button>
             </div>
@@ -324,7 +385,9 @@ export default function CreatorProfile() {
               >
                 {user.realNameStatus === 'unverified' || user.realNameStatus === 'rejected'
                   ? '提交认证'
-                  : '查看认证'}
+                  : user.realNameStatus === 'verified'
+                    ? '申请修改'
+                    : '查看认证'}
               </button>
             </div>
             <div className="flex items-center justify-between px-3 py-2 bg-[#f9fafb] rounded-md border border-[var(--border)]">
@@ -336,7 +399,7 @@ export default function CreatorProfile() {
             <div className="flex items-center justify-between px-3 py-2 bg-[#f9fafb] rounded-md border border-[var(--border)]">
               <div className="flex items-center gap-2 text-[13px]">
                 <span className="text-[var(--text3)]">📅 入职时间</span>
-                <span className="text-[var(--text)] font-medium">2026-01-10</span>
+                <span className="text-[var(--text)] font-medium">{user.createdAt ? new Date(user.createdAt).toLocaleDateString('zh-CN') : '—'}</span>
               </div>
             </div>
           </div>
@@ -348,8 +411,8 @@ export default function CreatorProfile() {
           <div className={cardCls}>
             <h3 className="text-[15px] font-semibold mb-3">协议管理</h3>
             <div className="text-[13px] mb-3">
-              {/* 平台固定协议 */}
-              {PLATFORM_AGREEMENTS.map((a, i) => (
+              {/* 平台固定协议（从 API 读取） */}
+              {(agreements || []).map((a, i) => (
                 <div
                   key={i}
                   className="flex justify-between items-center py-2 border-b border-[var(--border)]"
@@ -357,14 +420,14 @@ export default function CreatorProfile() {
                   <div>
                     <span
                       className="inline-block text-[11px] px-2 py-0.5 rounded mr-2"
-                      style={{ background: 'rgba(85,239,196,0.12)', color: 'var(--green2)' }}
+                      style={{ background: a.signed ? 'rgba(85,239,196,0.12)' : 'rgba(107,114,128,0.12)', color: a.signed ? 'var(--green2)' : 'var(--text3)' }}
                     >
-                      已签署
+                      {a.signed ? '已签署' : '未签署'}
                     </span>
                     <span className="font-medium">{a.name}</span>
                   </div>
                   <span className="text-[var(--text3)] text-xs">
-                    创建于 {a.signedAt}
+                    {a.signedAt ? `签署于 ${a.signedAt}` : '—'}
                   </span>
                 </div>
               ))}
@@ -565,11 +628,16 @@ export default function CreatorProfile() {
         open={verifyModal}
         onClose={() => setVerifyModal(false)}
       >
-        {user.realNameStatus === 'unverified' || user.realNameStatus === 'rejected' ? (
+        {user.realNameStatus === 'unverified' || user.realNameStatus === 'rejected' || user.realNameStatus === 'verified' ? (
           <div className="flex flex-col gap-4">
             {user.realNameStatus === 'rejected' && (
               <div className="px-3 py-2 rounded-md text-[13px] bg-[rgba(255,107,107,0.08)] text-[var(--red)]">
                 上次提交已被驳回，请核对信息后重新提交。
+              </div>
+            )}
+            {user.realNameStatus === 'verified' && (
+              <div className="px-3 py-2 rounded-md text-[13px] bg-[rgba(245,158,11,0.08)] text-[var(--orange)]">
+                当前已通过认证，提交修改后将重新审核。
               </div>
             )}
             <div>
@@ -643,16 +711,11 @@ export default function CreatorProfile() {
             </div>
             <div className={rowCls}>
               <span className="text-[var(--text3)]">认证状态</span>
-              <span style={{ color: rnStatus.color }}>
-                {user.realNameStatus === 'verified' ? '✅ ' : user.realNameStatus === 'pending' ? '⏳ ' : ''}
-                {rnStatus.label}
-              </span>
+              <span style={{ color: rnStatus.color }}>⏳ {rnStatus.label}</span>
             </div>
-            {user.realNameStatus === 'pending' && (
-              <div className="text-xs text-[var(--text3)] mt-1">
-                审核一般在 1 个工作日内完成，如需修改请等待审核结果或联系管理员。
-              </div>
-            )}
+            <div className="text-xs text-[var(--text3)] mt-1">
+              审核一般在 1 个工作日内完成，如需修改请等待审核结果或联系管理员。
+            </div>
           </div>
         )}
       </Modal>
@@ -675,7 +738,7 @@ export default function CreatorProfile() {
             </span>
           </div>
           {/* 固定条款内容 */}
-          {CONTRACT_DETAILS_STATIC.map(([k, v]) => (
+          {CONTRACT_TERMS.map(([k, v]) => (
             <div key={k} className={rowCls}>
               <span className="text-[var(--text3)]">{k}</span>
               <span>{v}</span>
@@ -741,6 +804,40 @@ export default function CreatorProfile() {
         >
           确认签署
         </button>
+      </Modal>
+
+      {/* Phone Change Modal */}
+      <Modal title="更换手机号" open={phoneModal} onClose={() => setPhoneModal(false)}>
+        <div className="flex flex-col gap-3.5">
+          <p className="text-xs text-[var(--text3)]">旧手机号与新手机号需各自通过短信验证码校验</p>
+          <div>
+            <label className={labelCls}>旧手机号</label>
+            <input className={`${inputCls} !bg-[var(--bg4)] cursor-not-allowed`} value={user.phone} disabled />
+          </div>
+          <div>
+            <label className={labelCls}>旧手机验证码</label>
+            <div className="flex gap-2">
+              <input className={inputCls} value={oldCode} onChange={e => setOldCode(e.target.value)} placeholder="6位数字" maxLength={6} />
+              <button className={`${btnGhost} whitespace-nowrap`} disabled={oldCodeCooldown > 0} onClick={sendOldCode}>
+                {oldCodeCooldown > 0 ? `${oldCodeCooldown}s` : '发送验证码'}
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className={labelCls}>新手机号</label>
+            <input className={inputCls} value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="1开头11位手机号" maxLength={11} />
+          </div>
+          <div>
+            <label className={labelCls}>新手机验证码</label>
+            <div className="flex gap-2">
+              <input className={inputCls} value={newCode} onChange={e => setNewCode(e.target.value)} placeholder="6位数字" maxLength={6} />
+              <button className={`${btnGhost} whitespace-nowrap`} disabled={newCodeCooldown > 0 || !newPhone} onClick={sendNewCode}>
+                {newCodeCooldown > 0 ? `${newCodeCooldown}s` : '发送验证码'}
+              </button>
+            </div>
+          </div>
+          <button className={btnPrimary} onClick={submitPhoneChange}>确认更换</button>
+        </div>
       </Modal>
 
       {/* Toast */}

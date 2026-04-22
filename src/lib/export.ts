@@ -6,7 +6,11 @@ export function downloadCSV(rows: Record<string, unknown>[], filename: string) {
   const headers = Object.keys(rows[0])
   const escape = (v: unknown) => {
     const s = v === null || v === undefined ? '' : String(v)
-    return `"${s.replace(/"/g, '""')}"`
+    // CSV 注入防护：公式前缀加 ' 转义
+    const sanitized = s.startsWith('=') || s.startsWith('+') || s.startsWith('-') || s.startsWith('@')
+      ? "'" + s
+      : s
+    return `"${sanitized.replace(/"/g, '""')}"`
   }
   const csv = [
     headers.map(escape).join(','),

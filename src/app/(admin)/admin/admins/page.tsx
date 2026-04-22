@@ -104,6 +104,39 @@ export default function AdminAdminsPage() {
   const [avatarUploading, setAvatarUploading] = useState(false)
   const avatarInputRef = useRef<HTMLInputElement>(null)
 
+  // Delete admin
+  async function handleDeleteAdmin(admin: AdminUser) {
+    if (!confirm(`确认删除管理员「${admin.name}」（${admin.account}）？`)) return
+    const res = await apiCall(`/api/admin/admins/${admin.id}`, 'DELETE')
+    if (res.ok) {
+      showToast('✅ 管理员已删除')
+      refetch()
+    } else {
+      showToast(res.message || '删除失败')
+    }
+  }
+
+  // Password reset modal
+  const [resetAdminId, setResetAdminId] = useState<number | null>(null)
+  const [resetPw, setResetPw] = useState('')
+  const [resetConfirmPw, setResetConfirmPw] = useState('')
+  const [showResetModal, setShowResetModal] = useState(false)
+
+  async function handleResetPassword() {
+    if (!resetPw || !resetConfirmPw) { showToast('❌ 请填写所有密码字段'); return }
+    if (resetPw !== resetConfirmPw) { showToast('❌ 两次密码不一致'); return }
+    if (resetPw.length < 8) { showToast('❌ 密码至少8位'); return }
+    if (!resetAdminId) return
+    const res = await apiCall(`/api/admin/admins/${resetAdminId}/reset-password`, 'POST', { password: resetPw })
+    if (res.ok) {
+      showToast('✅ 密码已重置')
+      setShowResetModal(false)
+      setResetPw(''); setResetConfirmPw(''); setResetAdminId(null)
+    } else {
+      showToast(res.message || '重置失败')
+    }
+  }
+
   async function handleAvatarUpload(file: File) {
     setAvatarUploading(true)
     try {
@@ -488,17 +521,44 @@ export default function AdminAdminsPage() {
     {
       key: 'id',
       title: '操作',
-      render: (_v, row) => (
-        <button
-          className={`${btnGhost} ${btnSmall}`}
-          onClick={(e) => {
-            e.stopPropagation()
-            openEdit(row as unknown as AdminUser)
-          }}
-        >
-          编辑
-        </button>
-      ),
+      render: (_v, row) => {
+        const r = row as unknown as AdminUser
+        return (
+          <div className="flex gap-1.5">
+            <button
+              className={`${btnGhost} ${btnSmall}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                openEdit(r)
+              }}
+            >
+              编辑
+            </button>
+            <button
+              className={`${btnGhost} ${btnSmall}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                setResetAdminId(r.id)
+                setResetPw('')
+                setResetConfirmPw('')
+                setShowResetModal(true)
+              }}
+            >
+              改密码
+            </button>
+            <button
+              className={`${btnGhost} ${btnSmall}`}
+              style={{ color: 'var(--red)', borderColor: 'var(--red)' }}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleDeleteAdmin(r)
+              }}
+            >
+              删除
+            </button>
+          </div>
+        )
+      },
     },
   ]
 
@@ -569,7 +629,7 @@ export default function AdminAdminsPage() {
               允许多端登录: a.multiLogin ? '是' : '否',
               最后登录时间: a.lastLoginAt ?? '',
               最后登录IP: a.lastLoginIp ?? '',
-              创建时间: a.createdAt ?? '',
+              创建时间: a.createdAt ? formatDateTime(a.createdAt) : '',
             }))
             downloadCSV(rows, `管理员列表_${today()}.csv`)
             showToast(`✅ 已导出 ${admins.length} 条管理员记录`)
@@ -587,6 +647,24 @@ export default function AdminAdminsPage() {
           rowKey={(r) => (r as unknown as AdminUser).id}
         />
       </div>
+
+      {/* Password Reset Modal */}
+      {showResetModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setShowResetModal(false)}>
+          <div className="bg-white rounded-xl p-7 w-[400px]" onClick={e => e.stopPropagation()}>
+            <h3 className="text-base font-semibold mb-5">修改管理员密码</h3>
+            <div className="mb-3.5">
+              <label className={labelCls}>新密码</label>
+              <input className={inputCls} type="password" value={resetPw} onChange={e => setResetPw(e.target.value)} placeholder="≥8位，含字母和数字" />
+            </div>
+            <div className="mb-5">
+              <label className={labelCls}>确认新密码</label>
+              <input className={inputCls} type="password" value={resetConfirmPw} onChange={e => setResetConfirmPw(e.target.value)} />
+            </div>
+            <button className={`${btnPrimary} w-full flex items-center justify-center`} onClick={handleResetPassword}>确认修改</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
