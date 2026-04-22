@@ -15,6 +15,7 @@ services:
       - OSS_DOMAIN=${OSS_DOMAIN:-}
       - UPLOAD_SECRET=${UPLOAD_SECRET:-}
       - STORAGE_ROOT=/app/storage
+      - ALLOW_LOCAL_UPLOAD=1
     depends_on:
       db:
         condition: service_healthy
