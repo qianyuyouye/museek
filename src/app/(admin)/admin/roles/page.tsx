@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import { XCircle, CheckCircle2 } from 'lucide-react'
-import { useConfirm } from '@/components/admin/confirm-dialog'
-import { PageHeader } from '@/components/admin/page-header'
-import { DataTable, Column } from '@/components/admin/data-table'
+import { useConfirm } from '@/components/ui/confirm-dialog'
+import { PageHeader } from '@/components/ui/page-header'
+import { DataTable, Column } from '@/components/ui/data-table'
 import { PermissionTree } from '@/components/admin/permission-tree'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'

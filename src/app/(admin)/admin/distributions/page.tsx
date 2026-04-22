@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { CheckCircle2, Hourglass, Clipboard } from 'lucide-react'
-import { PageHeader } from '@/components/admin/page-header'
-import { AdminModal } from '@/components/admin/admin-modal'
+import { PageHeader } from '@/components/ui/page-header'
+import { AdminModal } from '@/components/ui/modal'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
 

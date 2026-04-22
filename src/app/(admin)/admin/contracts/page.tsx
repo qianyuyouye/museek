@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { CheckCircle2, FileDown } from 'lucide-react'
-import { PageHeader } from '@/components/admin/page-header'
-import { DataTable, Column } from '@/components/admin/data-table'
-import { AdminModal } from '@/components/admin/admin-modal'
+import { PageHeader } from '@/components/ui/page-header'
+import { DataTable, Column } from '@/components/ui/data-table'
+import { AdminModal } from '@/components/ui/modal'
 import { RichTextEditor } from '@/components/admin/rich-text-editor'
 import { useApi } from '@/lib/use-api'
 import { pageWrap, btnPrimary, btnGhost } from '@/lib/ui-tokens'

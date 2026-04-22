@@ -30,10 +30,10 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
   // 2. 收益统计
   const settlements = await prisma.settlement.findMany({
     where: { creatorId: userId },
-    select: { settleStatus: true, amount: true },
+    select: { settleStatus: true, creatorAmount: true },
   })
   const totalEarnings = settlements.reduce(
-    (a, s) => a + parseFloat(s.amount.toString()),
+    (a, s) => a + parseFloat(s.creatorAmount.toString()),
     0,
   )
 
@@ -52,17 +52,20 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
   })
   const groupIds = userGroups.map((ug) => ug.groupId)
   const assignments = await prisma.assignment.findMany({
-    where: { groupId: { in: groupIds } },
+    where: { groupId: { in: groupIds }, status: 'active' },
     select: {
       id: true,
       title: true,
       deadline: true,
-      status: true,
-      submissions: { where: { userId }, select: { reviewStatus: true } },
     },
   })
+  const submissionAssignIds = await prisma.assignmentSubmission.findMany({
+    where: { userId, assignmentId: { in: assignments.map((a) => a.id) } },
+    select: { assignmentId: true },
+  })
+  const submittedIds = new Set(submissionAssignIds.map((s) => s.assignmentId))
   const unsubmitted = assignments.filter(
-    (a) => a.status === 'active' && a.submissions.length === 0,
+    (a) => !submittedIds.has(a.id),
   )
 
   // 5. 热门课程（按 views 排序，3条）

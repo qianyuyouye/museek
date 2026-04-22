@@ -1,6 +1,6 @@
 'use client'
 
-import { ConfirmProvider } from '@/components/admin/confirm-dialog'
+import { ConfirmProvider } from '@/components/ui/confirm-dialog'
 import { AdminRouteGuard } from './admin-route-guard'
 import { GlobalToast } from './global-toast'
 

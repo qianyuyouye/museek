@@ -2,9 +2,9 @@
 
 import { useState, useMemo } from 'react'
 import { CheckCircle2, Clipboard, FileAudio, Download, FileText } from 'lucide-react'
-import { PageHeader } from '@/components/admin/page-header'
-import { StatCard } from '@/components/admin/stat-card'
-import { DataTable, Column } from '@/components/admin/data-table'
+import { PageHeader } from '@/components/ui/page-header'
+import { StatCard } from '@/components/ui/stat-card'
+import { DataTable, Column } from '@/components/ui/data-table'
 import { useRef } from 'react'
 import { useApi, apiCall } from '@/lib/use-api'
 import { parseCSV } from '@/lib/csv'

@@ -2,11 +2,11 @@
 
 import { useState } from 'react'
 import { CheckCircle2, Pause, Pencil, Clipboard, Users } from 'lucide-react'
-import { useConfirm } from '@/components/admin/confirm-dialog'
-import { PageHeader } from '@/components/admin/page-header'
-import { StatCard } from '@/components/admin/stat-card'
-import { DataTable, Column } from '@/components/admin/data-table'
-import { AdminModal } from '@/components/admin/admin-modal'
+import { useConfirm } from '@/components/ui/confirm-dialog'
+import { PageHeader } from '@/components/ui/page-header'
+import { StatCard } from '@/components/ui/stat-card'
+import { DataTable, Column } from '@/components/ui/data-table'
+import { AdminModal } from '@/components/ui/modal'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
 import { formatDateTime } from '@/lib/format'
@@ -559,7 +559,7 @@ function InviteCodePanel({
     const res = await apiCall(`/api/admin/groups/${group.id}`, 'PUT', { inviteCode: newCode })
     if (res.ok) {
       setCode(newCode)
-      setLink(res.data?.inviteLink ?? link)
+      setLink((res.data as { inviteLink?: string })?.inviteLink ?? link)
       showToast('已重新生成邀请码')
     } else {
       showToast(res.message || '生成失败')

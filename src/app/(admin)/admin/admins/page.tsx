@@ -2,8 +2,8 @@
 
 import { useState, useRef } from 'react'
 import { CheckCircle2, XCircle, User } from 'lucide-react'
-import { PageHeader } from '@/components/admin/page-header'
-import { DataTable, Column } from '@/components/admin/data-table'
+import { PageHeader } from '@/components/ui/page-header'
+import { DataTable, Column } from '@/components/ui/data-table'
 import { useApi, apiCall } from '@/lib/use-api'
 import { downloadCSV, today } from '@/lib/export'
 import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'

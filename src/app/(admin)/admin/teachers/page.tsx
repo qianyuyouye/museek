@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { PageHeader } from '@/components/admin/page-header'
-import { DataTable, Column } from '@/components/admin/data-table'
+import { PageHeader } from '@/components/ui/page-header'
+import { DataTable, Column } from '@/components/ui/data-table'
 import { useApi } from '@/lib/use-api'
 import { pageWrap, cardCls } from '@/lib/ui-tokens'
 

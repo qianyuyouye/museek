@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { PageHeader } from '@/components/admin/page-header'
-import { SearchBar } from '@/components/admin/search-bar'
-import { DataTable, Column } from '@/components/admin/data-table'
+import { PageHeader } from '@/components/ui/page-header'
+import { SearchBar } from '@/components/ui/search-bar'
+import { DataTable, Column } from '@/components/ui/data-table'
 import { useApi } from '@/lib/use-api'
 import { pageWrap, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'
 import { formatDateTime } from '@/lib/format'

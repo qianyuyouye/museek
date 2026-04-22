@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { Rocket, CheckCircle2, X, XCircle, AlertTriangle, Star, BarChart3, Package } from 'lucide-react'
-import { PageHeader } from '@/components/admin/page-header'
+import { PageHeader } from '@/components/ui/page-header'
 import { useApi, apiCall } from '@/lib/use-api'
 import { SONG_STATUS_MAP } from '@/lib/constants'
 import { pageWrap, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'

@@ -4,7 +4,7 @@ import { useEditor, EditorContent, type Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import { useEffect, useState } from 'react'
-import { AdminModal } from '@/components/admin/admin-modal'
+import { AdminModal } from '@/components/ui/modal'
 import { FileUploader } from '@/components/admin/file-uploader'
 
 interface Props {

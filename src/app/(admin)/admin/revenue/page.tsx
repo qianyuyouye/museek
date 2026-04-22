@@ -2,17 +2,17 @@
 
 import { useState, useRef } from 'react'
 import { FileAudio, Link, Wallet, Download, AlertTriangle, CheckCircle2, HelpCircle, Music, Smartphone, Users } from 'lucide-react'
-import { PageHeader } from '@/components/admin/page-header'
-import { StatCard } from '@/components/admin/stat-card'
+import { PageHeader } from '@/components/ui/page-header'
+import { StatCard } from '@/components/ui/stat-card'
 
 function getCurrentQuarter(): string {
   const now = new Date()
   const q = Math.floor(now.getMonth() / 3) + 1
   return `${now.getFullYear()}-Q${q}`
 }
-import { DataTable, Column } from '@/components/admin/data-table'
-import { AdminTab } from '@/components/admin/admin-tab'
-import { AdminModal } from '@/components/admin/admin-modal'
+import { DataTable, Column } from '@/components/ui/data-table'
+import { AdminTab } from '@/components/ui/unified-tabs'
+import { AdminModal } from '@/components/ui/modal'
 import { useApi, apiCall } from '@/lib/use-api'
 import { downloadCSV, today } from '@/lib/export'
 import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
@@ -326,7 +326,7 @@ function QishuiTab({
                   refetchImports()
                   refetchMappings()
                 } else {
-                  showToast(json.message ?? '回滚失败', 'error')
+                  showToast(json.message ?? '回滚失败')
                 }
               }
             }}
@@ -528,7 +528,7 @@ function MappingTab({
                       showToast('已解除映射')
                       refetch()
                     } else {
-                      showToast(json.message ?? '解除失败', 'error')
+                      showToast(json.message ?? '解除失败')
                     }
                   }
                 }}>

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { PageHeader } from '@/components/admin/page-header'
+import { PageHeader } from '@/components/ui/page-header'
 import { useApi } from '@/lib/use-api'
 import { pageWrap } from '@/lib/ui-tokens'
 import { Users, Music, ClipboardList, Rocket, Banknote } from 'lucide-react'

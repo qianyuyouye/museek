@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { FileText, ChevronRight, ChevronLeft, ChevronDown } from 'lucide-react'
-import { PageHeader } from '@/components/admin/page-header'
-import { AdminModal } from '@/components/admin/admin-modal'
+import { PageHeader } from '@/components/ui/page-header'
+import { AdminModal } from '@/components/ui/modal'
 import { RichTextEditor } from '@/components/admin/rich-text-editor'
 import { FileUploader } from '@/components/admin/file-uploader'
 import { useApi, apiCall } from '@/lib/use-api'
