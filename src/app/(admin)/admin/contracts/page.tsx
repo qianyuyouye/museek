@@ -8,7 +8,7 @@ import { AdminModal } from '@/components/ui/modal'
 import { RichTextEditor } from '@/components/admin/rich-text-editor'
 import { useApi } from '@/lib/use-api'
 import { pageWrap, btnPrimary, btnGhost } from '@/lib/ui-tokens'
-import { SETTING_KEYS } from '@/lib/system-settings'
+import { SETTING_KEYS } from '@/lib/settings-keys'
 
 // ── Types ────────────────────────────────────────────────────────
 
