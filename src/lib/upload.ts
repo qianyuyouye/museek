@@ -39,9 +39,10 @@ export async function createUploadToken(
   fileName: string,
   type: 'audio' | 'image',
   userId: number,
+  portal: string,
 ): Promise<UploadTokenResult> {
   const key = generateKey(fileName, type)
-  const signed = await signPutUrl(key, { userId, type })
+  const signed = await signPutUrl(key, { userId, portal, type })
   return {
     uploadUrl: signed.uploadUrl,
     key,

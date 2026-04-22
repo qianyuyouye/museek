@@ -95,8 +95,9 @@ export const POST = safeHandler(async function POST(
     })
   }
 
+  const copyrightCode = await nextCopyrightCode()
+
   const result = await prisma.$transaction(async (tx) => {
-    const copyrightCode = await nextCopyrightCode(tx)
     const song = await tx.platformSong.create({
       data: {
         copyrightCode,

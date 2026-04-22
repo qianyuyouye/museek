@@ -14,7 +14,7 @@ export const PUT = safeHandler(async function PUT(
     return NextResponse.json({ code: 404, message: 'Not Found' }, { status: 404 })
   }
 
-  const { userId } = getCurrentUser(request)
+  const { userId, portal } = getCurrentUser(request)
   if (!userId) return err('未登录', 401)
 
   const { path: segments } = await context.params
@@ -27,8 +27,8 @@ export const PUT = safeHandler(async function PUT(
     return err('非法路径', 400)
   }
 
-  // 验签
-  const sigErr = verifyLocalPutSig(key, request.nextUrl.searchParams, userId)
+  // 验签（含 portal）
+  const sigErr = verifyLocalPutSig(key, request.nextUrl.searchParams, userId, portal)
   if (sigErr) return err(sigErr, 403)
 
   const type: 'audio' | 'image' = key.startsWith('uploads/audio/') ? 'audio' : 'image'

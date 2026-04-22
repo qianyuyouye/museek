@@ -302,39 +302,40 @@ import { signPutUrl, signGetUrl, verifyLocalPutSig, verifyLocalGetSig } from '@/
 describe('lib/signature HMAC local mode', () => {
   const key = 'uploads/audio/20260421_abc.mp3'
 
-  it('signPutUrl 返回含 sig/exp/uid/type 的 uploadUrl', async () => {
-    const { uploadUrl } = await signPutUrl(key, { userId: 42, type: 'audio' })
+  it('signPutUrl 返回含 sig/exp/uid/portal/type 的 uploadUrl', async () => {
+    const { uploadUrl } = await signPutUrl(key, { userId: 42, portal: 'creator', type: 'audio' })
     const u = new URL(uploadUrl, 'http://x')
     expect(u.pathname).toBe('/api/upload/local/' + key)
     expect(u.searchParams.get('sig')).toMatch(/^[0-9a-f]{64}$/)
     expect(u.searchParams.get('exp')).toMatch(/^\d+$/)
     expect(u.searchParams.get('uid')).toBe('42')
+    expect(u.searchParams.get('portal')).toBe('creator')
     expect(u.searchParams.get('type')).toBe('audio')
   })
 
   it('verifyLocalPutSig 正确签名返回 null', async () => {
-    const { uploadUrl } = await signPutUrl(key, { userId: 42, type: 'audio' })
+    const { uploadUrl } = await signPutUrl(key, { userId: 42, portal: 'creator', type: 'audio' })
     const q = new URL(uploadUrl, 'http://x').searchParams
-    expect(verifyLocalPutSig(key, q, 42)).toBeNull()
+    expect(verifyLocalPutSig(key, q, 42, 'creator')).toBeNull()
   })
 
   it('verifyLocalPutSig 过期签名返回错误', async () => {
-    const { uploadUrl } = await signPutUrl(key, { userId: 42, type: 'audio', ttlSec: -1 })
+    const { uploadUrl } = await signPutUrl(key, { userId: 42, portal: 'creator', type: 'audio', ttlSec: -1 })
     const q = new URL(uploadUrl, 'http://x').searchParams
-    expect(verifyLocalPutSig(key, q, 42)).toMatch(/过期|expired/i)
+    expect(verifyLocalPutSig(key, q, 42, 'creator')).toMatch(/过期|expired/i)
   })
 
   it('verifyLocalPutSig uid 不匹配返回错误', async () => {
-    const { uploadUrl } = await signPutUrl(key, { userId: 42, type: 'audio' })
+    const { uploadUrl } = await signPutUrl(key, { userId: 42, portal: 'creator', type: 'audio' })
     const q = new URL(uploadUrl, 'http://x').searchParams
-    expect(verifyLocalPutSig(key, q, 99)).toMatch(/用户|不匹配/)
+    expect(verifyLocalPutSig(key, q, 99, 'creator')).toMatch(/用户|不匹配/)
   })
 
   it('verifyLocalPutSig type/key 目录不符返回错误', async () => {
     // key 是 uploads/audio/... 但 type 签成了 image
-    const { uploadUrl } = await signPutUrl(key, { userId: 42, type: 'image' })
+    const { uploadUrl } = await signPutUrl(key, { userId: 42, portal: 'creator', type: 'image' })
     const q = new URL(uploadUrl, 'http://x').searchParams
-    expect(verifyLocalPutSig(key, q, 42)).toMatch(/类型|目录/)
+    expect(verifyLocalPutSig(key, q, 42, 'creator')).toMatch(/类型|目录/)
   })
 
   it('signGetUrl 绑 userId 带 uid 参数', async () => {
@@ -371,10 +372,10 @@ describe('lib/signature HMAC local mode', () => {
   })
 
   it('verifyLocalPutSig 篡改 sig 为非 hex 返回错误不抛异常', async () => {
-    const { uploadUrl } = await signPutUrl(key, { userId: 42, type: 'audio' })
+    const { uploadUrl } = await signPutUrl(key, { userId: 42, portal: 'creator', type: 'audio' })
     const q = new URL(uploadUrl, 'http://x').searchParams
     q.set('sig', 'zzzz')
-    expect(verifyLocalPutSig(key, q, 42)).toMatch(/签名|无效/)
+    expect(verifyLocalPutSig(key, q, 42, 'creator')).toMatch(/签名|无效/)
   })
 })
 

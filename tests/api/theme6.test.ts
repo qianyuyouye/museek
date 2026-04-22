@@ -39,20 +39,20 @@ describe('fillSongDefaults helper (GAP-CRTR-004 / GAP-SCHM-005)', () => {
 
 describe('nextCopyrightCode helper (GAP-ADMIN-029)', () => {
   it('返回形如 AIMU-YYYY-NNNNNN', async () => {
-    const result = await prisma.$transaction((tx) => nextCopyrightCode(tx))
+    const result = await nextCopyrightCode()
     expect(result).toMatch(/^AIMU-\d{4}-\d{6}$/)
   })
 
   it('连续调用递增', async () => {
-    const a = await prisma.$transaction((tx) => nextCopyrightCode(tx))
-    const b = await prisma.$transaction((tx) => nextCopyrightCode(tx))
+    const a = await nextCopyrightCode()
+    const b = await nextCopyrightCode()
     const parseNo = (s: string) => parseInt(s.split('-')[2], 10)
     expect(parseNo(b) - parseNo(a)).toBe(1)
   })
 
   it('并发 5 次得到互不相同且步长 1 的序号', async () => {
     const results = await Promise.all(
-      Array.from({ length: 5 }, () => prisma.$transaction((tx) => nextCopyrightCode(tx))),
+      Array.from({ length: 5 }, () => nextCopyrightCode()),
     )
     const nums = results.map((s) => parseInt(s.split('-')[2], 10)).sort((a, b) => a - b)
     expect(new Set(nums).size).toBe(5)

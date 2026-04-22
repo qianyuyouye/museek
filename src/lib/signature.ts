@@ -3,6 +3,7 @@ import { getSetting, SETTING_KEYS } from './system-settings'
 
 export interface SignedPutOptions {
   userId: number
+  portal: string
   type: 'audio' | 'image'
   ttlSec?: number  // 默认 300（5min）
 }
@@ -78,8 +79,8 @@ export async function signPutUrl(key: string, opts: SignedPutOptions): Promise<S
   }
   // local
   const exp = Math.floor(Date.now() / 1000) + ttl
-  const sig = computeSig([key, opts.userId, opts.type, exp])
-  const uploadUrl = `/api/upload/local/${key}?exp=${exp}&uid=${opts.userId}&type=${opts.type}&sig=${sig}`
+  const sig = computeSig([key, opts.userId, opts.portal, opts.type, exp])
+  const uploadUrl = `/api/upload/local/${key}?exp=${exp}&uid=${opts.userId}&portal=${opts.portal}&type=${opts.type}&sig=${sig}`
   return { uploadUrl }
 }
 
@@ -103,20 +104,22 @@ export async function signGetUrl(key: string, opts: SignedGetOptions = {}): Prom
 
 // ── 验签 PUT ───────────────────────────────────────────────────
 
-export function verifyLocalPutSig(key: string, query: URLSearchParams, currentUserId: number): string | null {
+export function verifyLocalPutSig(key: string, query: URLSearchParams, currentUserId: number, currentPortal: string | null): string | null {
   const expRaw = query.get('exp')
   const uidRaw = query.get('uid')
+  const portal = query.get('portal')
   const type = query.get('type')
   const sig = query.get('sig') ?? ''
-  if (!expRaw || !uidRaw || !type || !sig) return '签名参数缺失'
+  if (!expRaw || !uidRaw || !portal || !type || !sig) return '签名参数缺失'
   const exp = parseInt(expRaw, 10)
   const uid = parseInt(uidRaw, 10)
   if (isNaN(exp) || isNaN(uid)) return '签名参数缺失'
   if (exp < Math.floor(Date.now() / 1000)) return '上传链接已过期'
   if (uid !== currentUserId) return '用户不匹配'
+  if (portal !== currentPortal) return '门户不匹配'
   if (type !== 'audio' && type !== 'image') return '类型无效'
   if (!keyDirMatchesType(key, type)) return '类型与目录不符'
-  const expectSig = computeSig([key, uid, type, exp])
+  const expectSig = computeSig([key, uid, portal, type, exp])
   if (sig.length !== 64) return '签名无效'
   try {
     if (!crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expectSig, 'hex'))) return '签名无效'

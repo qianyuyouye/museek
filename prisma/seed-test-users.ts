@@ -19,8 +19,8 @@ async function main() {
 
   const creator = await prisma.user.upsert({
     where: { phone: '13800001234' },
-    update: { passwordHash, status: 'active', type: 'creator' },
-    create: { phone: '13800001234', passwordHash, type: 'creator', realNameStatus: 'unverified' },
+    update: { passwordHash, status: 'active', type: 'creator', name: '测试创作者' },
+    create: { phone: '13800001234', name: '测试创作者', passwordHash, type: 'creator', realNameStatus: 'unverified' },
   })
   console.log('creator', creator.id, creator.phone, creator.status)
 

@@ -11,8 +11,8 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     return err('请求过于频繁，请稍后再试', 429)
   }
 
-  const { userId } = getCurrentUser(request)
-  if (!userId) return err('未登录', 401)
+  const { userId, portal } = getCurrentUser(request)
+  if (!userId || !portal) return err('未登录', 401)
 
   const body = await request.json()
   // 兼容两套命名：{fileName, fileSize, type} 与 {name, size, kind}
@@ -26,6 +26,6 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   const error = validateUpload(fileName, fileSize, type)
   if (error) return err(error)
 
-  const token = await createUploadToken(fileName, type, userId)
+  const token = await createUploadToken(fileName, type, userId, portal)
   return ok(token)
 })

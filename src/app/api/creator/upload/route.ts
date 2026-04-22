@@ -68,32 +68,31 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   const user = await loadUserForDefaults(userId)
   const defaults = fillSongDefaults({ title, performer, lyricist, composer, albumName, albumArtist }, user)
 
-  const song = await prisma.$transaction(async (tx) => {
-    const copyrightCode = await nextCopyrightCode(tx)
-    return tx.platformSong.create({
-      data: {
-        copyrightCode,
-        userId,
-        title,
-        performer: defaults.performer,
-        lyricist: defaults.lyricist,
-        composer: defaults.composer,
-        albumName: defaults.albumName,
-        albumArtist: defaults.albumArtist,
-        aiTools: normalizedAiTools,
-        genre,
-        bpm: normalizedBpm,
-        lyrics,
-        styleDesc: normalizedStyleDesc,
-        audioUrl: audioUrl || undefined,
-        coverUrl: coverUrl || undefined,
-        audioFeatures: audioFeatures || undefined,
-        contribution: contribution || 'lead',
-        creationDesc,
-        source: 'upload',
-        status: 'pending_review',
-      },
-    })
+  const copyrightCode = await nextCopyrightCode()
+
+  const song = await prisma.platformSong.create({
+    data: {
+      copyrightCode,
+      userId,
+      title,
+      performer: defaults.performer,
+      lyricist: defaults.lyricist,
+      composer: defaults.composer,
+      albumName: defaults.albumName,
+      albumArtist: defaults.albumArtist,
+      aiTools: normalizedAiTools,
+      genre,
+      bpm: normalizedBpm,
+      lyrics,
+      styleDesc: normalizedStyleDesc,
+      audioUrl: audioUrl || undefined,
+      coverUrl: coverUrl || undefined,
+      audioFeatures: audioFeatures || undefined,
+      contribution: contribution || 'lead',
+      creationDesc,
+      source: 'upload',
+      status: 'pending_review',
+    },
   })
 
   return ok({
