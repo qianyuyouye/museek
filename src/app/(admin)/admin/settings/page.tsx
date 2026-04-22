@@ -26,6 +26,7 @@ const TABS = [
   { key: 'storage', label: '存储配置' },
   { key: 'sms', label: '短信配置' },
   { key: 'notifications', label: '通知模板' },
+  { key: 'invite', label: '邀请配置' },
 ]
 
 // ── Settings types ──────────────────────────────────────────────
@@ -47,6 +48,7 @@ interface SettingsData {
   storageConfig: any | null
   smsConfig: any | null
   notificationTemplates: Record<string, any> | null
+  inviteLinkDomain: string | null
 }
 
 function parseSettingsData(raw: SettingsApiItem[] | null): SettingsData | null {
@@ -92,6 +94,7 @@ function parseSettingsData(raw: SettingsApiItem[] | null): SettingsData | null {
   const storageConfig = (map.get('storage_config') as any) ?? null
   const smsConfig = (map.get('sms_config') as any) ?? null
   const notificationTemplates = (map.get('notification_templates') as Record<string, any>) ?? null
+  const inviteLinkDomain = (map.get('invite_link_domain') as string | undefined) ?? null
 
   return {
     weights,
@@ -105,6 +108,7 @@ function parseSettingsData(raw: SettingsApiItem[] | null): SettingsData | null {
     storageConfig,
     smsConfig,
     notificationTemplates,
+    inviteLinkDomain,
   }
 }
 
@@ -132,6 +136,7 @@ export default function AdminSettingsPage() {
       platforms: 'platform_configs',
       aiTools: 'ai_tools',
       genres: 'genres',
+      inviteLinkDomain: 'invite_link_domain',
     }
     const LABEL_TO_KEY: Record<string, string> = {
       '技术熟练度': 'technique',
@@ -210,6 +215,13 @@ export default function AdminSettingsPage() {
           <SettingsNotificationTab
             initial={data?.notificationTemplates ?? null}
             onSaved={refetch}
+            showToast={(msg) => showToast(msg)}
+          />
+        )}
+        {tab === 'invite' && (
+          <SettingsInviteDomainTab
+            initial={data?.inviteLinkDomain ?? null}
+            onSave={(domain) => handleSave({ inviteLinkDomain: domain })}
             showToast={(msg) => showToast(msg)}
           />
         )}
@@ -1046,6 +1058,59 @@ function OptionsTab({
           showToast('已更新流派列表')
         }}
       />
+    </div>
+  )
+}
+
+// ── ⑥ 邀请配置 ──────────────────────────────────────────────────
+
+function SettingsInviteDomainTab({
+  initial,
+  onSave,
+  showToast,
+}: {
+  initial: string | null
+  onSave: (domain: string) => void
+  showToast: (msg: string) => void
+}) {
+  const [domain, setDomain] = useState(initial ?? '')
+
+  useEffect(() => {
+    setDomain(initial ?? '')
+  }, [initial])
+
+  return (
+    <div>
+      <h3 className="text-[15px] font-semibold mb-4">邀请链接域名</h3>
+      <p className="text-xs text-[var(--text3)] mb-4">
+        用户组邀请链接的前缀域名，如 <code className="text-[var(--accent)]">https://museek.example.com</code>。
+        <br />
+        留空时回退到环境变量 <code>NEXT_PUBLIC_SITE_URL</code>，默认 <code>http://localhost:3000</code>。
+      </p>
+      <div className="flex flex-col gap-3">
+        <div>
+          <label className={labelCls}>邀请链接域名</label>
+          <input
+            className={inputCls}
+            placeholder="https://your-domain.com"
+            value={domain}
+            onChange={(e) => setDomain(e.target.value)}
+          />
+        </div>
+        <button
+          className={btnPrimary}
+          style={{ width: 'fit-content' }}
+          onClick={() => {
+            if (domain && !domain.startsWith('http://') && !domain.startsWith('https://')) {
+              showToast('域名必须以 http:// 或 https:// 开头')
+              return
+            }
+            onSave(domain)
+          }}
+        >
+          保存配置
+        </button>
+      </div>
     </div>
   )
 }

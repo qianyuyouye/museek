@@ -63,6 +63,8 @@ const PRESET_KEYS: Record<string, unknown> = {
   [SETTING_KEYS.AGENCY_TERMS]: { termYears: 3, scope: '全平台', exclusive: true },
   [SETTING_KEYS.SERVICE_AGREEMENT]: { content: '', version: '1.0', updatedAt: '' },
   [SETTING_KEYS.PRIVACY_POLICY]: { content: '', version: '1.0', updatedAt: '' },
+  // 邀请链接域名
+  [SETTING_KEYS.INVITE_LINK_DOMAIN]: process.env.NEXT_PUBLIC_SITE_URL ?? '',
 }
 
 /** 这些 key 走 setSetting（支持加密字段 + 合并补丁）路径 */
