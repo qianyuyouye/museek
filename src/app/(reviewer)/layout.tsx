@@ -8,7 +8,7 @@ function ReviewerGuard({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    fetch('/api/profile/me')
+    fetch('/api/profile')
       .then((r) => {
         if (!r.ok) throw new Error('unauthorized')
         return r.json()

@@ -206,7 +206,7 @@ export default function AdminContractsPage() {
                 '分成比例': '学生70% · 平台30%',
               }))
               if (exportData.length === 0) { showToast('暂无已签约数据'); return }
-              downloadCSV(exportData as unknown as Record<string, unknown>[], `合同台账_已签名单_${new Date().toISOString().slice(0, 10)}.csv`)
+              downloadCSV(exportData, `合同台账_已签名单_${new Date().toISOString().slice(0, 10)}.csv`)
               showToast(`已导出 ${exportData.length} 条签约记录`)
             }}>导出已签名单</button>
           ) : (
@@ -268,9 +268,9 @@ export default function AdminContractsPage() {
       {activeTab === 'records' && (
         <div className="bg-white rounded-b-xl border border-[var(--border)] border-t-0">
           <DataTable
-            columns={columns as unknown as Column<Record<string, unknown>>[]}
-            data={agencyStudents.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) as unknown as Record<string, unknown>[]}
-            rowKey={(r) => (r as unknown as Student).id}
+            columns={columns}
+            data={agencyStudents.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
+            rowKey={(r) => r.id}
           />
           <div className="px-4 pb-4">{renderPagination()}</div>
         </div>

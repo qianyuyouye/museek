@@ -16,7 +16,7 @@ interface DataTableProps<T> {
   rowKey?: (row: T) => string | number
 }
 
-export function DataTable<T extends Record<string, unknown>>({
+export function DataTable<T>({
   columns,
   data,
   onRowClick,
@@ -70,8 +70,8 @@ export function DataTable<T extends Record<string, unknown>>({
                     className="px-3 py-3 text-sm text-[var(--text)] border-b border-[var(--border)] whitespace-nowrap"
                   >
                     {col.render
-                      ? col.render(row[col.key], row)
-                      : (row[col.key] as ReactNode)}
+                      ? col.render((row as Record<string, unknown>)[col.key], row)
+                      : ((row as Record<string, unknown>)[col.key] as ReactNode)}
                   </td>
                 ))}
               </tr>

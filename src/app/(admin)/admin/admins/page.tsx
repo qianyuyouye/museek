@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/ui/page-header'
 import { DataTable, Column } from '@/components/ui/data-table'
 import { useApi, apiCall } from '@/lib/use-api'
 import { downloadCSV, today } from '@/lib/export'
-import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
+import { pageWrap, cardCls, btnPrimary, btnGhost, btnSmall, inputCls, labelCls } from '@/lib/ui-tokens'
 import { formatDateTime } from '@/lib/format'
 
 // ── Types ────────────────────────────────────────────────────────
@@ -32,7 +32,6 @@ interface AdminRole {
 
 // ── Button helpers ───────────────────────────────────────────────
 
-const btnSmall = 'text-[11px] px-2.5 py-1'
 
 // ── Toggle Switch ────────────────────────────────────────────────
 
@@ -643,9 +642,9 @@ export default function AdminAdminsPage() {
       {/* DataTable */}
       <div className={cardCls}>
         <DataTable
-          columns={columns as unknown as Column<Record<string, unknown>>[]}
-          data={admins as unknown as Record<string, unknown>[]}
-          rowKey={(r) => (r as unknown as AdminUser).id}
+          columns={columns}
+          data={admins}
+          rowKey={(r) => r.id}
         />
       </div>
 

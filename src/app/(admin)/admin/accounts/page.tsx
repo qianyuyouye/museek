@@ -9,10 +9,9 @@ import { AdminTab } from '@/components/ui/unified-tabs'
 import { DataTable, Column } from '@/components/ui/data-table'
 import { AdminModal } from '@/components/ui/modal'
 import { useApi, apiCall } from '@/lib/use-api'
-import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
+import { pageWrap, cardCls, btnPrimary, btnGhost, btnSmall, inputCls, labelCls } from '@/lib/ui-tokens'
 
 // ── Button / input helpers ───────────────────────────────────────
-const btnSmall = 'text-[11px] px-2.5 py-1'
 
 // ── Types ────────────────────────────────────────────────────────
 interface ReviewerAccount {
@@ -377,15 +376,15 @@ export default function AdminAccountsPage() {
       <div className={cardCls}>
         {tab === 'reviewer' ? (
           <DataTable
-            columns={reviewerColumns as unknown as Column<Record<string, unknown>>[]}
-            data={reviewers as unknown as Record<string, unknown>[]}
-            rowKey={(r) => (r as unknown as ReviewerAccount).id}
+            columns={reviewerColumns}
+            data={reviewers}
+            rowKey={(r) => r.id}
           />
         ) : (
           <DataTable
-            columns={creatorColumns as unknown as Column<Record<string, unknown>>[]}
-            data={creators as unknown as Record<string, unknown>[]}
-            rowKey={(r) => (r as unknown as CreatorAccount).id}
+            columns={creatorColumns}
+            data={creators}
+            rowKey={(r) => r.id}
           />
         )}
       </div>

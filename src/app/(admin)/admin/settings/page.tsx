@@ -513,8 +513,8 @@ function CommissionTab({
       </div>
       <DataTable
         columns={columns as unknown as Column<Record<string, unknown>>[]}
-        data={rules as unknown as Record<string, unknown>[]}
-        rowKey={(r) => (r as unknown as CommissionRule).name}
+        data={rules}
+        rowKey={(r) => r.name}
       />
       <div className="mt-4">
         <button className={btnPrimary} onClick={openNew}>
@@ -879,8 +879,8 @@ function PlatformsTab({
       <h3 className="text-[15px] font-semibold mb-4">合作流媒体平台</h3>
       <DataTable
         columns={columns as unknown as Column<Record<string, unknown>>[]}
-        data={platforms as unknown as Record<string, unknown>[]}
-        rowKey={(r) => (r as unknown as PlatformItem).name}
+        data={platforms}
+        rowKey={(r) => r.name}
       />
       <div className="mt-4">
         <button className={btnPrimary} onClick={openNew}>+ 添加平台</button>

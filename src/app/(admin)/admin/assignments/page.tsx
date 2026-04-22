@@ -7,7 +7,7 @@ import { StatCard } from '@/components/ui/stat-card'
 import { DataTable, Column } from '@/components/ui/data-table'
 import { AdminModal } from '@/components/ui/modal'
 import { useApi, apiCall } from '@/lib/use-api'
-import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
+import { pageWrap, cardCls, btnPrimary, btnGhost, btnSmall, inputCls, labelCls } from '@/lib/ui-tokens'
 import { formatDate, formatDateTime } from '@/lib/format'
 
 // ── Types ────────────────────────────────────────────────────────
@@ -53,7 +53,6 @@ interface Group {
 
 // ── Button / input helpers ──────────────────────────────────────
 
-const btnSmall = 'text-[11px] px-2.5 py-1'
 
 // ── Helpers ─────────────────────────────────────────────────────
 
@@ -255,9 +254,9 @@ export default function AdminAssignmentsPage() {
             <div style={{ padding: 20, textAlign: 'center', color: 'var(--text3)' }}>加载中...</div>
           ) : (
             <DataTable
-              columns={subColumns as unknown as Column<Record<string, unknown>>[]}
-              data={submissionList as unknown as Record<string, unknown>[]}
-              rowKey={(r) => (r as unknown as Submission).id}
+              columns={subColumns}
+              data={submissionList}
+              rowKey={(r) => r.id}
             />
           )}
 
@@ -508,9 +507,9 @@ export default function AdminAssignmentsPage() {
       {/* DataTable card */}
       <div className={cardCls}>
         <DataTable
-          columns={listColumns as unknown as Column<Record<string, unknown>>[]}
-          data={assignments as unknown as Record<string, unknown>[]}
-          rowKey={(r) => (r as unknown as Assignment).id}
+          columns={listColumns}
+          data={assignments}
+          rowKey={(r) => r.id}
           onRowClick={(row) => setDetailId((row as unknown as Assignment).id)}
         />
       </div>

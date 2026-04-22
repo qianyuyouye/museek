@@ -94,9 +94,9 @@ export default function AdminTeachersPage() {
           <h3 className="text-base font-semibold">评审绩效</h3>
         </div>
         <DataTable
-          columns={columns as unknown as Column<Record<string, unknown>>[]}
-          data={teachers as unknown as Record<string, unknown>[]}
-          rowKey={(r) => (r as unknown as Teacher).id}
+          columns={columns}
+          data={teachers}
+          rowKey={(r) => r.id}
         />
       </div>
     </div>

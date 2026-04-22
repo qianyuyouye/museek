@@ -9,15 +9,7 @@ import { StatusBadge } from '@/components/ui/status-badge'
 import { AdminModal } from '@/components/ui/modal'
 import { useApi, apiCall } from '@/lib/use-api'
 import { SONG_STATUS_MAP } from '@/lib/constants'
-import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
-
-// ── Button helpers ───────────────────────────────────────────────
-
-const btnSmall = 'text-[11px] px-2.5 py-1'
-const btnSuccess =
-  'bg-gradient-to-r from-[var(--green2)] to-[var(--green)] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
-const btnDanger =
-  'bg-gradient-to-r from-[var(--red)] to-[#c53030] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
+import { pageWrap, cardCls, btnPrimary, btnGhost, btnDanger, btnSuccess, btnSmall, inputCls, labelCls } from '@/lib/ui-tokens'
 
 // ── Tab config ───────────────────────────────────────────────────
 
@@ -390,9 +382,9 @@ export default function AdminSongsPage() {
       {/* Table */}
       <div className={cardCls}>
         <DataTable
-          columns={columns as unknown as Column<Record<string, unknown>>[]}
-          data={filteredSongs as unknown as Record<string, unknown>[]}
-          rowKey={(r) => (r as unknown as SongItem).id}
+          columns={columns}
+          data={filteredSongs}
+          rowKey={(r) => r.id}
         />
       </div>
 

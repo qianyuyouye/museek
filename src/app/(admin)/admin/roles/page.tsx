@@ -7,7 +7,7 @@ import { PageHeader } from '@/components/ui/page-header'
 import { DataTable, Column } from '@/components/ui/data-table'
 import { PermissionTree } from '@/components/admin/permission-tree'
 import { useApi, apiCall } from '@/lib/use-api'
-import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
+import { pageWrap, cardCls, btnPrimary, btnGhost, btnDanger, btnSuccess, btnSmall, inputCls, labelCls } from '@/lib/ui-tokens'
 import { formatDateTime } from '@/lib/format'
 
 // ── Types ────────────────────────────────────────────────────────
@@ -21,12 +21,6 @@ interface Role {
   isBuiltin?: boolean
   adminCount?: number
 }
-
-// ── Button helpers ────────────────────────────────────────────────
-
-const btnDanger =
-  'bg-gradient-to-r from-[var(--red)] to-[#c53030] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
-const btnSmall = 'text-[11px] px-2.5 py-1'
 
 // ── Helpers ───────────────────────────────────────────────────────
 
@@ -301,9 +295,9 @@ export default function AdminRolesPage() {
 
       <div className={cardCls}>
         <DataTable
-          columns={columns as unknown as Column<Record<string, unknown>>[]}
-          data={roles as unknown as Record<string, unknown>[]}
-          rowKey={(r) => (r as unknown as Role).id}
+          columns={columns}
+          data={roles}
+          rowKey={(r) => r.id}
         />
       </div>
     </div>

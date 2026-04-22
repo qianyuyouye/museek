@@ -105,7 +105,6 @@ export const POST = safeHandler(async function POST(
       await notify(song.userId, 'tpl.song_archived', { songTitle: song.title, songId: song.id }, 'song', song.id)
     } else if (action === 'unpublish') {
       await notify(song.userId, 'tpl.song_archived', { songTitle: song.title, songId: song.id }, 'song', song.id)
-      await notify(song.userId, 'tpl.song_archived', { songTitle: song.title, songId: song.id }, 'song', song.id)
     }
   } catch (e) {
     console.error('[notify] song status change failed:', e)

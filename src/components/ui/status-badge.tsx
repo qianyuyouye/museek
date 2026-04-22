@@ -1,3 +1,5 @@
+'use client'
+
 interface StatusBadgeProps {
   label: string
   color: string

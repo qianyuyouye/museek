@@ -15,7 +15,7 @@ import { AdminTab } from '@/components/ui/unified-tabs'
 import { AdminModal } from '@/components/ui/modal'
 import { useApi, apiCall } from '@/lib/use-api'
 import { downloadCSV, today } from '@/lib/export'
-import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
+import { pageWrap, cardCls, btnPrimary, btnGhost, btnDanger, btnSuccess, btnSmall, inputCls, labelCls } from '@/lib/ui-tokens'
 import { formatDateTime } from '@/lib/format'
 
 // ── Types ───────────────────────────────────────────────────────
@@ -86,14 +86,6 @@ interface OtherImport {
   totalRevenue: number
   status: string
 }
-
-// ── Style helpers ───────────────────────────────────────────────
-
-const btnDanger =
-  'bg-gradient-to-r from-[var(--red)] to-[#c53030] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
-const btnSuccess =
-  'bg-gradient-to-r from-[var(--green2)] to-[var(--green)] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
-const btnSmall = 'text-[11px] px-2.5 py-1'
 
 // ── Status maps ─────────────────────────────────────────────────
 
@@ -295,7 +287,7 @@ function QishuiTab({
   refetchImports: () => void
   refetchMappings: () => void
 }) {
-  const importColumns: Column<Record<string, unknown>>[] = [
+  const importColumns: Column<RevenueImport>[] = [
     { key: 'fileName', title: '文件名', render: v => <span style={{ fontSize: 12 }}>{v as string}</span> },
     { key: 'period', title: '数据区间' },
     { key: 'totalRows', title: '总行数' },
@@ -356,8 +348,8 @@ function QishuiTab({
         <h3 className="text-base font-semibold mb-4">导入历史</h3>
         <DataTable
           columns={importColumns}
-          data={imports as unknown as Record<string, unknown>[]}
-          rowKey={r => (r as unknown as RevenueImport).id}
+          data={imports}
+          rowKey={r => r.id}
         />
       </div>
     </div>
@@ -459,7 +451,7 @@ function MappingTab({
     ? mappings
     : mappings.filter(m => m.status === mappingFilter)
 
-  const mappingColumns: Column<Record<string, unknown>>[] = [
+  const mappingColumns: Column<Mapping>[] = [
     { key: 'qishuiId', title: '歌曲ID', render: v => <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text3)', userSelect: 'all' as const }}>{v as string}</span> },
     { key: 'songName', title: '歌曲名称', render: v => <span style={{ fontWeight: 500 }}>{v as string}</span> },
     {
@@ -615,8 +607,8 @@ function MappingTab({
       <div className={cardCls}>
         <DataTable
           columns={mappingColumns}
-          data={filteredData as unknown as Record<string, unknown>[]}
-          rowKey={r => (r as unknown as Mapping).id}
+          data={filteredData}
+          rowKey={r => r.id}
         />
       </div>
     </div>
@@ -646,7 +638,7 @@ function StatsTab({
 }) {
   const maxPeriodTotal = Math.max(...periodStats.map(x => x.total), 1)
 
-  const userColumns: Column<Record<string, unknown>>[] = [
+  const userColumns: Column<RevenueStats["userStats"][number]>[] = [
     { key: 'name', title: '创作者', render: (v) => {
       const idx = userStats.findIndex(u => u.name === (v as string))
       return <span style={{ fontWeight: 600 }}>#{idx + 1} {v as string}</span>
@@ -657,7 +649,7 @@ function StatsTab({
     { key: 'total', title: '合计', render: v => <span style={{ fontWeight: 600, color: 'var(--green2)' }}>¥{(v as number).toFixed(2)}</span> },
   ]
 
-  const songColumns: Column<Record<string, unknown>>[] = [
+  const songColumns: Column<RevenueStats["songStats"][number]>[] = [
     { key: 'name', title: '歌曲', render: (v, row) => (
       <div>
         <span style={{ fontWeight: 600 }}>{v as string}</span>
@@ -670,7 +662,7 @@ function StatsTab({
     { key: 'total', title: '合计', render: v => <span style={{ fontWeight: 600, color: 'var(--green2)' }}>¥{(v as number).toFixed(2)}</span> },
   ]
 
-  const periodColumns: Column<Record<string, unknown>>[] = [
+  const periodColumns: Column<RevenueStats["periodStats"][number]>[] = [
     { key: 'period', title: '月份', render: v => <span style={{ fontWeight: 600 }}>{v as string}</span> },
     { key: 'songs', title: '歌曲数' },
     { key: 'userCount', title: '创作者' },
@@ -709,14 +701,14 @@ function StatsTab({
       {/* By creator */}
       {statsTab === 'user' && (
         <div className={cardCls}>
-          <DataTable columns={userColumns} data={userStats as unknown as Record<string, unknown>[]} rowKey={r => (r as unknown as { name: string }).name} />
+          <DataTable columns={userColumns} data={userStats} rowKey={r => r.name} />
         </div>
       )}
 
       {/* By song */}
       {statsTab === 'song' && (
         <div className={cardCls}>
-          <DataTable columns={songColumns} data={songStats as unknown as Record<string, unknown>[]} rowKey={r => (r as unknown as { name: string }).name} />
+          <DataTable columns={songColumns} data={songStats} rowKey={r => r.name} />
         </div>
       )}
 
@@ -741,7 +733,7 @@ function StatsTab({
             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: 'var(--accent)', display: 'inline-block' }} />抖音</span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: 'var(--pink, #ec4899)', display: 'inline-block' }} />汽水</span>
           </div>
-          <DataTable columns={periodColumns} data={periodStats as unknown as Record<string, unknown>[]} rowKey={r => (r as unknown as { period: string }).period} />
+          <DataTable columns={periodColumns} data={periodStats} rowKey={r => r.period} />
         </div>
       )}
 
@@ -825,7 +817,7 @@ function StatsTab({
 // ── Tab: 结算管理 ───────────────────────────────────────────────
 
 function SettleTab({ showToast, settlements, refetch }: { showToast: (msg: string) => void; settlements: Settlement[]; refetch: () => void }) {
-  const settleColumns: Column<Record<string, unknown>>[] = [
+  const settleColumns: Column<Settlement>[] = [
     { key: 'songTitle', title: '歌曲' },
     { key: 'platform', title: '来源平台' },
     { key: 'plays', title: '播放量', render: v => (v as number)?.toLocaleString() },
@@ -859,8 +851,8 @@ function SettleTab({ showToast, settlements, refetch }: { showToast: (msg: strin
       <h3 className="text-base font-semibold mb-4">结算明细 · {getCurrentQuarter()}</h3>
       <DataTable
         columns={settleColumns}
-        data={settlements as unknown as Record<string, unknown>[]}
-        rowKey={r => (r as unknown as Settlement).id}
+        data={settlements}
+        rowKey={r => r.id}
       />
       <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
         <button className={btnPrimary} onClick={async () => { const ids = settlements.filter((s: { status: string; id: number }) => s.status === 'pending').map(s => s.id); if (!ids.length) { showToast('没有待确认的记录'); return }; const res = await apiCall('/api/admin/revenue/settlements', 'POST', { ids, action: 'confirm' }); if (res.ok) { showToast('已批量确认'); refetch() } else showToast(res.message ?? '操作失败') }}>批量确认</button>
@@ -905,7 +897,7 @@ function OtherPlatformTab({ showToast }: { showToast: (msg: string) => void }) {
     }
   }
 
-  const otherColumns: Column<Record<string, unknown>>[] = [
+  const otherColumns: Column<OtherImport>[] = [
     { key: 'platform', title: '平台' },
     { key: 'fileName', title: '文件名', render: v => <span style={{ fontSize: 12 }}>{v as string}</span> },
     { key: 'totalRows', title: '行数' },
@@ -970,8 +962,8 @@ function OtherPlatformTab({ showToast }: { showToast: (msg: string) => void }) {
       <div className={cardCls}>
         <DataTable
           columns={otherColumns}
-          data={otherImports as unknown as Record<string, unknown>[]}
-          rowKey={r => (r as unknown as { id: number }).id}
+          data={otherImports}
+          rowKey={r => r.id}
         />
       </div>
     </div>
@@ -984,7 +976,7 @@ function PlatformSettleTab({ showToast }: { showToast: (msg: string) => void }) 
   const { data: psData, refetch: refetchPs } = useApi<{ settlements: Settlement[] }>('/api/admin/revenue/platform-settlements')
   const platformSettlements = psData?.settlements ?? []
 
-  const psColumns: Column<Record<string, unknown>>[] = [
+  const psColumns: Column<Settlement>[] = [
     { key: 'songTitle', title: '歌曲' },
     {
       key: 'platform', title: '来源平台', render: v =>
@@ -1024,8 +1016,8 @@ function PlatformSettleTab({ showToast }: { showToast: (msg: string) => void }) 
       </div>
       <DataTable
         columns={psColumns}
-        data={platformSettlements as unknown as Record<string, unknown>[]}
-        rowKey={r => (r as unknown as { id: number }).id}
+        data={platformSettlements}
+        rowKey={r => r.id}
       />
       <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
         <button className={btnGhost} onClick={async () => { const ids = platformSettlements.filter((s: { status: string; id: number }) => s.status === 'pending').map(s => s.id); if (!ids.length) { showToast('没有待确认的记录'); return }; const res = await apiCall('/api/admin/revenue/settlements', 'POST', { ids, action: 'confirm' }); if (res.ok) { showToast('已批量确认'); refetchPs() } else showToast(res.message ?? '操作失败') }}>批量确认</button>
@@ -1095,8 +1087,8 @@ function ImportDetailContent({ row, showToast, refetch }: { row: RevenueImport; 
                 return <span style={{ fontWeight: 600 }}>¥{(d.douyinRevenue + d.qishuiRevenue).toFixed(2)}</span>
               }},
             ]}
-            data={idConfirmed as unknown as Record<string, unknown>[]}
-            rowKey={r => (r as unknown as QishuiDetail).id}
+            data={idConfirmed}
+            rowKey={r => r.id}
           />
         </div>
       )}
@@ -1135,8 +1127,8 @@ function ImportDetailContent({ row, showToast, refetch }: { row: RevenueImport; 
                 )
               }},
             ]}
-            data={namePending as unknown as Record<string, unknown>[]}
-            rowKey={r => (r as unknown as { id: number }).id}
+            data={namePending}
+            rowKey={r => r.id}
           />
         </div>
       )}
@@ -1152,8 +1144,8 @@ function ImportDetailContent({ row, showToast, refetch }: { row: RevenueImport; 
               { key: 'totalRevenue', title: '收益', render: v => `¥${(v as number).toFixed(2)}` },
               { key: 'id', title: '', render: () => <button className={`${btnGhost} ${btnSmall}`} onClick={() => showToast('请在匹配关系页签中绑定创作者')}>绑定创作者</button> },
             ]}
-            data={unmatched as unknown as Record<string, unknown>[]}
-            rowKey={r => (r as unknown as { id: number }).id}
+            data={unmatched}
+            rowKey={r => r.id}
           />
         </div>
       )}

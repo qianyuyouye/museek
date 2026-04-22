@@ -9,7 +9,7 @@ import { SearchBar } from '@/components/ui/search-bar'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { SONG_STATUS_MAP } from '@/lib/constants'
 import { useApi, apiCall } from '@/lib/use-api'
-import { pageWrap, cardCls, btnGhost, inputCls } from '@/lib/ui-tokens'
+import { pageWrap, cardCls, btnPrimary, btnGhost, btnDanger, btnSuccess, btnSmall, inputCls, labelCls } from '@/lib/ui-tokens'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -41,14 +41,6 @@ interface Song {
   status: string
   userId: number
 }
-
-// ── Button helpers ───────────────────────────────────────────────
-
-const btnDanger =
-  'bg-gradient-to-r from-[var(--red)] to-[#c53030] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
-const btnSuccess =
-  'bg-gradient-to-r from-[var(--green2)] to-[var(--green)] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
-const btnSmall = 'text-[11px] px-2.5 py-1'
 
 // ── Main component ───────────────────────────────────────────────
 
@@ -528,9 +520,9 @@ export default function AdminStudentsPage() {
       {/* DataTable card */}
       <div className={cardCls}>
         <DataTable
-          columns={listColumns as unknown as Column<Record<string, unknown>>[]}
-          data={students as unknown as Record<string, unknown>[]}
-          rowKey={(r) => (r as unknown as Student).id}
+          columns={listColumns}
+          data={students}
+          rowKey={(r) => r.id}
           onRowClick={(row) => setDetail((row as unknown as Student).id)}
         />
       </div>

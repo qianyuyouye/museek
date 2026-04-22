@@ -5,7 +5,7 @@ import { Rocket, CheckCircle2, X, XCircle, AlertTriangle, Star, BarChart3, Packa
 import { PageHeader } from '@/components/ui/page-header'
 import { useApi, apiCall } from '@/lib/use-api'
 import { SONG_STATUS_MAP } from '@/lib/constants'
-import { pageWrap, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'
+import { pageWrap, cardCls, btnPrimary, btnGhost, btnSmall } from '@/lib/ui-tokens'
 
 interface SongItem {
   id: number
@@ -54,7 +54,6 @@ function hasAnyIssue(v: ValidationIssue) {
 }
 
 // ── Button / style helpers ──────────────────────────────────────
-const btnSmall = 'text-[11px] px-2.5 py-1'
 
 const selectCls =
   'px-3 py-2 bg-white border-[1.5px] border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer'
@@ -364,7 +363,7 @@ export default function BatchDownloadPage() {
                 'ISRC': s.isrc ?? '',
                 '状态': (SONG_STATUS_MAP[s.status] ?? { label: s.status }).label,
               }))
-              downloadCSV(exportData as unknown as Record<string, unknown>[], `作品元数据_${new Date().toISOString().slice(0, 10)}.csv`)
+              downloadCSV(exportData, `作品元数据_${new Date().toISOString().slice(0, 10)}.csv`)
               showToast(`已导出 ${selected.length} 首歌曲的元数据表`)
             }}
           >

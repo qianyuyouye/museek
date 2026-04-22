@@ -8,7 +8,7 @@ import { StatCard } from '@/components/ui/stat-card'
 import { DataTable, Column } from '@/components/ui/data-table'
 import { AdminModal } from '@/components/ui/modal'
 import { useApi, apiCall } from '@/lib/use-api'
-import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
+import { pageWrap, cardCls, btnPrimary, btnGhost, btnDanger, btnSuccess, btnSmall, inputCls, labelCls } from '@/lib/ui-tokens'
 import { formatDateTime } from '@/lib/format'
 
 // ── Types ────────────────────────────────────────────────────────
@@ -37,14 +37,6 @@ interface GroupMember {
   status: string
   joinedAt: string
 }
-
-// ── Button helpers ───────────────────────────────────────────────
-
-const btnDanger =
-  'bg-gradient-to-r from-[var(--red)] to-[#c53030] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
-const btnSuccess =
-  'bg-gradient-to-r from-[var(--green2)] to-[var(--green)] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
-const btnSmall = 'text-[11px] px-2.5 py-1'
 
 // ── Main component ───────────────────────────────────────────────
 
@@ -311,9 +303,9 @@ export default function AdminGroupsPage() {
           </div>
           {members.length > 0 ? (
             <DataTable
-              columns={memberColumns as unknown as Column<Record<string, unknown>>[]}
-              data={members as unknown as Record<string, unknown>[]}
-              rowKey={(r) => (r as unknown as GroupMember).id}
+              columns={memberColumns}
+              data={members}
+              rowKey={(r) => r.id}
             />
           ) : (
             <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text3)', fontSize: 14 }}>
@@ -443,9 +435,9 @@ export default function AdminGroupsPage() {
       {/* DataTable card */}
       <div className={cardCls}>
         <DataTable
-          columns={listColumns as unknown as Column<Record<string, unknown>>[]}
-          data={groups as unknown as Record<string, unknown>[]}
-          rowKey={(r) => (r as unknown as Group).id}
+          columns={listColumns}
+          data={groups}
+          rowKey={(r) => r.id}
           onRowClick={(row) => setDetail((row as unknown as Group).id)}
         />
       </div>

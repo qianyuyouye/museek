@@ -7,15 +7,8 @@ import { AdminTab } from '@/components/ui/unified-tabs'
 import { DataTable, Column } from '@/components/ui/data-table'
 import { AdminModal } from '@/components/ui/modal'
 import { useApi, apiCall } from '@/lib/use-api'
-import { pageWrap, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'
+import { pageWrap, cardCls, btnPrimary, btnGhost, btnDanger, btnSuccess, btnSmall } from '@/lib/ui-tokens'
 import { formatDate } from '@/lib/format'
-
-// ── Style helpers ────────────────────────────────────────────────
-const btnDanger =
-  'bg-gradient-to-r from-[var(--red)] to-[#c53030] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
-const btnSuccess =
-  'bg-gradient-to-r from-[var(--green2)] to-[var(--green)] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-0'
-const btnSmall = 'text-[11px] px-2.5 py-1'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -394,9 +387,9 @@ export default function PublishConfirmPage() {
       {/* Table */}
       <div className={cardCls}>
         <DataTable
-          columns={columns as unknown as Column<Record<string, unknown>>[]}
-          data={filteredTracks as unknown as Record<string, unknown>[]}
-          rowKey={(r) => (r as unknown as PublishTrack).id}
+          columns={columns}
+          data={filteredTracks}
+          rowKey={(r) => r.id}
         />
       </div>
 

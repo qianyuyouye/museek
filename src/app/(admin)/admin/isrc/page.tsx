@@ -307,9 +307,9 @@ export default function AdminIsrcPage() {
           </div>
 
           <DataTable
-            columns={columns as unknown as Column<Record<string, unknown>>[]}
-            data={pagedSongs as unknown as Record<string, unknown>[]}
-            rowKey={(r) => (r as unknown as SongItem).id}
+            columns={columns}
+            data={pagedSongs}
+            rowKey={(r) => r.id}
           />
 
           {renderPagination()}

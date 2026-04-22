@@ -157,9 +157,9 @@ export default function AdminLogsPage() {
       {/* 表格 */}
       <div className={cardCls}>
         <DataTable
-          columns={columns as unknown as Column<Record<string, unknown>>[]}
-          data={filtered as unknown as Record<string, unknown>[]}
-          rowKey={(r) => (r as unknown as LogItem).id}
+          columns={columns}
+          data={filtered}
+          rowKey={(r) => r.id}
         />
       </div>
     </div>
