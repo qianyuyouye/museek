@@ -38,7 +38,7 @@ export const POST = safeHandler(async function POST(
   if (isNaN(id)) return err('无效的歌曲ID')
 
   const body = await request.json()
-  const { platform, status, submittedAt, liveDate } = body
+  const { platform, status, submittedAt, liveDate, url } = body
 
   if (!platform || typeof platform !== 'string' || !(await isPlatformEnabled(platform))) {
     return err('无效的平台名称')
@@ -56,6 +56,7 @@ export const POST = safeHandler(async function POST(
       status,
       submittedAt: submittedAt ? new Date(submittedAt) : undefined,
       liveDate: liveDate ? new Date(liveDate) : undefined,
+      url: url ?? undefined,
     },
     create: {
       songId: id,
@@ -63,6 +64,7 @@ export const POST = safeHandler(async function POST(
       status,
       submittedAt: submittedAt ? new Date(submittedAt) : undefined,
       liveDate: liveDate ? new Date(liveDate) : undefined,
+      url: url ?? undefined,
     },
   })
 

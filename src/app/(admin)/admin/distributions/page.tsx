@@ -38,6 +38,7 @@ interface EditingCell {
   status: string
   submittedAt: string
   liveDate: string
+  url: string
 }
 
 export default function AdminDistributionsPage() {
@@ -71,6 +72,7 @@ export default function AdminDistributionsPage() {
       status: status === 'none' ? 'pending' : status,
       submittedAt: '',
       liveDate: '',
+      url: '',
     })
   }
 
@@ -82,6 +84,7 @@ export default function AdminDistributionsPage() {
       status: editing.status,
       submittedAt: editing.submittedAt || undefined,
       liveDate: editing.liveDate || undefined,
+      url: editing.url || undefined,
     })
     setSaving(false)
     if (res.ok) {
@@ -211,6 +214,15 @@ export default function AdminDistributionsPage() {
                 className={inputCls}
                 value={editing.liveDate}
                 onChange={(e) => setEditing({ ...editing, liveDate: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>发行链接（可选）</label>
+              <input
+                className={inputCls}
+                placeholder="https://..."
+                value={editing.url}
+                onChange={(e) => setEditing({ ...editing, url: e.target.value })}
               />
             </div>
             <div className="flex gap-2 justify-end">

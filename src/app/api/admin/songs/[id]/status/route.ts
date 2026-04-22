@@ -25,6 +25,10 @@ const ACTION_TRANSITIONS: Record<string, { from: SongStatus[]; to: SongStatus }>
     from: [SongStatus.archived],
     to: SongStatus.reviewed,
   },
+  unpublish: {
+    from: [SongStatus.published],
+    to: SongStatus.reviewed,
+  },
   review_done: {
     from: [SongStatus.pending_review],
     to: SongStatus.reviewed,
@@ -98,6 +102,9 @@ export const POST = safeHandler(async function POST(
     if (action === 'publish') {
       await notify(song.userId, 'tpl.song_published', { songTitle: song.title, songId: song.id }, 'song', song.id)
     } else if (action === 'archive') {
+      await notify(song.userId, 'tpl.song_archived', { songTitle: song.title, songId: song.id }, 'song', song.id)
+    } else if (action === 'unpublish') {
+      await notify(song.userId, 'tpl.song_archived', { songTitle: song.title, songId: song.id }, 'song', song.id)
       await notify(song.userId, 'tpl.song_archived', { songTitle: song.title, songId: song.id }, 'song', song.id)
     }
   } catch (e) {
