@@ -3,6 +3,12 @@
 import { useState, useRef } from 'react'
 import { PageHeader } from '@/components/admin/page-header'
 import { StatCard } from '@/components/admin/stat-card'
+
+function getCurrentQuarter(): string {
+  const now = new Date()
+  const q = Math.floor(now.getMonth() / 3) + 1
+  return `${now.getFullYear()}-Q${q}`
+}
 import { DataTable, Column } from '@/components/admin/data-table'
 import { AdminTab } from '@/components/admin/admin-tab'
 import { AdminModal } from '@/components/admin/admin-modal'
@@ -810,7 +816,7 @@ function SettleTab({ showToast, settlements, refetch }: { showToast: (msg: strin
 
   return (
     <div className={cardCls}>
-      <h3 className="text-base font-semibold mb-4">结算明细 · 2026-Q1</h3>
+      <h3 className="text-base font-semibold mb-4">结算明细 · {getCurrentQuarter()}</h3>
       <DataTable
         columns={settleColumns}
         data={settlements as unknown as Record<string, unknown>[]}

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useMemo, useRef, useEffect } from 'react'
-import JSZip from 'jszip'
 import { PageHeader } from '@/components/admin/page-header'
 import { useApi, apiCall } from '@/lib/use-api'
 import { SONG_STATUS_MAP } from '@/lib/constants'
@@ -53,34 +52,6 @@ function hasAnyIssue(v: ValidationIssue) {
   return v.missingAgency || v.missingRealName || v.missingIsrc
 }
 
-function buildValidationReport(issues: ValidationIssue[]): string {
-  const passed = issues.filter(v => !hasAnyIssue(v))
-  const failed = issues.filter(v => hasAnyIssue(v))
-  const now = new Date()
-  const pad = (n: number) => String(n).padStart(2, '0')
-  const ts = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`
-
-  const lines: string[] = []
-  lines.push('Museek 批量下载校验报告')
-  lines.push(`生成时间：${ts}`)
-  lines.push('')
-  lines.push(`==== 通过 (${passed.length}) ====`)
-  for (const v of passed) {
-    const creator = v.song.creatorName ?? `用户${v.song.userId}`
-    lines.push(`[${v.song.copyrightCode}] ${v.song.title} — ${creator}`)
-  }
-  lines.push('')
-  lines.push(`==== 不合规 (${failed.length}) ====`)
-  for (const v of failed) {
-    const creator = v.song.creatorName ?? `用户${v.song.userId}`
-    lines.push(`[${v.song.copyrightCode}] ${v.song.title} — ${creator}`)
-    if (v.missingAgency) lines.push('  ❌ 未签代理协议')
-    if (v.missingRealName) lines.push('  ❌ 未实名认证')
-    if (v.missingIsrc) lines.push('  ⚠️ ISRC 未申报')
-  }
-  return lines.join('\n') + '\n'
-}
-
 // ── Button / style helpers ──────────────────────────────────────
 const btnSmall = 'text-[11px] px-2.5 py-1'
 
@@ -99,10 +70,16 @@ const STATUS_FILTERS = [
 
 // ── Download helpers ────────────────────────────────────────────
 
+function escapeCsvField(s: string): string {
+  return s.startsWith('=') || s.startsWith('+') || s.startsWith('-') || s.startsWith('@')
+    ? "'" + s
+    : s
+}
+
 function downloadCSV(data: Record<string, unknown>[], filename: string) {
   if (data.length === 0) return
   const headers = Object.keys(data[0])
-  const csv = [headers.join(','), ...data.map(row => headers.map(h => `"${String(row[h] ?? '')}"`).join(','))].join('\n')
+  const csv = [headers.join(','), ...data.map(row => headers.map(h => `"${escapeCsvField(String(row[h] ?? ''))}"`).join(','))].join('\n')
   const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -131,104 +108,35 @@ export default function BatchDownloadPage() {
 
   // ZIP packing state
   const [zipping, setZipping] = useState(false)
-  const [zipProgress, setZipProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 })
   // 下载前校验预览
   const [previewIssues, setPreviewIssues] = useState<ValidationIssue[] | null>(null)
 
   async function packAndDownload(selected: SongItem[]) {
     setZipping(true)
-    setZipProgress({ current: 0, total: selected.length })
-    const zip = new JSZip()
-    const safe = (s: string) => s.replace(/[\\/:*?"<>|]/g, '_').trim()
-    const errors: string[] = []
-
-    // 三条件校验报告（签约 + 实名 + ISRC）
-    const issues = selected.map(validateSong)
-    const unverifiedCount = issues.filter(hasAnyIssue).length
-    zip.file('validation-report.txt', buildValidationReport(issues))
-
-    // 元数据 JSON 一并打包
-    zip.file('metadata.json', JSON.stringify(
-      selected.map((s) => ({
-        id: s.id, title: s.title, creator: s.creatorName ?? `用户${s.userId}`,
-        genre: s.genre, bpm: s.bpm, aiTools: Array.isArray(s.aiTools) ? s.aiTools : [], score: s.score,
-        copyrightCode: s.copyrightCode, isrc: s.isrc, status: s.status,
-        agencyContract: s.agencyContract ?? false,
-        realNameStatus: s.realNameStatus ?? 'unverified',
-      })),
-      null, 2,
-    ))
-
-    for (let i = 0; i < selected.length; i++) {
-      const s = selected[i]
-      setZipProgress({ current: i + 1, total: selected.length })
-      if (!s.audioUrl) { errors.push(`${s.title}: 无音频地址`); continue }
-      try {
-        const res = await fetch(s.audioUrl)
-        if (!res.ok) { errors.push(`${s.title}: HTTP ${res.status}`); continue }
-        const blob = await res.blob()
-        const ext = (s.audioUrl.match(/\.(mp3|wav|flac|m4a|ogg)$/i)?.[1] ?? 'mp3').toLowerCase()
-        const filename = `${safe(s.copyrightCode || String(s.id))}_${safe(s.title)}.${ext}`
-        zip.file(filename, blob)
-        if (s.coverUrl) {
-          try {
-            const cr = await fetch(s.coverUrl)
-            if (cr.ok) {
-              const cblob = await cr.blob()
-              const cext = (s.coverUrl.match(/\.(jpg|jpeg|png|webp)$/i)?.[1] ?? 'jpg').toLowerCase()
-              zip.file(`covers/${safe(s.copyrightCode || String(s.id))}.${cext}`, cblob)
-            }
-          } catch { /* 封面失败不影响音频 */ }
-        }
-      } catch (e) {
-        errors.push(`${s.title}: ${e instanceof Error ? e.message : '下载失败'}`)
-      }
-
-      // 代理发行授权凭证 PDF（仅当作者已签 agency_contract）
-      if (s.agencyContract) {
-        try {
-          const pr = await fetch(`/api/admin/songs/${s.id}/agency-pdf`)
-          if (pr.ok) {
-            const pblob = await pr.blob()
-            zip.file(`agency-pdfs/${safe(s.copyrightCode || String(s.id))}.pdf`, pblob)
-          } else {
-            errors.push(`${s.title}: 授权凭证生成失败 (HTTP ${pr.status})`)
-          }
-        } catch { /* PDF 失败不影响音频 */ }
-      } else {
-        errors.push(`${s.title}: 未签代理协议，跳过授权凭证`)
-      }
-    }
-
-    if (errors.length > 0) {
-      zip.file('errors.txt', errors.join('\n'))
-    }
-
     try {
-      const blob = await zip.generateAsync({ type: 'blob' })
+      const songIds = selected.map(s => s.id)
+      const res = await fetch('/api/admin/batch-download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ songIds }),
+      })
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({ message: '请求失败' }))
+        showToast(`❌ ${json.message || '打包失败'}`)
+        return
+      }
+      const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
       a.download = `批量下载_${new Date().toISOString().slice(0, 10)}.zip`
       a.click()
       URL.revokeObjectURL(url)
-      showToast(`✅ 打包完成 · 成功 ${selected.length - errors.length} · 失败 ${errors.length}`)
-      // 记录操作日志
-      apiCall('/api/admin/logs/record', 'POST', {
-        action: 'batch_download_songs',
-        targetType: 'platform_song',
-        detail: {
-          count: selected.length,
-          unverifiedCount,
-          downloadErrors: errors.length,
-          songIds: selected.map(s => s.id),
-        },
-      }).catch(() => {})
+      showToast('✅ 打包完成')
     } catch {
-      showToast('打包失败，文件可能过大')
+      showToast('❌ 网络请求失败')
     } finally {
       setZipping(false)
-      setZipProgress({ current: 0, total: 0 })
     }
   }
 
@@ -474,7 +382,7 @@ export default function BatchDownloadPage() {
               setPreviewIssues(selected.map(validateSong))
             }}
           >
-            {zipping ? `📦 打包中 ${zipProgress.current}/${zipProgress.total}` : `📦 批量打包${selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}`}
+            {zipping ? '📦 打包中...' : `📦 批量打包${selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}`}
           </button>
         </div>
       </div>

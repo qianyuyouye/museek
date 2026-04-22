@@ -72,8 +72,8 @@ function Toolbar({ editor }: { editor: Editor | null }) {
   function promptImage() {
     if (!editor) return
     const url = window.prompt('请输入图片 URL')
-    if (url) {
-      editor.chain().focus().setImage({ src: url }).run()
+    if (url && /^https?:\/\//.test(url.trim())) {
+      editor.chain().focus().setImage({ src: url.trim() }).run()
     }
   }
 

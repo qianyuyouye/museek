@@ -4,6 +4,12 @@ import { useState } from 'react'
 import { useApi } from '@/lib/use-api'
 import { pageWrap, textPageTitle } from '@/lib/ui-tokens'
 
+function getCurrentQuarter(): string {
+  const now = new Date()
+  const q = Math.floor(now.getMonth() / 3) + 1
+  return `${now.getFullYear()}-Q${q}`
+}
+
 // ── Status config ──────────────────────────────────────────────
 
 const SETTLE_STATUS: Record<string, { label: string; color: string }> = {
@@ -205,7 +211,7 @@ export default function CreatorRevenuePage() {
       {/* Platform Revenue Table */}
       {activeTab === 'platform' && (
         <div className="bg-white rounded-xl border border-[var(--border)] p-5">
-          <h3 className="text-[15px] font-semibold text-[var(--text)] mb-4">平台分发收益明细 - 2026-Q1</h3>
+          <h3 className="text-[15px] font-semibold text-[var(--text)] mb-4">平台分发收益明细 - {getCurrentQuarter()}</h3>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-[var(--text3)] border-b border-[var(--border)]">
