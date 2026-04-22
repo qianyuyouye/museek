@@ -23,7 +23,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   const pwdErr = validatePassword(newPassword)
   if (pwdErr) return err(pwdErr)
 
-  const valid = await verifySmsCode(phone, code)
+  const valid = await verifySmsCode(phone, code, 'resetPassword')
   if (!valid) return err('验证码无效或已过期')
 
   // 尝试在 user 表查找（创作者/评审）

@@ -33,7 +33,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     return NextResponse.json({ code: 423, message: `验证码错误过多，请 ${lockedFor} 秒后重试` }, { status: 423 })
   }
 
-  const valid = await verifySmsCode(phone, code)
+  const valid = await verifySmsCode(phone, code, 'register')
   if (!valid) {
     await recordSmsVerifyFailure(phone)
     return NextResponse.json({ code: 400, message: '验证码错误或已过期' }, { status: 400 })

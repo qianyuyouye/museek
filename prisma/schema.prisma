@@ -108,15 +108,15 @@ model PlatformSong {
   userId         Int          @map("user_id")
   title          String       @db.VarChar(200)
   aiTools        Json?        @map("ai_tools")
-  performer      String?      @db.VarChar(200)
-  lyricist       String?      @db.VarChar(200)
-  composer       String?      @db.VarChar(200)
+  performer      String       @default("") @db.VarChar(200)
+  lyricist       String       @default("") @db.VarChar(200)
+  composer       String       @default("") @db.VarChar(200)
   lyrics         String?      @db.Text
   styleDesc      String?      @map("style_desc") @db.VarChar(500)
   genre          String?      @db.VarChar(50)
   bpm            Int?         @db.SmallInt
-  albumName      String?      @map("album_name") @db.VarChar(200)
-  albumArtist    String?      @map("album_artist") @db.VarChar(200)
+  albumName      String       @default("") @map("album_name") @db.VarChar(200)
+  albumArtist    String       @default("") @map("album_artist") @db.VarChar(200)
   audioUrl       String?      @map("audio_url") @db.VarChar(500)
   coverUrl       String?      @map("cover_url") @db.VarChar(500)
   contribution   Contribution @default(lead)
@@ -126,7 +126,7 @@ model PlatformSong {
   source         SongSource
   assignmentId   Int?         @map("assignment_id")
   status         SongStatus   @default(pending_review)
-  score          Int?         @db.TinyInt
+  score          Int?         @db.TinyInt  // 应用层 CHECK 0-100（Review.totalScore 等）
   reviewComment  String?      @map("review_comment") @db.Text
   version        Int          @default(1) @db.TinyInt
   likeCount      Int          @default(0) @map("like_count")
@@ -199,7 +199,7 @@ model AssignmentSubmission {
   platformSongId  Int?               @unique @map("platform_song_id")
   status          SubmissionStatus   @default(pending_review)
   score           Int?               @db.TinyInt
-  submittedAt     DateTime?          @map("submitted_at")
+  submittedAt     DateTime           @default(now()) @map("submitted_at")
   version         Int                @default(1) @db.TinyInt
 
   assignment      Assignment         @relation(fields: [assignmentId], references: [id])
@@ -257,7 +257,7 @@ model FormFieldConfig {
   options      Json?
   required     Boolean    @default(true)
   defaultValue String?    @map("default_value") @db.VarChar(500)
-  displayOrder Int        @default(0) @map("display_order") @db.TinyInt
+  displayOrder Int        @default(0) @map("display_order")  // 移除 TinyInt，避免溢出（GAP-SCHM-024）
 
   group        Group?     @relation(fields: [groupId], references: [id])
 
@@ -526,7 +526,7 @@ model LearningRecord {
   id           Int       @id @default(autoincrement())
   userId       Int       @map("user_id")
   contentId    Int       @map("content_id")
-  progress     Int       @default(0) @db.SmallInt
+  progress     Int       @default(0) @db.SmallInt  // 应用层 CHECK 0-100
   duration     Int       @default(0)
   completedAt  DateTime? @map("completed_at")
   lastViewedAt DateTime  @default(now()) @map("last_viewed_at")
@@ -585,11 +585,13 @@ model SmsCode {
   id        Int      @id @default(autoincrement())
   phone     String   @db.VarChar(20)
   code      String   @db.VarChar(6)
+  purpose   String   @default("register") @db.VarChar(20)
   expiresAt DateTime @map("expires_at")
   used      Boolean  @default(false)
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([phone, code])
+  @@index([phone, purpose, createdAt])
   @@map("sms_codes")
 }
 

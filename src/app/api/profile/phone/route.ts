@@ -43,9 +43,9 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   if (occupied && occupied.id !== userId) return err('新手机号已被其他账号使用')
 
   // 分别验证两套验证码
-  const oldOk = await verifySmsCode(oldPhone, oldCode)
+  const oldOk = await verifySmsCode(oldPhone, oldCode, 'changePhone')
   if (!oldOk) return err('旧手机号验证码错误或已过期')
-  const newOk = await verifySmsCode(newPhone, newCode)
+  const newOk = await verifySmsCode(newPhone, newCode, 'changePhone')
   if (!newOk) return err('新手机号验证码错误或已过期')
 
   await prisma.user.update({ where: { id: userId }, data: { phone: newPhone } })

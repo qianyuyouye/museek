@@ -68,7 +68,7 @@ export async function sendSmsCode(
   // Dev 模式：未启用 SMS 时 + NODE_ENV=development → 固定码
   if (!config.enabled && process.env.NODE_ENV === 'development') {
     await prisma.smsCode.create({
-      data: { phone, code: '123456', expiresAt: new Date(Date.now() + 5 * 60 * 1000) },
+      data: { phone, code: '123456', purpose, expiresAt: new Date(Date.now() + 5 * 60 * 1000) },
     })
     return { success: true, message: '开发模式：验证码为 123456' }
   }
@@ -94,7 +94,7 @@ export async function sendSmsCode(
 
     if (response.body?.code === 'OK') {
       await prisma.smsCode.create({
-        data: { phone, code, expiresAt: new Date(Date.now() + 5 * 60 * 1000) },
+        data: { phone, code, purpose, expiresAt: new Date(Date.now() + 5 * 60 * 1000) },
       })
       return { success: true, message: '验证码已发送' }
     }
@@ -105,9 +105,9 @@ export async function sendSmsCode(
   }
 }
 
-export async function verifySmsCode(phone: string, code: string): Promise<boolean> {
+export async function verifySmsCode(phone: string, code: string, purpose?: SmsPurpose): Promise<boolean> {
   const record = await prisma.smsCode.findFirst({
-    where: { phone, code, used: false, expiresAt: { gte: new Date() } },
+    where: { phone, code, purpose: purpose ?? undefined, used: false, expiresAt: { gte: new Date() } },
     orderBy: { createdAt: 'desc' },
   })
   if (!record) return false
