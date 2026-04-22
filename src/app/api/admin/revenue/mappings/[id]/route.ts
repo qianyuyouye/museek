@@ -4,6 +4,61 @@ import { requirePermission, ok, err, safeHandler } from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
 import { backfillSettlements } from '@/lib/revenue-backfill'
 
+export const DELETE = safeHandler(async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const auth = await requirePermission(request, 'admin.revenue.operate')
+  if ('error' in auth) return auth.error
+
+  const { id } = await params
+  const mappingId = parseInt(id, 10)
+  if (isNaN(mappingId)) return err('无效的 ID')
+
+  const existing = await prisma.songMapping.findUnique({ where: { id: mappingId } })
+  if (!existing) return err('映射记录不存在', 404)
+
+  // 解除映射：创作者/作品清空，状态回 pending；revenue_rows 的 mappingId 保留
+  // （历史数据保留溯源，但 confirmed → pending 导致 stats 不再计入）
+  const updated = await prisma.songMapping.update({
+    where: { id: mappingId },
+    data: {
+      creatorId: null,
+      platformSongId: null,
+      status: 'pending',
+      confirmedAt: null,
+      confirmedBy: null,
+    },
+  })
+
+  // 级联：删除 settlements（该 mapping 对应的所有 revenue_rows 的 settlements）
+  // 仅删 pending 状态，避免清空已导出/已付款的结算
+  const affectedRowIds = await prisma.revenueRow.findMany({
+    where: { mappingId },
+    select: { id: true },
+  })
+  if (affectedRowIds.length > 0) {
+    await prisma.settlement.deleteMany({
+      where: {
+        revenueRowId: { in: affectedRowIds.map((r) => r.id) },
+        settleStatus: 'pending',
+      },
+    })
+  }
+
+  await logAdminAction(request, {
+    action: 'unbind_mapping',
+    targetType: 'song_mapping',
+    targetId: mappingId,
+    detail: {
+      qishuiSongId: existing.qishuiSongId,
+      previousCreatorId: existing.creatorId,
+      previousPlatformSongId: existing.platformSongId,
+    },
+  })
+  return ok(updated)
+})
+
 export const PUT = safeHandler(async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

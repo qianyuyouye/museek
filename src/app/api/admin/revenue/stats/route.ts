@@ -37,6 +37,20 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
       .filter((id): id is number => id !== null)
   )
 
+  // 多维计数：歌曲数 / 结算期数 / 涉及用户数
+  const [distinctSongs, distinctPeriods] = await Promise.all([
+    prisma.revenueRow.findMany({
+      where: confirmedFilter,
+      select: { qishuiSongId: true },
+      distinct: ['qishuiSongId'],
+    }),
+    prisma.revenueRow.findMany({
+      where: confirmedFilter,
+      select: { period: true },
+      distinct: ['period'],
+    }),
+  ])
+
   // byCreator: 按 creatorId 分组 — 使用原生 SQL，因为 Prisma groupBy 不支持跨关联字段分组
   const byCreator = await prisma.$queryRaw<
     { creatorId: number; creatorName: string | null; totalRevenue: number; douyinRevenue: number; qishuiRevenue: number }[]
@@ -93,6 +107,14 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     douyinRevenue: parseFloat((totals._sum.douyinRevenue ?? 0).toString()),
     qishuiRevenue: parseFloat((totals._sum.qishuiRevenue ?? 0).toString()),
     creatorCount: creatorIds.size,
+    userCount: creatorIds.size,
+    songCount: distinctSongs.length,
+    periodCount: distinctPeriods.length,
+    songs: bySong.slice(0, 10).map((r) => ({
+      qishuiSongId: r.qishuiSongId,
+      songName: r.songName,
+      totalRevenue: parseFloat(r.totalRevenue.toString()),
+    })),
     byCreator: byCreator.map((r) => ({
       ...r,
       totalRevenue: parseFloat(r.totalRevenue.toString()),

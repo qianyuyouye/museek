@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import iconv from 'iconv-lite'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, err, parsePagination, safeHandler } from '@/lib/api-utils'
@@ -6,6 +7,30 @@ import { logAdminAction } from '@/lib/log-action'
 import { parseCSV } from '@/lib/csv'
 import { isPlatformEnabled } from '@/lib/platforms'
 import { loadRevenueRules, resolveCommissionRatio } from '@/lib/commission'
+
+/**
+ * 探测字节流编码并解码为 UTF-8 字符串。
+ * - UTF-8 BOM (EF BB BF) → utf8 去 BOM
+ * - UTF-16LE BOM (FF FE) / UTF-16BE BOM (FE FF) → utf16
+ * - 否则：尝试 utf-8 严格解码，失败则回退 GBK（国内 Excel 导出常见）
+ */
+function decodeCsvBuffer(buf: Buffer): string {
+  if (buf.length >= 3 && buf[0] === 0xef && buf[1] === 0xbb && buf[2] === 0xbf) {
+    return buf.slice(3).toString('utf8')
+  }
+  if (buf.length >= 2 && buf[0] === 0xff && buf[1] === 0xfe) {
+    return iconv.decode(buf.slice(2), 'utf-16le')
+  }
+  if (buf.length >= 2 && buf[0] === 0xfe && buf[1] === 0xff) {
+    return iconv.decode(buf.slice(2), 'utf-16be')
+  }
+  // 尝试 UTF-8：若遇到替换字符密度过高则视为非 UTF-8
+  const utf8Text = buf.toString('utf8')
+  const replacementRate =
+    (utf8Text.match(/\uFFFD/g)?.length ?? 0) / Math.max(1, utf8Text.length)
+  if (replacementRate < 0.002) return utf8Text
+  return iconv.decode(buf, 'gbk')
+}
 
 export const GET = safeHandler(async function GET(request: NextRequest) {
   const auth = await requirePermission(request, 'admin.revenue.view')
@@ -82,14 +107,20 @@ function parseQishuiCsv(text: string): { rows: ParsedRow[]; errors: string[] } {
       errors.push(`第 ${i + 1} 行: 日期格式无法识别 "${dateRange}"`)
       continue
     }
-    // 保留 CSV 原始起止日期（如 "2026/02/01 - 2026/02/28"），避免丢失天级粒度
     const period = dateRange
 
-    // 去除千分位分隔符（Excel 导出常带逗号 "1,234.56"）与两端引号
     const toNum = (s: string) => parseFloat(s.replace(/[,"']/g, '')) || 0
     const d = toNum(douyin)
     const q = toNum(qishui)
-    const t = toNum(total) || d + q
+    const tRaw = toNum(total)
+    const t = tRaw || d + q
+
+    // col7 = col5 + col6 校验（允许 ¥0.01 四舍五入偏差）
+    if (tRaw > 0 && Math.abs(tRaw - (d + q)) > 0.02) {
+      errors.push(
+        `第 ${i + 1} 行: 总收入与抖音+汽水对不上（${tRaw.toFixed(2)} vs ${(d + q).toFixed(2)}），已按子项求和修正`,
+      )
+    }
 
     rows.push({ qishuiSongId, songName, period, douyinRevenue: d, qishuiRevenue: q, totalRevenue: t })
   }
@@ -139,7 +170,8 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   if (!file) return err('请选择 CSV 文件')
   if (!(await isPlatformEnabled(platformStr, { allowLegacyKeys: true }))) return err('无效的平台')
 
-  const text = await file.text()
+  const ab = await file.arrayBuffer()
+  const text = decodeCsvBuffer(Buffer.from(ab))
   const { rows: parsed, errors: parseErrors } = parseQishuiCsv(text)
 
   if (parsed.length === 0) {

@@ -14,7 +14,8 @@ async function loadDashboard() {
     songsFromAssignment,
     pendingReview,
     published,
-    revenueAgg,
+    // Theme 11 GAP-ADMIN-063：平台总收入 = revenue_rows.totalRevenue（confirmed 映射）求和
+    platformRevenueAgg,
     creatorsWithSongs,
     verifiedCreators,
     agencyCreators,
@@ -28,22 +29,25 @@ async function loadDashboard() {
     prisma.platformSong.count({ where: { source: 'assignment' } }),
     prisma.platformSong.count({ where: { status: 'pending_review' } }),
     prisma.platformSong.count({ where: { status: 'published' } }),
-    prisma.settlement.aggregate({ _sum: { creatorAmount: true } }),
+    prisma.revenueRow.aggregate({
+      _sum: { totalRevenue: true },
+      where: { mapping: { status: 'confirmed' } },
+    }),
     prisma.platformSong.groupBy({
       by: ['userId'],
       _count: true,
     }).then((rows) => rows.length),
     prisma.user.count({ where: { type: 'creator', realNameStatus: 'verified' } }),
     prisma.user.count({ where: { type: 'creator', agencyContract: true } }),
-    prisma.settlement.groupBy({
+    prisma.revenueRow.groupBy({
       by: ['period'],
-      _sum: { creatorAmount: true },
-      orderBy: { period: 'asc' },
+      _sum: { totalRevenue: true },
+      where: { mapping: { status: 'confirmed' } },
     }),
     prisma.group.count(),
   ])
 
-  const totalRevenue = Number(revenueAgg._sum.creatorAmount ?? 0)
+  const totalRevenue = Number(platformRevenueAgg._sum.totalRevenue ?? 0)
 
   // 转化率（百分比，保留一位小数）
   const safe = (n: number, d: number) => (d > 0 ? Math.round((n / d) * 1000) / 10 : 0)
@@ -55,9 +59,19 @@ async function loadDashboard() {
     { n: 4, label: '作品发行率', v: safe(published, totalSongs), c: '#6366f1' },
   ]
 
-  // 收益趋势：将 period 转为月份标签
-  const trendMonths = trendRaw.map((r) => r.period ?? '')
-  const trendValues = trendRaw.map((r) => Number(r._sum.creatorAmount ?? 0))
+  // 收益趋势：period 可能是日期范围 (如 "2026/02/01 - 2026/02/28")，提取起始日期用于按时间排序
+  function parsePeriodStart(period: string | null | undefined): number {
+    if (!period) return 0
+    const m = period.match(/(\d{4})[\/\-](\d{1,2})[\/\-]?(\d{1,2})?/)
+    if (!m) return 0
+    const year = parseInt(m[1], 10)
+    const month = parseInt(m[2], 10) - 1
+    const day = m[3] ? parseInt(m[3], 10) : 1
+    return new Date(year, month, day).getTime()
+  }
+  const trendSorted = trendRaw.slice().sort((a, b) => parsePeriodStart(a.period) - parsePeriodStart(b.period))
+  const trendMonths = trendSorted.map((r) => r.period ?? '')
+  const trendValues = trendSorted.map((r) => Number(r._sum.totalRevenue ?? 0))
 
   const publishRate = totalSongs > 0 ? Math.round((published / totalSongs) * 1000) / 10 : 0
 
