@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle, textSectionTitle, cardCls, btnPrimary, labelCls } from '@/lib/ui-tokens'
 import AudioPlayer, { type AudioMark, type AudioPlayerHandle } from '@/components/review/AudioPlayer'
-import { Bot, CheckCircle2, Music, ClipboardList } from 'lucide-react'
+import { Bot, CheckCircle2, Music, ClipboardList, Search } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -70,7 +70,7 @@ function AIAnalysisPanel({ songId, bpm }: { songId: number; bpm?: number }) {
       </summary>
       <div className="p-3 bg-[var(--bg4)] rounded-lg mt-2 text-xs grid grid-cols-2 gap-2">
         {items.map(([k, v]) => (
-          <div key={k} className="p-1.5 bg-white rounded">
+          <div key={k} className="p-1.5 bg-[var(--bg3)] rounded">
             <span className="text-[var(--text3)]">{k}：</span>{v}
           </div>
         ))}
@@ -99,7 +99,9 @@ const QUICK_TAGS = [
 function Empty({ text }: { text: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-[var(--text3)]">
-      <div className="text-5xl mb-4">📭</div>
+      <div className="w-16 h-16 rounded-full bg-[var(--bg4)] border border-[var(--border)] flex items-center justify-center mb-4">
+        <Search size={28} className="text-[var(--text3)]" />
+      </div>
       <div className="text-sm">{text}</div>
     </div>
   )
@@ -508,7 +510,7 @@ export default function ReviewAssessPage() {
                 专业评语 <span className="text-[var(--text3)]">（≥20字）</span>
               </label>
               <textarea
-                className="w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] resize-y"
+                className="w-full px-3.5 py-2.5 bg-[var(--bg3)] border-[1.5px] border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] resize-y"
                 style={{ height: 100 }}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}

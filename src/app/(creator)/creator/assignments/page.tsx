@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle, cardCls, btnPrimary, btnGhost, btnSuccess, inputCls, labelCls } from '@/lib/ui-tokens'
 import { formatDate } from '@/lib/format'
-import { CheckCircle2 } from 'lucide-react'
+import { CheckCircle2, Music, AlertCircle, Search } from 'lucide-react'
 
 // ── Status Maps ────────────────────────────────────────────────
 
@@ -313,7 +313,7 @@ export default function CreatorAssignmentsPage() {
 
         <div className={cardCls}>
           {/* Audio Upload */}
-          <h3 className="text-[15px] font-semibold mb-4">🎵 上传音频文件</h3>
+          <h3 className="text-[15px] font-semibold mb-4"><Music size={16} className="inline mr-1 -mt-0.5" />上传音频文件</h3>
           <input
             ref={audioRef}
             type="file"
@@ -336,21 +336,19 @@ export default function CreatorAssignmentsPage() {
           >
             {uploading ? (
               <div>
-                <span className="text-4xl">⏳</span>
+                <div className="w-10 h-10 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin mx-auto" />
                 <p className="mt-1.5 text-[var(--text2)] text-[13px]">上传中...</p>
               </div>
             ) : audioUploaded ? (
               <div>
-                <span className="text-4xl text-[var(--green)]">
-                  <CheckCircle2 size={36} className="mx-auto" />
-                </span>
+                <CheckCircle2 size={36} className="mx-auto text-[var(--green)]" />
                 <p className="mt-1.5 text-[var(--green)] text-[13px]">
                   {audioFileName} 已上传 ({audioSize})
                 </p>
               </div>
             ) : (
               <div>
-                <span className="text-4xl">🎵</span>
+                <Music size={36} className="mx-auto text-[var(--text3)]" />
                 <p className="mt-1.5 text-[var(--text2)] text-[13px]">
                   点击或拖拽上传音频文件
                 </p>
@@ -362,7 +360,7 @@ export default function CreatorAssignmentsPage() {
           </div>
 
           {/* Dynamic Form Fields */}
-          <h3 className="text-[15px] font-semibold mb-4">📋 作品元数据</h3>
+          <h3 className="text-[15px] font-semibold mb-4"><AlertCircle size={16} className="inline mr-1 -mt-0.5" />作品元数据</h3>
           <div className="grid grid-cols-2 gap-4">
             {formFields.map((field) => {
               if (field.type === 'textarea') {
@@ -579,7 +577,7 @@ export default function CreatorAssignmentsPage() {
                           </span>
                         )}
                         {asn.submissionStatus === 'needs_revision' && (
-                          <span className="text-[var(--red)]">📝 老师建议修改后重新提交</span>
+                          <span className="text-[var(--red)]"><AlertCircle size={12} className="inline mr-1" />老师建议修改后重新提交</span>
                         )}
                       </div>
                     )}
@@ -606,7 +604,7 @@ export default function CreatorAssignmentsPage() {
                               }
                             }}
                           >
-                            📝 修改并重新提交
+                            <AlertCircle size={14} className="inline mr-1" />修改并重新提交
                           </button>
                         </div>
                       ) : asn.submitted ? (
@@ -636,7 +634,9 @@ export default function CreatorAssignmentsPage() {
 
       {allAssignments.length === 0 && (
         <div className={`${cardCls} text-center py-12`}>
-          <div className="text-4xl mb-3">📭</div>
+          <div className="w-16 h-16 rounded-full bg-[var(--bg4)] border border-[var(--border)] flex items-center justify-center mx-auto mb-3">
+            <Search size={28} className="text-[var(--text3)]" />
+          </div>
           <p className="text-[var(--text3)] text-sm">
             暂无作业，请等待管理员发布
           </p>

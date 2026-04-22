@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useApi } from '@/lib/use-api'
 import { pageWrap, textPageTitle } from '@/lib/ui-tokens'
-import { Coins, CheckCircle2, Hourglass } from 'lucide-react'
+import { Coins, CheckCircle2, Hourglass, Music } from 'lucide-react'
 
 function getCurrentQuarter(): string {
   const now = new Date()
@@ -187,7 +187,7 @@ export default function CreatorRevenuePage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-4 gap-4">
         <StatCard icon={<Coins size={20} />} label="平台分发收益" value={`¥${stats.total.toFixed(0)}`} color="#10b981" />
-        <StatCard icon={<span className="text-lg">🎵</span>} label="汽水音乐收益" value={`¥${stats.qishuiTotal.toFixed(2)}`} color="var(--pink)" />
+        <StatCard icon={<Music size={20} />} label="汽水音乐收益" value={`¥${stats.qishuiTotal.toFixed(2)}`} color="var(--pink)" />
         <StatCard icon={<CheckCircle2 size={20} />} label="已打款" value={`¥${stats.paid.toFixed(0)}`} color="var(--accent)" />
         <StatCard icon={<Hourglass size={20} />} label="待结算" value={`¥${stats.pending.toFixed(0)}`} color="var(--orange)" />
       </div>

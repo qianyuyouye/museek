@@ -3,6 +3,32 @@
 import Link from 'next/link'
 import { useApi } from '@/lib/use-api'
 import { pageWrap, textPageTitle, cardCls, btnPrimary } from '@/lib/ui-tokens'
+import { Piano, Headphones, Music, BookOpen, Coffee, Scroll, Drum, Lightbulb, Mic, Bookmark, Rocket, ClipboardList, Coins, TrendingUp, User, Bell, Upload, Globe } from 'lucide-react'
+
+// ── Cover helpers (复用课程页逻辑) ────────────────────────────────
+
+const COVER_GRADIENTS: Record<string, string> = {
+  '🎹': 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+  '🎧': 'linear-gradient(135deg, #2d1b69 0%, #11998e 100%)',
+  '🎼': 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
+  '📖': 'linear-gradient(135deg, #1f1c2c 0%, #928dab 100%)',
+  '🥤': 'linear-gradient(135deg, #e44d26 0%, #f7931e 100%)',
+  '📜': 'linear-gradient(135deg, #2c3e50 0%, #3498db 100%)',
+  '🥁': 'linear-gradient(135deg, #141e30 0%, #243b55 100%)',
+  '🎵': 'linear-gradient(135deg, #4a00e0 0%, #8e2de2 100%)',
+  '💡': 'linear-gradient(135deg, #f12711 0%, #f5af19 100%)',
+  '🎤': 'linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)',
+  '🔖': 'linear-gradient(135deg, #373b44 0%, #4286f4 100%)',
+  '🚀': 'linear-gradient(135deg, #8360c3 0%, #2ebf91 100%)',
+}
+
+const COVER_ICONS: Record<string, React.ComponentType<{ size: number; className?: string }>> = {
+  '🎹': Piano, '🎧': Headphones, '🎼': Music, '📖': BookOpen,
+  '🥤': Coffee, '📜': Scroll, '🥁': Drum, '🎵': Music,
+  '💡': Lightbulb, '🎤': Mic, '🔖': Bookmark, '🚀': Rocket,
+}
+
+const DEFAULT_GRADIENT = 'linear-gradient(135deg, #1a1a2e 0%, #3a3a5e 100%)'
 
 // ── StatCard ───────────────────────────────────────────────────
 
@@ -12,7 +38,7 @@ function StatCard({
   value,
   color,
 }: {
-  icon: string
+  icon: React.ReactNode
   label: string
   value: string | number
   color: string
@@ -20,7 +46,7 @@ function StatCard({
   return (
     <div className={`${cardCls} relative overflow-hidden`}>
       <div className="absolute top-0 left-0 right-0 h-[3px] opacity-60" style={{ background: color }} />
-      <div className="text-[28px] mb-1.5">{icon}</div>
+      <div className="mb-1.5 text-[var(--text2)]">{icon}</div>
       <div className="text-[26px] font-bold leading-tight" style={{ color }}>{value}</div>
       <div className="text-[13px] text-[var(--text2)] mt-1.5 font-medium">{label}</div>
     </div>
@@ -36,7 +62,7 @@ export default function CreatorHome() {
     revenue: { totalEarnings: number }
     notifications: { id: number; type: string; title: string; read: boolean; createdAt: string }[]
     assignments: { unsubmitted: { id: number; title: string; deadline: string | null }[] }
-    courses: { hot: { id: number; title: string; category: string }[]; total: number }
+    courses: { hot: { id: number; title: string; category: string; cover: string | null }[]; total: number }
     learning: { completed: number; total: number }
   }>('/api/creator/dashboard')
 
@@ -67,7 +93,7 @@ export default function CreatorHome() {
           <div className={`${cardCls} cursor-pointer`} style={{ background: 'linear-gradient(135deg,rgba(108,92,231,.08),rgba(0,206,201,.05))', border: '1px solid rgba(108,92,231,.2)' }}>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <span className="text-2xl">📝</span>
+                <ClipboardList className="text-[var(--accent)]" size={28} />
                 <div>
                   <div className="text-[15px] font-semibold text-[var(--text)]">
                     你有 {unsubmitted.length} 个未完成的作业
@@ -85,10 +111,10 @@ export default function CreatorHome() {
 
       {/* 数据概览卡片 */}
       <div className="grid grid-cols-4 gap-4">
-        <StatCard icon="🎵" label="我的作品" value={songCount} color="var(--accent2)" />
-        <StatCard icon="⭐" label="平均评分" value={avgScore} color="var(--orange)" />
-        <StatCard icon="💰" label="累计收益" value={`¥${totalEarnings.toFixed(0)}`} color="var(--green2)" />
-        <StatCard icon="📚" label="学习进度" value={learningProgress} color="var(--pink)" />
+        <StatCard icon={<Music size={28} />} label="我的作品" value={songCount} color="var(--accent2)" />
+        <StatCard icon={<TrendingUp size={28} />} label="平均评分" value={avgScore} color="var(--orange)" />
+        <StatCard icon={<Coins size={28} />} label="累计收益" value={`¥${totalEarnings.toFixed(0)}`} color="var(--green2)" />
+        <StatCard icon={<BookOpen size={28} />} label="学习进度" value={learningProgress} color="var(--pink)" />
       </div>
 
       {/* 热门课程推荐 */}
@@ -101,19 +127,31 @@ export default function CreatorHome() {
           <div className="text-center py-8 text-[var(--text3)] text-sm">暂无课程</div>
         ) : (
           <div className="grid grid-cols-3 gap-4">
-            {hotCourses.map((course) => (
-              <Link key={course.id} href="/creator/courses" className="no-underline">
-                <div className="rounded-lg bg-[var(--bg4)] overflow-hidden cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5">
-                  <div className="h-28 bg-gradient-to-br from-[#6366f1]/20 to-[#ec4899]/10 flex items-center justify-center">
-                    <span className="text-4xl">🎵</span>
+            {hotCourses.map((course) => {
+              const isImage = course.cover?.startsWith('/api/files/')
+              const IconComp = !isImage ? (COVER_ICONS[course.cover ?? ''] || Music) : null
+              return (
+                <Link key={course.id} href="/creator/courses" className="no-underline">
+                  <div className="rounded-lg bg-[var(--bg3)] border border-[var(--border)] overflow-hidden cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5">
+                    <div className="h-28 overflow-hidden"
+                      style={!isImage ? { background: COVER_GRADIENTS[course.cover ?? ''] || DEFAULT_GRADIENT } : undefined}
+                    >
+                      {isImage ? (
+                        <img src={course.cover} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <IconComp size={40} className="text-white/40 drop-shadow-md" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <div className="text-[13px] font-medium text-[var(--text)] truncate">{course.title}</div>
+                      <div className="text-[11px] text-[var(--text3)] mt-1">{course.category || '课程'}</div>
+                    </div>
                   </div>
-                  <div className="p-3">
-                    <div className="text-[13px] font-medium text-[var(--text)] truncate">{course.title}</div>
-                    <div className="text-[11px] text-[var(--text3)] mt-1">{course.category || '课程'}</div>
-                  </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              )
+            })}
           </div>
         )}
       </div>
@@ -151,14 +189,14 @@ export default function CreatorHome() {
           <h3 className="text-[16px] font-semibold mb-4">快捷入口</h3>
           <div className="grid gap-2.5">
             {[
-              { icon: '📝', label: '作业提交', desc: '查看并提交待完成作业', href: '/creator/assignments' },
-              { icon: '⬆️', label: '上传作品', desc: '自由上传独立创作', href: '/creator/upload' },
-              { icon: '🎵', label: '我的作品库', desc: '管理全部作品', href: '/creator/songs' },
-              { icon: '💰', label: '我的收益', desc: '查看收益明细与结算', href: '/creator/revenue' },
+              { icon: <ClipboardList size={20} />, label: '作业提交', desc: '查看并提交待完成作业', href: '/creator/assignments' },
+              { icon: <Upload size={20} />, label: '上传作品', desc: '自由上传独立创作', href: '/creator/upload' },
+              { icon: <Music size={20} />, label: '我的作品库', desc: '管理全部作品', href: '/creator/songs' },
+              { icon: <Coins size={20} />, label: '我的收益', desc: '查看收益明细与结算', href: '/creator/revenue' },
             ].map((item) => (
               <Link key={item.href} href={item.href} className="no-underline">
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--bg4)] cursor-pointer transition-all hover:bg-[var(--border)]">
-                  <span className="text-xl">{item.icon}</span>
+                  <span className="text-[var(--accent)]">{item.icon}</span>
                   <div>
                     <div className="text-[13px] font-medium text-[var(--text)]">{item.label}</div>
                     <div className="text-[11px] text-[var(--text3)]">{item.desc}</div>

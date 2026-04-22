@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle, cardCls, btnPrimary as btnPrimaryBase, inputCls, labelCls } from '@/lib/ui-tokens'
+import { Music, User, Phone, Lock, Mail, ShieldCheck, BadgeCheck, Calendar, Camera, X, Clock } from 'lucide-react'
 
 // ── Style helpers ───────────────────────────────────────────────
 
@@ -77,13 +78,33 @@ function Modal({
           </h3>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-[var(--bg4)] text-[var(--text3)] text-lg cursor-pointer border-0 bg-transparent"
+            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-[var(--bg4)] text-[var(--text3)] cursor-pointer border-0 bg-transparent"
           >
-            x
+            <X size={14} />
           </button>
         </div>
         {children}
       </div>
+    </div>
+  )
+}
+
+// ── Profile Row ──────────────────────────────────────────────────
+
+function ProfileRow({ icon, label, value, action }: {
+  icon: React.ReactNode
+  label: string
+  value: string
+  action?: React.ReactNode
+}) {
+  return (
+    <div className="flex items-center justify-between px-3 py-2.5 bg-[var(--bg4)] rounded-md border border-[var(--border)]">
+      <div className="flex items-center gap-2 text-[13px] min-w-0">
+        <span className="text-[var(--accent)] flex-shrink-0">{icon}</span>
+        <span className="text-[var(--text3)] flex-shrink-0">{label}</span>
+        <span className="text-[var(--text)] font-medium truncate">{value}</span>
+      </div>
+      {action && <div className="flex-shrink-0 ml-2">{action}</div>}
     </div>
   )
 }
@@ -324,57 +345,26 @@ export default function CreatorProfile() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-[var(--text3)] text-2xl">🎵</span>
+                <Music size={24} className="text-[var(--text3)]" />
               )}
               {(avatarHover || avatarUploading) && (
                 <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center text-xs text-white">
                   {avatarUploading ? '上传中...' : '修改头像'}
                 </div>
               )}
-              {/* Camera icon */}
-              <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-white rounded-full border border-[var(--border)] flex items-center justify-center text-[10px]">
-                📷
+              <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-[var(--bg3)] rounded-full border border-[var(--border)] flex items-center justify-center">
+                <Camera size={10} className="text-[var(--text3)]" />
               </div>
             </div>
           </div>
 
           {/* Field rows with action buttons */}
           <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between px-3 py-2 bg-[#f9fafb] rounded-md border border-[var(--border)]">
-              <div className="flex items-center gap-2 text-[13px]">
-                <span className="text-[var(--text3)]">🏷️ 姓名</span>
-                <span className="text-[var(--text)] font-medium">{user.name}</span>
-              </div>
-              <button className={btnGhost} onClick={() => setEditModal(true)}>修改姓名</button>
-            </div>
-            <div className="flex items-center justify-between px-3 py-2 bg-[#f9fafb] rounded-md border border-[var(--border)]">
-              <div className="flex items-center gap-2 text-[13px]">
-                <span className="text-[var(--text3)]">📱 手机号</span>
-                <span className="text-[var(--text)] font-medium">{user.phone}</span>
-              </div>
-              <button className={btnGhost} onClick={() => setPhoneModal(true)}>更换手机</button>
-            </div>
-            <div className="flex items-center justify-between px-3 py-2 bg-[#f9fafb] rounded-md border border-[var(--border)]">
-              <div className="flex items-center gap-2 text-[13px]">
-                <span className="text-[var(--text3)]">🔒 密码</span>
-                <span className="text-[var(--text)] font-medium">已设置</span>
-              </div>
-              <button className={btnGhost} onClick={() => setPwdModal(true)}>更换密码</button>
-            </div>
-            <div className="flex items-center justify-between px-3 py-2 bg-[#f9fafb] rounded-md border border-[var(--border)]">
-              <div className="flex items-center gap-2 text-[13px]">
-                <span className="text-[var(--text3)]">📧 邮箱</span>
-                <span className="text-[var(--text)] font-medium">{user.email || ''}</span>
-              </div>
-              <button className={btnGhost} onClick={() => setEditModal(true)}>更换邮箱</button>
-            </div>
-            <div className="flex items-center justify-between px-3 py-2 bg-[#f9fafb] rounded-md border border-[var(--border)]">
-              <div className="flex items-center gap-2 text-[13px]">
-                <span className="text-[var(--text3)]">🔐 实名认证</span>
-                <span className="text-[var(--text)] font-medium">
-                  {user.realName || '未填写'}（{rnStatus.label}）
-                </span>
-              </div>
+            <ProfileRow icon={<User size={14} />} label="姓名" value={user.name} action={<button className={btnGhost} onClick={() => setEditModal(true)}>修改姓名</button>} />
+            <ProfileRow icon={<Phone size={14} />} label="手机号" value={user.phone} action={<button className={btnGhost} onClick={() => setPhoneModal(true)}>更换手机</button>} />
+            <ProfileRow icon={<Lock size={14} />} label="密码" value="已设置" action={<button className={btnGhost} onClick={() => setPwdModal(true)}>更换密码</button>} />
+            <ProfileRow icon={<Mail size={14} />} label="邮箱" value={user.email || ''} action={<button className={btnGhost} onClick={() => setEditModal(true)}>更换邮箱</button>} />
+            <ProfileRow icon={<ShieldCheck size={14} />} label="实名认证" value={`${user.realName || '未填写'}（${rnStatus.label}）`} action={
               <button
                 className={btnGhost}
                 onClick={() => {
@@ -389,19 +379,9 @@ export default function CreatorProfile() {
                     ? '申请修改'
                     : '查看认证'}
               </button>
-            </div>
-            <div className="flex items-center justify-between px-3 py-2 bg-[#f9fafb] rounded-md border border-[var(--border)]">
-              <div className="flex items-center gap-2 text-[13px]">
-                <span className="text-[var(--text3)]">🎭 角色</span>
-                <span className="text-[var(--text)] font-medium">学生</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between px-3 py-2 bg-[#f9fafb] rounded-md border border-[var(--border)]">
-              <div className="flex items-center gap-2 text-[13px]">
-                <span className="text-[var(--text3)]">📅 入职时间</span>
-                <span className="text-[var(--text)] font-medium">{user.createdAt ? new Date(user.createdAt).toLocaleDateString('zh-CN') : '—'}</span>
-              </div>
-            </div>
+            } />
+            <ProfileRow icon={<BadgeCheck size={14} />} label="角色" value="学生" />
+            <ProfileRow icon={<Calendar size={14} />} label="注册时间" value={user.createdAt ? new Date(user.createdAt).toLocaleDateString('zh-CN') : '—'} />
           </div>
         </div>
 
@@ -711,7 +691,7 @@ export default function CreatorProfile() {
             </div>
             <div className={rowCls}>
               <span className="text-[var(--text3)]">认证状态</span>
-              <span style={{ color: rnStatus.color }}>⏳ {rnStatus.label}</span>
+              <span style={{ color: rnStatus.color }}><Clock size={12} className="inline mr-1 -mt-0.5" />{rnStatus.label}</span>
             </div>
             <div className="text-xs text-[var(--text3)] mt-1">
               审核一般在 1 个工作日内完成，如需修改请等待审核结果或联系管理员。

@@ -357,7 +357,7 @@ export default function ReviewStatsPage() {
               >
                 ›
               </button>
-              <span className="ml-2 text-[11.5px] text-[var(--text3)] bg-[#f4f7fe] px-2.5 py-[3px] rounded-md border border-[var(--border)]">
+              <span className="ml-2 text-[11.5px] text-[var(--text3)] bg-[var(--bg4)] px-2.5 py-[3px] rounded-md border border-[var(--border)]">
                 {HISTORY_PAGE_SIZE} 条/页
               </span>
             </div>

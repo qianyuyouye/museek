@@ -14,7 +14,7 @@ function ReviewerGuard({ children }: { children: React.ReactNode }) {
         return r.json()
       })
       .then((j) => {
-        if (j.code === 200 && j.data?.portal === 'reviewer') {
+        if (j.code === 200 && j.data?.type === 'reviewer') {
           setReady(true)
         } else {
           window.location.href = '/review/login'
@@ -34,7 +34,7 @@ export default function ReviewerLayout({ children }: { children: React.ReactNode
     <div className="min-h-screen">
       <GlobalToast />
       <ReviewerSidebar />
-      <main className="ml-[200px] min-h-screen p-6">
+      <main className="ml-[220px] min-h-screen p-6">
         <ReviewerGuard>{children}</ReviewerGuard>
       </main>
     </div>

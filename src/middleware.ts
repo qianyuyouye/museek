@@ -30,7 +30,7 @@ const PUBLIC_PATHS = [
   '/api/content',
   '/api/songs/published',
   '/api/files',
-  // 本地存储签名上传（URL 自身带 HMAC 签名鉴权，无需再走 Cookie 鉴权）
+  // 签名上传（upload/local 路径有 HMAC 签名鉴权）
   '/api/upload/local/',
 ]
 
@@ -54,7 +54,7 @@ export async function middleware(request: NextRequest) {
   const isApiRoute = pathname.startsWith('/api/')
 
   // 静态资源直通
-  if (pathname.startsWith('/_next') || pathname.startsWith('/favicon') || pathname === '/') {
+  if (pathname.startsWith('/_next') || pathname.startsWith('/favicon') || pathname.startsWith('/logo') || pathname === '/') {
     return NextResponse.next()
   }
 

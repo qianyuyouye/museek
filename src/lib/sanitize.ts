@@ -10,8 +10,6 @@
  *
  * TipTap 默认产出的 HTML 完全在白名单内。
  */
-import DOMPurify from 'isomorphic-dompurify'
-
 const ALLOWED_TAGS = [
   'p', 'br', 'hr',
   'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
@@ -30,19 +28,23 @@ const ALLOWED_ATTR = [
   'colspan', 'rowspan',
 ]
 
+const SANITIZE_OPTIONS = {
+  ALLOWED_TAGS,
+  ALLOWED_ATTR,
+  ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|ftp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+  ADD_ATTR: ['target'],
+  FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'style', 'link', 'meta', 'form', 'svg', 'math'],
+  FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'onkeydown', 'onkeyup', 'onsubmit'],
+} as const
+
 /** 净化富文本 HTML，返回安全的 HTML 字符串（可直接 dangerouslySetInnerHTML） */
 export function sanitizeHtml(dirty: string): string {
   if (!dirty || typeof dirty !== 'string') return ''
-  return DOMPurify.sanitize(dirty, {
-    ALLOWED_TAGS,
-    ALLOWED_ATTR,
-    // 禁掉 script 协议
-    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|ftp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
-    // 强制 target=_blank 时加 noopener
-    ADD_ATTR: ['target'],
-    FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'style', 'link', 'meta', 'form', 'svg', 'math'],
-    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'onkeydown', 'onkeyup', 'onsubmit'],
-  })
+  // 开发环境跳过 jsdom（避免 @exodus/bytes ESM 报错），生产再走 DOMPurify
+  if (process.env.NODE_ENV !== 'production') return dirty
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const DOMPurify = require('isomorphic-dompurify').default
+  return DOMPurify.sanitize(dirty, SANITIZE_OPTIONS)
 }
 
 /** 完全剥离 HTML，只保留纯文本 */

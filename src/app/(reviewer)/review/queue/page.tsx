@@ -128,7 +128,7 @@ export default function ReviewQueuePage() {
         <select
           value={genre}
           onChange={(e) => setGenre(e.target.value)}
-          className="px-3 py-2 bg-white border border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none cursor-pointer min-w-[120px]"
+          className="px-3 py-2 bg-[var(--bg3)] border border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none cursor-pointer min-w-[120px]"
         >
           {GENRE_OPTIONS.map((g) => (
             <option key={g} value={g}>
@@ -145,7 +145,7 @@ export default function ReviewQueuePage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            className="pl-8 pr-3 py-2 bg-white border border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none w-[200px] focus:border-[var(--accent)]"
+            className="pl-8 pr-3 py-2 bg-[var(--bg3)] border border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none w-[200px] focus:border-[var(--accent)]"
           />
         </div>
 

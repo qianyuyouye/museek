@@ -2,7 +2,7 @@ services:
   app:
     build: .
     ports:
-      - "3000:3000"
+      - "5173:3000"
     environment:
       - DATABASE_URL=mysql://root:${MYSQL_ROOT_PASSWORD:-museek2026}@db:3306/museek
       - JWT_SECRET=${JWT_SECRET:-change-me-in-production}

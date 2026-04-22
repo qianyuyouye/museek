@@ -2,13 +2,12 @@
 
 import { useState, useEffect, useCallback, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import { Settings, Music, Headphones, Shield, Users, Coins, Globe, LineChart, Lock, AlertTriangle, CheckCircle, MessageSquare, BarChart3, Eye, EyeOff, X } from 'lucide-react'
+import { Shield, Users, Coins, Globe, LineChart, Lock, AlertTriangle, CheckCircle, MessageSquare, BarChart3, Eye, EyeOff, X, Headphones } from 'lucide-react'
 
 /* ── Portal theme config ── */
 const PORTAL_CONFIG: Record<string, {
   accent: string; accent2: string; accentRgb: string
-  logo: ReactNode; logoGrad: string
-  title: string; subtitle: string
+  title: string
   heroTitle: string; heroSub: string
   placeholder: string; loginTitle: string
   tipBg: string; tipBorder: string; tipText: string; tipIcon: ReactNode
@@ -16,10 +15,7 @@ const PORTAL_CONFIG: Record<string, {
 }> = {
   admin: {
     accent: 'var(--orange)', accent2: 'var(--orange)', accentRgb: '251,191,36',
-    logo: <Settings size={22} />,
-    logoGrad: 'linear-gradient(135deg, var(--orange), var(--orange))',
     title: 'AI音乐教学与版权代理平台',
-    subtitle: '管理端 · 平台运营管理后台',
     heroTitle: '智慧中枢，\n驱动平台增长',
     heroSub: '全面掌控平台运营、用户管理、收益结算与内容发行',
     placeholder: '管理员账号 / 邮箱',
@@ -34,10 +30,7 @@ const PORTAL_CONFIG: Record<string, {
   },
   creator: {
     accent: 'var(--accent)', accent2: 'var(--accent2)', accentRgb: '129,140,248',
-    logo: <Music size={22} />,
-    logoGrad: 'linear-gradient(135deg, var(--accent), var(--accent2))',
     title: 'AI音乐教学与版权代理平台',
-    subtitle: '创作者端 · 创作 · 学习 · 发行 · 收益',
     heroTitle: '创作 · 学习 · 发行\n让音乐走向世界',
     heroSub: 'AI赋能音乐创作，版权代理全球发行，开启你的音乐人生',
     placeholder: '手机号 / 邮箱',
@@ -47,10 +40,7 @@ const PORTAL_CONFIG: Record<string, {
   },
   reviewer: {
     accent: 'var(--green)', accent2: 'var(--green)', accentRgb: '34,211,238',
-    logo: <Headphones size={22} />,
-    logoGrad: 'linear-gradient(135deg, var(--green), var(--green2))',
     title: 'AI音乐教学与版权代理平台',
-    subtitle: '评审端 · 专业评审工作台',
     heroTitle: '专业评审，\n发现优秀音乐作品',
     heroSub: '聆听、评分、反馈，帮助创作者成长',
     placeholder: '手机号 / 邮箱',
@@ -203,54 +193,56 @@ export function LoginForm({ portal }: { portal: string }) {
 
   return (
     <>
-    <div className="min-h-screen bg-[var(--bg)] flex items-stretch justify-center">
-      {/* Left: Hero */}
-      <div className="hidden lg:flex flex-1 flex-col justify-center px-16 xl:px-24 relative overflow-hidden">
-        {/* Decorative gradient orbs */}
-        <div className="absolute top-10 left-10 w-64 h-64 rounded-full opacity-20 blur-3xl" style={{ background: cfg.accent }} />
-        <div className="absolute bottom-10 right-10 w-48 h-48 rounded-full opacity-10 blur-3xl" style={{ background: cfg.accent2 }} />
+    <div className="min-h-screen bg-[var(--bg)] flex items-center justify-center">
+      {/* Inner container */}
+      <div className="hidden lg:flex w-full max-w-7xl items-center justify-center gap-12 xl:gap-16 px-12">
+        {/* Left: Hero */}
+        <div className="flex-1 max-w-xl relative">
+          {/* Decorative gradient orbs */}
+          <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full opacity-20 blur-3xl" style={{ background: cfg.accent }} />
+          <div className="absolute -bottom-20 -right-20 w-48 h-48 rounded-full opacity-10 blur-3xl" style={{ background: cfg.accent2 }} />
 
-        <h1 className="text-3xl xl:text-4xl font-bold text-[var(--text)] leading-tight mb-4 whitespace-pre-line relative z-10">
-          {cfg.heroTitle}
-        </h1>
-        <p className="text-base text-[var(--text2)] leading-relaxed relative z-10">
-          {cfg.heroSub}
-        </p>
+          <div className="relative z-10">
+            <h1 className="text-3xl xl:text-4xl font-bold text-[var(--text)] leading-tight mb-3 whitespace-pre-line">
+              {cfg.heroTitle}
+            </h1>
+            <p className="text-base text-[var(--text2)] leading-relaxed">
+              {cfg.heroSub}
+            </p>
 
-        {/* Features list */}
-        {cfg.features.length > 0 ? (
-          <div className="mt-8 flex flex-col gap-3 relative z-10">
-            {cfg.features.map((f, i) => (
-              <div key={i} className="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-[var(--bg3)] border border-[var(--border)]">
-                <span style={{ color: cfg.accent, display: 'flex' }}>{f.icon}</span>
-                <span className="text-[13px] text-[var(--text)] font-medium">{f.text}</span>
+            {/* Features list */}
+            {cfg.features.length > 0 && (
+              <div className="mt-8 flex flex-col gap-4">
+                {cfg.features.map((f, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <span style={{ color: cfg.accent, display: 'flex' }}>{f.icon}</span>
+                    <span className="text-[13px] text-[var(--text2)]">{f.text}</span>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        ) : (
-          /* Creator illustration */
-          <div className="mt-8 relative z-10" style={{ height: 220 }}>
-            <svg width="160" height="160" viewBox="0 0 160 160" className="absolute left-8 top-4">
-              <circle cx="80" cy="80" r="80" fill="var(--bg3)" />
-              <circle cx="80" cy="80" r="60" fill="var(--bg4)" />
-              <circle cx="80" cy="80" r="42" stroke={cfg.accent} strokeWidth="1" fill="none" opacity="0.3" />
-              <circle cx="80" cy="80" r="28" stroke={cfg.accent} strokeWidth="1" fill="none" opacity="0.2" />
-              <circle cx="80" cy="80" r="12" fill={cfg.accent} opacity="0.6" />
-            </svg>
-          </div>
-        )}
-      </div>
 
-      {/* Right: Login Card */}
-      <div className="flex flex-1 lg:flex-none items-center justify-center p-8 lg:w-[440px]">
-        <div className="w-full max-w-sm bg-[var(--bg3)] border border-[var(--border)] rounded-xl p-7 shadow-[0_8px_32px_rgba(0,0,0,.4)]">
-          {/* Logo */}
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg mb-3" style={{ background: cfg.logoGrad }}>
-              {cfg.logo}
+          {/* Creator illustration */}
+          {!cfg.features.length && (
+            <div className="mt-8 relative z-10" style={{ height: 220 }}>
+              <svg width="160" height="160" viewBox="0 0 160 160">
+                <circle cx="80" cy="80" r="80" fill="var(--bg3)" />
+                <circle cx="80" cy="80" r="60" fill="var(--bg4)" />
+                <circle cx="80" cy="80" r="42" stroke={cfg.accent} strokeWidth="1" fill="none" opacity="0.3" />
+                <circle cx="80" cy="80" r="28" stroke={cfg.accent} strokeWidth="1" fill="none" opacity="0.2" />
+                <circle cx="80" cy="80" r="12" fill={cfg.accent} opacity="0.6" />
+              </svg>
             </div>
+          )}
+        </div>
+
+        {/* Right: Login Card */}
+        <div className="w-[400px] shrink-0 bg-[var(--bg3)] border border-[var(--border)] rounded-xl p-6 shadow-[0_8px_32px_rgba(0,0,0,.4)]">
+          {/* Logo */}
+          <div className="text-center mb-5">
+            <img src="/logo.svg" alt="Museek" className="mx-auto w-[180px] h-auto object-contain mb-3" />
             <div className="text-sm font-semibold text-[var(--text)]">{cfg.title}</div>
-            <div className="text-[11px] text-[var(--text3)] mt-0.5">{cfg.subtitle}</div>
           </div>
 
           {/* Tab switcher (creator only) or static title */}

@@ -128,8 +128,8 @@ export default function ReviewerProfilePage() {
             <h2 className={textSectionTitle}>基本信息</h2>
             <div className="flex gap-2">
               <button className={btnGhost} onClick={() => setModal('edit')}><Pencil className="w-3.5 h-3.5 inline mr-1" />编辑</button>
-              <button className={btnGhost} onClick={() => setModal('phone')}>📱 改手机号</button>
-              <button className={btnGhost} onClick={() => setModal('password')}>🔒 改密码</button>
+              <button className={btnGhost} onClick={() => setModal('phone')}><Smartphone size={14} className="inline mr-1 -mt-0.5" />改手机号</button>
+              <button className={btnGhost} onClick={() => setModal('password')}><Lock size={14} className="inline mr-1 -mt-0.5" />改密码</button>
             </div>
           </div>
 

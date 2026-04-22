@@ -58,6 +58,8 @@ function keyDirMatchesType(key: string, type: 'audio' | 'image'): boolean {
 // ── 存储模式判定 ───────────────────────────────────────────────
 
 async function resolveMode(): Promise<'local' | 'oss'> {
+  // 开发环境默认本地存储，避免 OSS 直连的 CORS 问题
+  if (process.env.NODE_ENV !== 'production') return 'local'
   const cfg = await getSetting<{ mode?: string }>(SETTING_KEYS.STORAGE_CONFIG, {})
   return (cfg.mode as 'local' | 'oss') ?? (process.env.OSS_BUCKET ? 'oss' : 'local')
 }

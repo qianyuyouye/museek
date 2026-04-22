@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle } from '@/lib/ui-tokens'
-import { Piano, Headphones, Music, BookOpen, Coffee, Scroll, Drum, Lightbulb, Mic, Bookmark, Rocket, X, AlertTriangle, FileVideo, FileText, Clock, GraduationCap, Eye, User } from 'lucide-react'
+import { Piano, Headphones, Music, BookOpen, Coffee, Scroll, Drum, Lightbulb, Mic, Bookmark, Rocket, X, AlertTriangle, FileVideo, FileText, Clock, GraduationCap, Eye, User, Search } from 'lucide-react'
 
 // ── Constants ───────────────────────────────────────────────────
 
@@ -159,11 +159,14 @@ function DetailModal({ item, onClose }: { item: CmsItem; onClose: () => void }) 
         onClick={(e) => e.stopPropagation()}
       >
         {/* Cover */}
-        <div
-          className="relative h-[180px] rounded-t-xl flex items-center justify-center shrink-0"
-          style={{ background: COVER_GRADIENTS[item.cover] || DEFAULT_GRADIENT }}
+        <div className="relative h-[180px] rounded-t-xl flex items-center justify-center shrink-0 overflow-hidden"
+          style={!item.cover?.startsWith('/api/files/') ? { background: COVER_GRADIENTS[item.cover] || DEFAULT_GRADIENT } : undefined}
         >
-          <CoverIcon size={72} className="text-white/60 drop-shadow-lg" />
+          {item.cover?.startsWith('/api/files/') ? (
+            <img src={item.cover} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <CoverIcon size={72} className="text-white/60 drop-shadow-lg" />
+          )}
           <button
             className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 backdrop-blur text-white flex items-center justify-center cursor-pointer hover:bg-white/30 transition border-0 text-lg"
             onClick={onClose}
@@ -176,15 +179,15 @@ function DetailModal({ item, onClose }: { item: CmsItem; onClose: () => void }) 
           <h2 className="text-xl font-bold text-[var(--text)] mb-3">{item.title}</h2>
 
           {/* Meta */}
-          <div className="flex items-center gap-3 mb-5 flex-wrap">
-            <span className="px-3 py-1 rounded-full text-xs font-medium bg-[#ede9fe] text-[var(--accent)]">
+          <div className="flex items-center gap-2.5 mb-5 flex-wrap">
+            <span className="px-2.5 py-0.5 rounded-full text-[11.5px] font-medium bg-[rgba(99,102,241,0.12)] text-[var(--accent)]">
               {item.category}
             </span>
-            <span className="px-3 py-1 rounded-full text-xs font-medium bg-[#fef3c7] text-[var(--orange)]">
+            <span className="px-2.5 py-0.5 rounded-full text-[11.5px] font-medium bg-[rgba(251,191,36,0.12)] text-[var(--orange)]">
               {isVideo ? <><FileVideo size={12} className="inline mr-1" />视频课程</> : <><FileText size={12} className="inline mr-1" />图文科普</>}
             </span>
             {item.level && (
-              <span className="px-3 py-1 rounded-full text-xs font-medium bg-[#e0f7fa] text-[var(--green)]">
+              <span className="px-2.5 py-0.5 rounded-full text-[11.5px] font-medium bg-[rgba(34,211,238,0.12)] text-[var(--green)]">
                 <GraduationCap size={12} className="inline mr-1" />{item.level}
               </span>
             )}
@@ -231,7 +234,7 @@ function DetailModal({ item, onClose }: { item: CmsItem; onClose: () => void }) 
               <div className="space-y-2">
                 {sections.map((s, i) => (
                   <div key={i} className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-[#ede9fe] text-[var(--accent)] text-xs flex items-center justify-center shrink-0 mt-0.5 font-medium">
+                    <span className="w-5 h-5 rounded-full bg-[rgba(99,102,241,0.15)] text-[var(--accent)] text-xs flex items-center justify-center shrink-0 mt-0.5 font-medium">
                       {i + 1}
                     </span>
                     <span className="text-sm text-[var(--text2)]">{s}</span>
@@ -259,7 +262,7 @@ function DetailModal({ item, onClose }: { item: CmsItem; onClose: () => void }) 
                 .map((t) => (
                   <span
                     key={t}
-                    className="px-2 py-0.5 rounded text-[11px] bg-[var(--bg4)] text-[var(--text3)] border border-[var(--border)]"
+                    className="px-2.5 py-0.5 rounded text-[11.5px] bg-[rgba(99,102,241,0.08)] text-[var(--accent)]"
                   >
                     #{t}
                   </span>
@@ -289,17 +292,28 @@ function DetailModal({ item, onClose }: { item: CmsItem; onClose: () => void }) 
 // ── Course Card ─────────────────────────────────────────────────
 
 function CourseCard({ item, onClick }: { item: CmsItem; onClick: () => void }) {
+  const isImageUrl = item.cover?.startsWith('/api/files/')
   const IconComp = COVER_ICONS[item.cover] || Music
   return (
     <div
       className="rounded-xl overflow-hidden bg-[var(--bg3)] border border-[var(--border)] shadow-[0_2px_8px_rgba(0,0,0,0.06)] cursor-pointer transition-all hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(99,102,241,0.12)] group"
       onClick={onClick}
     >
-      <div
-        className="relative h-[140px] flex items-center justify-center overflow-hidden"
-        style={{ background: COVER_GRADIENTS[item.cover] || DEFAULT_GRADIENT }}
-      >
-        <IconComp size={56} className="text-white/40 drop-shadow-md group-hover:scale-110 transition-transform duration-300" />
+      <div className="relative h-[140px] overflow-hidden">
+        {isImageUrl ? (
+          <img
+            src={item.cover}
+            alt=""
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div
+            className="h-full flex items-center justify-center"
+            style={{ background: COVER_GRADIENTS[item.cover] || DEFAULT_GRADIENT }}
+          >
+            <IconComp size={56} className="text-white/40 drop-shadow-md group-hover:scale-110 transition-transform duration-300" />
+          </div>
+        )}
         <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded text-[10px] font-medium bg-black/30 backdrop-blur-sm text-white">
           {item.category}
         </span>
@@ -382,7 +396,9 @@ export default function CreatorCoursesPage() {
 
       {filteredItems.length === 0 && (
         <div className="text-center py-20 text-[var(--text3)]">
-          <span className="text-4xl block mb-3">📭</span>
+          <div className="w-16 h-16 rounded-full bg-[var(--bg4)] border border-[var(--border)] flex items-center justify-center mx-auto mb-3">
+            <Search size={28} className="text-[var(--text3)]" />
+          </div>
           <p className="text-sm">该分类暂无内容</p>
         </div>
       )}

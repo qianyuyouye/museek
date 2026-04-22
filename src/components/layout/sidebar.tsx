@@ -40,12 +40,9 @@ export function Sidebar({ items, portalLabel, portalColor, onLogout }: SidebarPr
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-[220px] flex-col bg-[var(--bg2)] border-r border-[var(--border)]">
       {/* Header */}
-      <div className="flex flex-col items-center gap-1.5 px-4 py-5 border-b border-[var(--border)]">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--accent)]/15 text-[var(--accent)]">
-          <Music size={18} />
-        </div>
-        <span className="text-sm font-semibold text-[var(--text)]">AI音乐平台</span>
-        <span className="rounded-md px-2 py-0.5 text-[10px] font-medium bg-[var(--bg4)] text-[var(--text3)]">
+      <div className="flex flex-col items-center justify-center gap-1 px-4 py-4 border-b border-[var(--border)]">
+        <img src="/logo-white.svg" alt="Museek" className="w-[180px] h-auto" />
+        <span className="rounded-md px-2 py-0.5 text-[10px] font-medium bg-[var(--bg4)] text-[var(--text3)] mt-0.5">
           {portalLabel}
         </span>
       </div>

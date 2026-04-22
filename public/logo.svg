@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 100">
+  <defs>
+    <linearGradient id="gradB" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:var(--accent, #9b8ef0)"/>
+      <stop offset="50%" style="stop-color:var(--accent2, #7c5cfc)"/>
+      <stop offset="100%" style="stop-color:var(--green, #00e5a0)"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(0, 10)">
+    <rect x="5" y="5" width="70" height="70" rx="16" fill="url(#gradB)" opacity="0.15"/>
+    <rect x="5" y="5" width="70" height="70" rx="16" fill="none" stroke="url(#gradB)" stroke-width="1.5"/>
+    <rect x="16" y="35" width="6" height="25" rx="3" fill="var(--accent, #9b8ef0)"/>
+    <rect x="26" y="22" width="6" height="38" rx="3" fill="var(--accent, #9b8ef0)" opacity="0.85"/>
+    <rect x="36" y="30" width="6" height="28" rx="3" fill="var(--accent2, #7c5cfc)"/>
+    <rect x="46" y="18" width="6" height="40" rx="3" fill="var(--accent2, #7c5cfc)"/>
+    <rect x="56" y="28" width="6" height="30" rx="3" fill="var(--green, #00e5a0)"/>
+  </g>
+  <text x="85" y="60" font-family="'Inter','Noto Sans SC',sans-serif" font-size="38" font-weight="700" fill="var(--text, #e8e8f0)">Museek</text>
+  <text x="87" y="76" font-family="'Inter','Noto Sans SC',sans-serif" font-size="11" font-weight="400" fill="var(--text3, #6a6a82)" letter-spacing="2">AI 音乐教学与版权代理</text>
+</svg>

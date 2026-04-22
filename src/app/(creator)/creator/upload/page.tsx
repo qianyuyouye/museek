@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { apiCall, useApi } from '@/lib/use-api'
 import { extractAudioFeatures, type AudioFeatures } from '@/lib/audio-extract'
 import { pageWrap, textPageTitle, cardCls, btnPrimary, btnGhost, btnSuccess, inputCls, labelCls } from '@/lib/ui-tokens'
-import { CheckCircle2, Bot } from 'lucide-react'
+import { CheckCircle2, Bot, Music } from 'lucide-react'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -490,7 +490,7 @@ export default function CreatorUploadPage() {
                 </div>
               ) : (
                 <div>
-                  <span className="text-[40px]">🎵</span>
+                  <Music size={40} className="mx-auto text-[var(--text3)]" />
                   <p className="mt-2 text-[var(--text2)]">
                     点击或拖拽上传音频文件
                   </p>

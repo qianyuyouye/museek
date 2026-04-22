@@ -6,7 +6,7 @@ import { useApi } from '@/lib/use-api'
 import { SONG_STATUS_MAP } from '@/lib/constants'
 import { pageWrap, textPageTitle, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'
 import { formatDateTime } from '@/lib/format'
-import { CheckCircle2, Hourglass, Heart } from 'lucide-react'
+import { CheckCircle2, Hourglass, Heart, Music, Search, AlertCircle } from 'lucide-react'
 import { Waveform } from '@/components/audio/waveform'
 
 // ── Types ──────────────────────────────────────────────────────
@@ -277,8 +277,8 @@ export default function CreatorSongsPage() {
           <div className={cardCls}>
             {/* Cover + status + title */}
             <div className="flex items-center gap-4 mb-4">
-              <div className="text-[56px] w-20 h-20 bg-[var(--bg4)] rounded-xl flex items-center justify-center">
-                <span>🎵</span>
+              <div className="w-20 h-20 bg-[var(--bg4)] rounded-xl flex items-center justify-center">
+                <Music size={36} className="text-[var(--text3)]" />
               </div>
               <div>
                 <Badge status={song.status} />
@@ -321,7 +321,7 @@ export default function CreatorSongsPage() {
             {song.status === 'needs_revision' && (
               <div className="mt-4">
                 <Link href={`/creator/upload?songId=${song.id}`}>
-                  <button className={btnPrimary}>📝 修改并重新提交</button>
+                  <button className={btnPrimary}><AlertCircle size={14} className="inline mr-1 -mt-0.5" />修改并重新提交</button>
                 </Link>
               </div>
             )}
@@ -474,8 +474,8 @@ export default function CreatorSongsPage() {
             className={`${cardCls} cursor-pointer transition-all duration-200 overflow-hidden hover:border-[var(--accent)] hover:-translate-y-0.5`}
           >
             {/* Cover */}
-            <div className="text-5xl text-center py-4 bg-[var(--bg4)] rounded-[10px] mb-2.5">
-              <span>🎵</span>
+            <div className="text-center py-4 bg-[var(--bg4)] rounded-[10px] mb-2.5">
+              <Music size={32} className="text-[var(--text3)] mx-auto" />
             </div>
 
             {/* Badge */}
@@ -500,7 +500,9 @@ export default function CreatorSongsPage() {
 
       {mySongs.length === 0 && (
         <div className={`${cardCls} text-center py-12`}>
-          <div className="text-4xl mb-3">📭</div>
+          <div className="w-16 h-16 rounded-full bg-[var(--bg4)] border border-[var(--border)] flex items-center justify-center mx-auto mb-3">
+            <Search size={28} className="text-[var(--text3)]" />
+          </div>
           <p className="text-[var(--text3)] text-sm">该分类下暂无作品</p>
         </div>
       )}

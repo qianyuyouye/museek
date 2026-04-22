@@ -6,7 +6,7 @@ export default function CreatorLayout({ children }: { children: React.ReactNode 
     <div className="min-h-screen">
       <GlobalToast />
       <CreatorSidebar />
-      <main className="ml-[200px] min-h-screen p-6">{children}</main>
+      <main className="ml-[220px] min-h-screen p-6">{children}</main>
     </div>
   )
 }

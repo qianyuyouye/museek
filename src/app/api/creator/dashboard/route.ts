@@ -71,7 +71,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
   // 5. 热门课程（按 views 排序，3条）
   const courses = await prisma.cmsContent.findMany({
     where: { status: 'published' },
-    select: { id: true, title: true, category: true, views: true },
+    select: { id: true, title: true, category: true, cover: true, views: true },
     orderBy: { views: 'desc' },
     take: 3,
   })
@@ -117,6 +117,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
         id: c.id,
         title: c.title,
         category: c.category,
+        cover: c.cover,
         views: c.views,
       })),
       total: totalCourses,

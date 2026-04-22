@@ -2,6 +2,7 @@
 
 import { useApi } from '@/lib/use-api'
 import { pageWrap, textPageTitle, cardCls } from '@/lib/ui-tokens'
+import { BookOpen, Timer, Award } from 'lucide-react'
 
 interface Badge {
   id: string
@@ -56,9 +57,9 @@ export default function CreatorLearning() {
   const records = recordsData?.list ?? []
 
   const STATS = [
-    { icon: '📚', label: '已完成课程', value: `${completed}/${totalCourses}`, color: 'var(--accent2)', bg: 'rgba(79,70,229,0.08)' },
-    { icon: '⏱', label: '本周学习', value: `${weekHours}h`, color: 'var(--green)', bg: 'rgba(6,148,162,0.08)' },
-    { icon: '🏆', label: '成就徽章', value: String(earnedBadges), color: 'var(--orange)', bg: 'rgba(217,119,6,0.08)' },
+    { icon: <BookOpen size={20} />, label: '已完成课程', value: `${completed}/${totalCourses}`, color: 'var(--accent2)', bg: 'rgba(79,70,229,0.08)' },
+    { icon: <Timer size={20} />, label: '本周学习', value: `${weekHours}h`, color: 'var(--green)', bg: 'rgba(6,148,162,0.08)' },
+    { icon: <Award size={20} />, label: '成就徽章', value: String(earnedBadges), color: 'var(--orange)', bg: 'rgba(217,119,6,0.08)' },
   ]
 
   // 按阶段聚合：progress 平均值（该阶段下所有属于 categories 的课程 progress 取均值）

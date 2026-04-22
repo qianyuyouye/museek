@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle } from '@/lib/ui-tokens'
+import { Bell } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -122,10 +123,12 @@ export default function NotificationsPage() {
       </div>
 
       {/* Notification List */}
-      <div className="bg-white rounded-xl border border-[var(--border)] shadow-[0_1px_4px_rgba(99,102,241,0.06)]">
+      <div className="bg-[var(--bg3)] rounded-xl border border-[var(--border)] shadow-[0_1px_4px_rgba(99,102,241,0.06)]">
         {filteredNotifications.length === 0 ? (
           <div className="text-center py-20 text-[var(--text3)]">
-            <span className="text-4xl block mb-3">📭</span>
+            <div className="w-16 h-16 rounded-full bg-[var(--bg4)] border border-[var(--border)] flex items-center justify-center mx-auto mb-3">
+              <Bell size={28} className="text-[var(--text3)]" />
+            </div>
             <p className="text-sm">暂无消息</p>
           </div>
         ) : (
