@@ -11,11 +11,16 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl
   const { page, pageSize, skip } = parsePagination(searchParams)
   const groupId = searchParams.get('groupId')
+  const statusFilter = searchParams.get('status')
 
   const parsedGroupId = groupId ? parseInt(groupId, 10) : null
   if (groupId && isNaN(parsedGroupId!)) return err('无效的用户组 ID')
 
-  const where = parsedGroupId ? { groupId: parsedGroupId } : {}
+  const where: Record<string, unknown> = {}
+  if (parsedGroupId) where.groupId = parsedGroupId
+  if (statusFilter && ['draft', 'active', 'closed'].includes(statusFilter)) {
+    where.status = statusFilter
+  }
 
   const [assignments, total] = await Promise.all([
     prisma.assignment.findMany({
@@ -45,14 +50,17 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   if ('error' in auth) return auth.error
 
   const body = await request.json()
-  const { groupId, title, description, deadline } = body
+  const { groupId, title, description, deadline, status } = body
 
   if (!groupId) return err('用户组不能为空')
   if (!title) return err('作业标题不能为空')
-  if (!deadline) return err('截止日期不能为空')
 
   const gid = typeof groupId === 'number' ? groupId : parseInt(groupId, 10)
   if (isNaN(gid)) return err('无效的用户组 ID')
+
+  // 草稿允许无截止日期，非草稿必须有
+  const effectiveStatus = status || 'active'
+  if (effectiveStatus !== 'draft' && !deadline) return err('截止日期不能为空')
 
   // 计算该组成员数
   const totalMembers = await prisma.userGroup.count({
@@ -64,7 +72,8 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
       groupId: gid,
       title,
       description: description || null,
-      deadline: new Date(deadline),
+      deadline: deadline ? new Date(deadline) : new Date('2099-12-31'),
+      status: effectiveStatus,
       totalMembers,
       createdBy: auth.userId,
     },
@@ -76,6 +85,9 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     targetId: assignment.id,
     detail: { title: assignment.title, groupId: gid, deadline: assignment.deadline },
   })
+
+  // 草稿不广播通知
+  if (effectiveStatus === 'draft') return ok(assignment)
 
   try {
     const members = await prisma.userGroup.findMany({

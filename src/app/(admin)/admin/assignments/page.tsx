@@ -18,7 +18,7 @@ interface Assignment {
   groupId: number
   groupName: string
   deadline: string
-  status: 'active' | 'closed'
+  status: 'draft' | 'active' | 'closed'
   submissionCount: number
   totalMembers: number
   createdAt: string
@@ -76,14 +76,16 @@ export default function AdminAssignmentsPage() {
   const [createModal, setCreateModal] = useState(false)
   const [fieldConfigModal, setFieldConfigModal] = useState<number | null>(null)
   const [filterGroupId, setFilterGroupId] = useState<number | ''>('')
+  const [filterStatus, setFilterStatus] = useState<string>('')
   const [toast, setToast] = useState('')
   const [expandedSubId, setExpandedSubId] = useState<number | null>(null)
 
   const groupIdParam = filterGroupId !== '' ? `&groupId=${filterGroupId}` : ''
+  const statusParam = filterStatus ? `&status=${filterStatus}` : ''
 
   const { data: assignmentsData, loading, refetch } = useApi<{ list: Assignment[]; total: number }>(
-    `/api/admin/assignments?pageSize=100${groupIdParam}`,
-    [filterGroupId]
+    `/api/admin/assignments?pageSize=100${groupIdParam}${statusParam}`,
+    [filterGroupId, filterStatus]
   )
   const assignments = assignmentsData?.list ?? []
 
@@ -382,58 +384,79 @@ export default function AdminAssignmentsPage() {
     {
       key: 'status',
       title: '状态',
-      render: (v) =>
-        v === 'active' ? (
-          <span
-            style={{
-              fontSize: 12,
-              padding: '2px 8px',
-              borderRadius: 10,
-              background: 'rgba(22,163,74,0.1)',
-              color: 'var(--green2)',
-            }}
-          >
-            进行中
+      render: (v) => {
+        const st = v as string
+        const map: Record<string, { label: string; bg: string; color: string }> = {
+          draft: { label: '草稿', bg: 'rgba(100,116,139,0.1)', color: 'var(--text2)' },
+          active: { label: '进行中', bg: 'rgba(22,163,74,0.1)', color: 'var(--green2)' },
+          closed: { label: '已关闭', bg: 'rgba(239,68,68,0.1)', color: 'var(--red)' },
+        }
+        const cfg = map[st] ?? map.active
+        return (
+          <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 10, background: cfg.bg, color: cfg.color }}>
+            {cfg.label}
           </span>
-        ) : (
-          <span
-            style={{
-              fontSize: 12,
-              padding: '2px 8px',
-              borderRadius: 10,
-              background: 'rgba(100,116,139,0.1)',
-              color: 'var(--text2)',
-            }}
-          >
-            已截止
-          </span>
-        ),
+        )
+      },
     },
     {
       key: 'id',
       title: '操作',
-      render: (v) => (
-        <div style={{ display: 'flex', gap: 4 }}>
-          <button
-            className={`${btnGhost} ${btnSmall}`}
-            onClick={(e) => {
-              e.stopPropagation()
-              setFieldConfigModal(v as number)
-            }}
-          >
-            ⚙️ 表单
-          </button>
-          <button
-            className={`${btnGhost} ${btnSmall}`}
-            onClick={(e) => {
-              e.stopPropagation()
-              setDetailId(v as number)
-            }}
-          >
-            详情 →
-          </button>
-        </div>
-      ),
+      render: (v, row) => {
+        const a = row as unknown as Assignment
+        return (
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button
+              className={`${btnGhost} ${btnSmall}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                setFieldConfigModal(v as number)
+              }}
+            >
+              ⚙️ 表单
+            </button>
+            <button
+              className={`${btnGhost} ${btnSmall}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                setDetailId(v as number)
+              }}
+            >
+              详情 →
+            </button>
+            {a.status === 'active' && (
+              <button
+                className={`${btnGhost} ${btnSmall}`}
+                style={{ color: 'var(--red)', borderColor: 'var(--red)' }}
+                onClick={async (e) => {
+                  e.stopPropagation()
+                  if (!confirm(`确认关闭作业「${a.title}」？`)) return
+                  const res = await apiCall(`/api/admin/assignments/${a.id}`, 'PUT', { status: 'closed' })
+                  if (res.ok) { showToast('✅ 作业已关闭'); refetch() }
+                  else showToast(res.message || '操作失败')
+                }}
+              >
+                关闭
+              </button>
+            )}
+            {a.status === 'draft' && (
+              <button
+                className={`${btnGhost} ${btnSmall}`}
+                style={{ color: 'var(--red)', borderColor: 'var(--red)' }}
+                onClick={async (e) => {
+                  e.stopPropagation()
+                  if (!confirm(`确认删除草稿「${a.title}」？此操作不可恢复。`)) return
+                  const res = await apiCall(`/api/admin/assignments/${a.id}`, 'DELETE')
+                  if (res.ok) { showToast('✅ 草稿已删除'); refetch() }
+                  else showToast(res.message || '删除失败')
+                }}
+              >
+                删除
+              </button>
+            )}
+          </div>
+        )
+      },
     },
   ]
 
@@ -452,11 +475,11 @@ export default function AdminAssignmentsPage() {
       />
 
       {/* Filter bar */}
-      <div className="flex gap-3 items-center">
+      <div className="flex gap-3 items-center flex-wrap">
         <label style={{ fontSize: 13, color: 'var(--text2)' }}>用户组筛选：</label>
         <select
           className={inputCls}
-          style={{ width: 240 }}
+          style={{ width: 200 }}
           value={filterGroupId}
           onChange={(e) => setFilterGroupId(e.target.value === '' ? '' : Number(e.target.value))}
         >
@@ -466,6 +489,18 @@ export default function AdminAssignmentsPage() {
               {g.name}
             </option>
           ))}
+        </select>
+        <label style={{ fontSize: 13, color: 'var(--text2)' }}>状态筛选：</label>
+        <select
+          className={inputCls}
+          style={{ width: 140 }}
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+        >
+          <option value="">全部</option>
+          <option value="draft">草稿</option>
+          <option value="active">进行中</option>
+          <option value="closed">已关闭</option>
         </select>
       </div>
 
@@ -521,7 +556,7 @@ export default function AdminAssignmentsPage() {
 
 // ── Create Assignment Form ──────────────────────────────────────
 
-function CreateAssignmentForm({ groups, onSubmit }: { groups: Group[]; onSubmit: (data: { groupId: number; title: string; description?: string; deadline: string }) => void }) {
+function CreateAssignmentForm({ groups, onSubmit }: { groups: Group[]; onSubmit: (data: { groupId: number; title: string; description?: string; deadline: string; status?: string }) => void }) {
   const [groupId, setGroupId] = useState('')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -558,12 +593,20 @@ function CreateAssignmentForm({ groups, onSubmit }: { groups: Group[]; onSubmit:
         <label className={labelCls}>截止时间</label>
         <input className={inputCls} type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
       </div>
-      <button
-        className={`${btnPrimary} w-full flex justify-center`}
-        onClick={() => onSubmit({ groupId: Number(groupId), title, description: description || undefined, deadline })}
-      >
-        创建作业
-      </button>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button
+          className={`${btnGhost} flex-1 justify-center`}
+          onClick={() => onSubmit({ groupId: Number(groupId), title, description: description || undefined, deadline: deadline || '2099-12-31', status: 'draft' })}
+        >
+          保存为草稿
+        </button>
+        <button
+          className={`${btnPrimary} flex-1 justify-center`}
+          onClick={() => onSubmit({ groupId: Number(groupId), title, description: description || undefined, deadline })}
+        >
+          创建作业
+        </button>
+      </div>
     </div>
   )
 }
