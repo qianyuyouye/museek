@@ -49,8 +49,7 @@ export default function ReviewQueuePage() {
   }
 
   function handleStartReview(songId: number) {
-    localStorage.setItem('currentReviewSongId', String(songId))
-    router.push('/review/assess')
+    router.push(`/review/assess?songId=${songId}`)
   }
 
   const columns: Column<QueueSong>[] = [

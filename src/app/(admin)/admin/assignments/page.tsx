@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Settings, CheckCircle2, Hourglass, Users, FileText } from 'lucide-react'
 import { PageHeader } from '@/components/admin/page-header'
 import { StatCard } from '@/components/admin/stat-card'
 import { DataTable, Column } from '@/components/admin/data-table'
@@ -107,7 +108,7 @@ export default function AdminAssignmentsPage() {
   }
 
   const toastEl = toast ? (
-    <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
+    <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-[var(--bg3)] border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
       {toast}
     </div>
   ) : null
@@ -223,7 +224,7 @@ export default function AdminAssignmentsPage() {
         {/* Stat cards */}
         <div className="grid grid-cols-3 gap-4">
           <StatCard
-            icon="👥"
+            icon={<Users className="w-5 h-5" />}
             label="总成员"
             val={totalMembers}
             color="#6c5ce7"
@@ -239,7 +240,7 @@ export default function AdminAssignmentsPage() {
             iconBg="rgba(22,163,74,0.1)"
           />
           <StatCard
-            icon="⏳"
+            icon={<Hourglass size={18} />}
             label="待评审"
             val={pendingReview}
             color="#f59e0b"
@@ -249,7 +250,7 @@ export default function AdminAssignmentsPage() {
 
         {/* Submission table */}
         <div className={cardCls}>
-          <h3 className="text-base font-semibold mb-4">📋 提交列表</h3>
+          <h3 className="text-base font-semibold mb-4">提交列表</h3>
           {subsLoading ? (
             <div style={{ padding: 20, textAlign: 'center', color: 'var(--text3)' }}>加载中...</div>
           ) : (
@@ -275,9 +276,9 @@ export default function AdminAssignmentsPage() {
             }
             const st = song ? statusMap[song.status] : null
             return (
-              <div style={{ margin: '12px 0', padding: 16, background: '#f8faff', borderRadius: 10, border: '1px solid var(--border)' }}>
+              <div style={{ margin: '12px 0', padding: 16, background: 'var(--bg4)', borderRadius: 10, border: '1px solid var(--border)' }}>
                 <h4 className="text-sm font-semibold mb-3 text-[var(--text)]">
-                  📄 提交详情 — {sub.user.realName || sub.user.name}
+                  提交详情 — {sub.user.realName || sub.user.name}
                 </h4>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px', fontSize: 13 }}>
                   <div style={{ display: 'flex', gap: 8 }}>
@@ -333,7 +334,7 @@ export default function AdminAssignmentsPage() {
                 display: 'flex',
                 justifyContent: 'space-between',
                 padding: '8px 12px',
-                background: '#f0f4fb',
+                background: 'var(--bg4)',
                 borderRadius: 6,
                 marginBottom: 6,
                 fontSize: 13,
@@ -413,7 +414,7 @@ export default function AdminAssignmentsPage() {
                 setFieldConfigModal(v as number)
               }}
             >
-              ⚙️ 表单
+              <Settings className="inline w-3.5 h-3.5 mr-1" />表单
             </button>
             <button
               className={`${btnGhost} ${btnSmall}`}
@@ -432,7 +433,7 @@ export default function AdminAssignmentsPage() {
                   e.stopPropagation()
                   if (!confirm(`确认关闭作业「${a.title}」？`)) return
                   const res = await apiCall(`/api/admin/assignments/${a.id}`, 'PUT', { status: 'closed' })
-                  if (res.ok) { showToast('✅ 作业已关闭'); refetch() }
+                  if (res.ok) { showToast('作业已关闭'); refetch() }
                   else showToast(res.message || '操作失败')
                 }}
               >
@@ -447,7 +448,7 @@ export default function AdminAssignmentsPage() {
                   e.stopPropagation()
                   if (!confirm(`确认删除草稿「${a.title}」？此操作不可恢复。`)) return
                   const res = await apiCall(`/api/admin/assignments/${a.id}`, 'DELETE')
-                  if (res.ok) { showToast('✅ 草稿已删除'); refetch() }
+                  if (res.ok) { showToast('草稿已删除'); refetch() }
                   else showToast(res.message || '删除失败')
                 }}
               >

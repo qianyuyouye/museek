@@ -43,11 +43,15 @@ export function SettingsNotificationTab({ initial, onSaved, showToast }: Props) 
   async function handleSave() {
     setSaving(true)
     try {
-      const res = await apiCall('/api/admin/settings', 'PUT', {
+      const res = await apiCall<Record<string, any>>('/api/admin/settings', 'PUT', {
         settings: [{ key: 'notification_templates', value: templates }],
       })
       if (res.ok) {
         showToast('保存成功', 'success')
+        // 立即更新为服务器返回的合并后模板
+        if (res.data?.notification_templates) {
+          setTemplates(res.data.notification_templates)
+        }
         onSaved()
       } else {
         showToast(res.message || '保存失败', 'error')

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { apiCall } from '@/lib/use-api'
 import { cardCls, btnPrimary, inputCls, labelCls } from '@/lib/ui-tokens'
+import { AlertTriangle } from 'lucide-react'
 
 interface OssConfig {
   accessKeyId: string
@@ -53,7 +54,7 @@ export function SettingsStorageTab({ initial, onSaved, showToast }: Props) {
       if (newAccessKeyId.trim()) oss.accessKeyId = newAccessKeyId.trim()
       if (newAccessKeySecret.trim()) oss.accessKeySecret = newAccessKeySecret.trim()
 
-      const res = await apiCall('/api/admin/settings', 'PUT', {
+      const res = await apiCall<Record<string, any>>('/api/admin/settings', 'PUT', {
         settings: [
           {
             key: 'storage_config',
@@ -71,6 +72,10 @@ export function SettingsStorageTab({ initial, onSaved, showToast }: Props) {
         showToast('保存成功', 'success')
         setNewAccessKeyId('')
         setNewAccessKeySecret('')
+        // 立即更新表单为服务器返回的脱敏值
+        if (res.data?.storage_config) {
+          setForm({ ...res.data.storage_config })
+        }
         onSaved()
       } else {
         showToast(res.message || '保存失败', 'error')
@@ -201,8 +206,9 @@ export function SettingsStorageTab({ initial, onSaved, showToast }: Props) {
           {saving ? '保存中...' : '保存'}
         </button>
 
-        <div className="text-xs text-orange-600 bg-orange-50 p-3 rounded">
-          ⚠️ Batch 1A 只保存配置，OSS 签名 URL 真实接入将在 Batch 1B 完成。切换到 OSS 模式后上传会失败，请等待 1B 发布。
+        <div className="text-xs text-orange-600 bg-orange-50 p-3 rounded flex items-start gap-1.5">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>Batch 1A 只保存配置，OSS 签名 URL 真实接入将在 Batch 1B 完成。切换到 OSS 模式后上传会失败，请等待 1B 发布。</span>
         </div>
       </div>
     </div>

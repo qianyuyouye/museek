@@ -2,34 +2,39 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Sidebar, type MenuItem } from './sidebar'
+import {
+  LayoutDashboard, FileText, Users, ClipboardList, Headphones, KeyRound,
+  Shield, ShieldCheck, Music, Download, Tag, Globe, CircleCheck,
+  Coins, Settings, ScrollText
+} from 'lucide-react'
 
 // 菜单项按 permissions key 归属的模块。内置超管（isSuperAdmin=true）所有菜单放行。
 // 检查 `admin.{module}.view` 是否为 true；为 true 则保留该菜单。
 const ADMIN_MENUS: (MenuItem & { permKey?: string })[] = [
   { key: 'd1', label: '', icon: '', href: '', divider: '总览' },
-  { key: 'dashboard', label: '运营看板', icon: '📊', href: '/admin/dashboard', permKey: 'admin.dashboard.view' },
+  { key: 'dashboard', label: '运营看板', icon: <LayoutDashboard size={16} />, href: '/admin/dashboard', permKey: 'admin.dashboard.view' },
   { key: 'd2', label: '', icon: '', href: '', divider: '内容' },
-  { key: 'cms', label: '内容管理', icon: '📝', href: '/admin/content', permKey: 'admin.cms.view' },
+  { key: 'cms', label: '内容管理', icon: <FileText size={16} />, href: '/admin/content', permKey: 'admin.cms.view' },
   { key: 'd3', label: '', icon: '', href: '', divider: '用户与权限' },
-  { key: 'groups', label: '用户组管理', icon: '🏘️', href: '/admin/groups', permKey: 'admin.groups.view' },
-  { key: 'assignments', label: '作业管理', icon: '📝', href: '/admin/assignments', permKey: 'admin.assignments.view' },
-  { key: 'students', label: '用户档案', icon: '👥', href: '/admin/students', permKey: 'admin.students.view' },
-  { key: 'contracts', label: '合同台账', icon: '📄', href: '/admin/contracts', permKey: 'admin.contracts.view' },
-  { key: 'teachers', label: '评审绩效', icon: '🎧', href: '/admin/teachers', permKey: 'admin.teachers.view' },
-  { key: 'accounts', label: '账号与权限', icon: '🔑', href: '/admin/accounts', permKey: 'admin.accounts.view' },
-  { key: 'admins', label: '平台管理员', icon: '👤', href: '/admin/admins', permKey: 'admin.admins.view' },
-  { key: 'roles', label: '角色管理', icon: '🛡️', href: '/admin/roles', permKey: 'admin.roles.view' },
+  { key: 'groups', label: '用户组管理', icon: <Users size={16} />, href: '/admin/groups', permKey: 'admin.groups.view' },
+  { key: 'assignments', label: '作业管理', icon: <ClipboardList size={16} />, href: '/admin/assignments', permKey: 'admin.assignments.view' },
+  { key: 'students', label: '用户档案', icon: <Users size={16} />, href: '/admin/students', permKey: 'admin.students.view' },
+  { key: 'contracts', label: '合同台账', icon: <FileText size={16} />, href: '/admin/contracts', permKey: 'admin.contracts.view' },
+  { key: 'teachers', label: '评审绩效', icon: <Headphones size={16} />, href: '/admin/teachers', permKey: 'admin.teachers.view' },
+  { key: 'accounts', label: '账号与权限', icon: <KeyRound size={16} />, href: '/admin/accounts', permKey: 'admin.accounts.view' },
+  { key: 'admins', label: '平台管理员', icon: <Shield size={16} />, href: '/admin/admins', permKey: 'admin.admins.view' },
+  { key: 'roles', label: '角色管理', icon: <ShieldCheck size={16} />, href: '/admin/roles', permKey: 'admin.roles.view' },
   { key: 'd4', label: '', icon: '', href: '', divider: '歌曲' },
-  { key: 'songs', label: '歌曲库管理', icon: '🎵', href: '/admin/songs', permKey: 'admin.songs.view' },
-  { key: 'batch-download', label: '作品库批量下载', icon: '⬇️', href: '/admin/batch-download', permKey: 'admin.batch_download.view' },
-  { key: 'isrc', label: 'ISRC管理', icon: '🔖', href: '/admin/isrc', permKey: 'admin.isrc.view' },
-  { key: 'distributions', label: '发行渠道', icon: '🌐', href: '/admin/distributions', permKey: 'admin.distributions.view' },
-  { key: 'publish-confirm', label: '发行状态确认', icon: '✅', href: '/admin/publish-confirm', permKey: 'admin.publish_confirm.view' },
+  { key: 'songs', label: '歌曲库管理', icon: <Music size={16} />, href: '/admin/songs', permKey: 'admin.songs.view' },
+  { key: 'batch-download', label: '作品库批量下载', icon: <Download size={16} />, href: '/admin/batch-download', permKey: 'admin.batch_download.view' },
+  { key: 'isrc', label: 'ISRC管理', icon: <Tag size={16} />, href: '/admin/isrc', permKey: 'admin.isrc.view' },
+  { key: 'distributions', label: '发行渠道', icon: <Globe size={16} />, href: '/admin/distributions', permKey: 'admin.distributions.view' },
+  { key: 'publish-confirm', label: '发行状态确认', icon: <CircleCheck size={16} />, href: '/admin/publish-confirm', permKey: 'admin.publish_confirm.view' },
   { key: 'd5', label: '', icon: '', href: '', divider: '收益' },
-  { key: 'revenue', label: '收益管理', icon: '💰', href: '/admin/revenue', permKey: 'admin.revenue.view' },
+  { key: 'revenue', label: '收益管理', icon: <Coins size={16} />, href: '/admin/revenue', permKey: 'admin.revenue.view' },
   { key: 'd6', label: '', icon: '', href: '', divider: '系统' },
-  { key: 'settings', label: '系统设置', icon: '⚙️', href: '/admin/settings', permKey: 'admin.settings.view' },
-  { key: 'logs', label: '操作日志', icon: '📋', href: '/admin/logs', permKey: 'admin.logs.view' },
+  { key: 'settings', label: '系统设置', icon: <Settings size={16} />, href: '/admin/settings', permKey: 'admin.settings.view' },
+  { key: 'logs', label: '操作日志', icon: <ScrollText size={16} />, href: '/admin/logs', permKey: 'admin.logs.view' },
 ]
 
 interface Me {

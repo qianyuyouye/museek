@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useApi } from '@/lib/use-api'
 import { pageWrap, textSectionTitle } from '@/lib/ui-tokens'
+import { ClipboardCheck, CheckCircle, Clock, BarChart3, PencilRuler, TrendingUp } from 'lucide-react'
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -32,54 +33,10 @@ interface StatsApiData {
 // ── Stat card config ────────────────────────────────────────────
 
 const STAT_CARDS = [
-  {
-    key: 'pending' as const,
-    icon: (
-      <svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        <rect x="9" y="3" width="6" height="4" rx="1" stroke="#fff" strokeWidth="2"/>
-        <path d="M9 14l2 2 4-4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    ),
-    label: '待评审',
-    grad: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-    shadow: 'rgba(245,158,11,.25)',
-  },
-  {
-    key: 'completed' as const,
-    icon: (
-      <svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-        <path d="M22 11.08V12a10 10 0 11-5.93-9.14" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M22 4L12 14.01l-3-3" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    ),
-    label: '已评审',
-    grad: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-    shadow: 'rgba(16,185,129,.25)',
-  },
-  {
-    key: 'avgDuration' as const,
-    icon: (
-      <svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="10" stroke="#fff" strokeWidth="2"/>
-        <path d="M12 6v6l4 2" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    ),
-    label: '平均用时',
-    grad: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-    shadow: 'rgba(99,102,241,.25)',
-  },
-  {
-    key: 'avgScore' as const,
-    icon: (
-      <svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-        <path d="M18 20V10M12 20V4M6 20v-6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    ),
-    label: '平均评分',
-    grad: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
-    shadow: 'rgba(236,72,153,.25)',
-  },
+  { key: 'pending' as const, icon: <ClipboardCheck size={22} color="#fff" />, label: '待评审', grad: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', shadow: 'rgba(245,158,11,.25)' },
+  { key: 'completed' as const, icon: <CheckCircle size={22} color="#fff" />, label: '已评审', grad: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', shadow: 'rgba(16,185,129,.25)' },
+  { key: 'avgDuration' as const, icon: <Clock size={22} color="#fff" />, label: '平均用时', grad: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', shadow: 'rgba(99,102,241,.25)' },
+  { key: 'avgScore' as const, icon: <BarChart3 size={22} color="#fff" />, label: '平均评分', grad: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)', shadow: 'rgba(236,72,153,.25)' },
 ]
 
 // ── Trend chart (SVG bar) ───────────────────────────────────────
@@ -114,8 +71,8 @@ function TrendChart({ data }: { data: number[] }) {
         const label = Math.round(maxVal * (1 - ratio))
         return (
           <g key={ratio}>
-            <line x1={padX} y1={y} x2={W - padX} y2={y} stroke="#e8edf5" strokeWidth="1" />
-            <text x={padX - 6} y={y + 4} textAnchor="end" fontSize="10" fill="#94a3b8">{label}</text>
+            <line x1={padX} y1={y} x2={W - padX} y2={y} stroke="var(--border)" strokeWidth="1" />
+            <text x={padX - 6} y={y + 4} textAnchor="end" fontSize="10" fill="var(--text3)">{label}</text>
           </g>
         )
       })}
@@ -143,7 +100,7 @@ function TrendChart({ data }: { data: number[] }) {
         if (i % step !== 0 && i !== data.length - 1) return null
         const x = padX + i * (barW + barGap) + barW / 2
         return (
-          <text key={i} x={x} y={H + 12} textAnchor="middle" fontSize="10" fill="#94a3b8">
+          <text key={i} x={x} y={H + 12} textAnchor="middle" fontSize="10" fill="var(--text3)">
             {i + 1}日
           </text>
         )
@@ -228,7 +185,7 @@ export default function ReviewWorkbench() {
         {STAT_CARDS.map((s) => (
           <div
             key={s.key}
-            className="bg-white border border-[var(--border)] rounded-xl px-[18px] py-5 flex items-center gap-3.5 shadow-[0_1px_4px_rgba(99,102,241,0.05)] transition-all cursor-default"
+            className="bg-[var(--bg3)] border border-[var(--border)] rounded-xl px-[18px] py-5 flex items-center gap-3.5 shadow-[0_1px_4px_rgba(0,0,0,0.2)] transition-all cursor-default"
             onMouseOver={(e) => {
               e.currentTarget.style.transform = 'translateY(-2px)'
               e.currentTarget.style.boxShadow = `0 8px 20px ${s.shadow}`
@@ -258,7 +215,7 @@ export default function ReviewWorkbench() {
       </div>
 
       {/* Trend chart */}
-      <div className="bg-white border border-[var(--border)] rounded-xl px-6 py-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]">
+      <div className="bg-[var(--bg3)] border border-[var(--border)] rounded-xl px-6 py-5 shadow-[0_1px_4px_rgba(0,0,0,0.2)]">
         <div className="flex justify-between items-center mb-4">
           <h2 className={textSectionTitle}>
             近30天评审数量
@@ -273,7 +230,7 @@ export default function ReviewWorkbench() {
       {/* Quick actions + recent reviews */}
       <div className="grid gap-5" style={{ gridTemplateColumns: '280px 1fr' }}>
         {/* Quick actions */}
-        <div className="bg-white border border-[var(--border)] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]">
+        <div className="bg-[var(--bg3)] border border-[var(--border)] rounded-xl p-5 shadow-[0_1px_4px_rgba(0,0,0,0.2)]">
           <h2 className={`${textSectionTitle} mb-4`}>
             快捷入口
           </h2>
@@ -284,28 +241,23 @@ export default function ReviewWorkbench() {
               onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-1px)' }}
               onMouseOut={(e) => { e.currentTarget.style.transform = '' }}
             >
-              <svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <PencilRuler size={18} />
               开始评审
             </button>
             <button
               onClick={() => router.push('/review/stats')}
-              className="flex items-center gap-2.5 px-4 py-3.5 bg-[#f8faff] text-[var(--accent)] border border-[var(--border)] rounded-[10px] text-sm font-medium cursor-pointer transition-all"
-              onMouseOver={(e) => { e.currentTarget.style.background = '#f0f2ff' }}
-              onMouseOut={(e) => { e.currentTarget.style.background = '#f8faff' }}
+              className="flex items-center gap-2.5 px-4 py-3.5 bg-[var(--bg4)] text-[var(--accent)] border border-[var(--border)] rounded-[10px] text-sm font-medium cursor-pointer transition-all"
+              onMouseOver={(e) => { e.currentTarget.style.background = 'var(--bg2)' }}
+              onMouseOut={(e) => { e.currentTarget.style.background = 'var(--bg4)' }}
             >
-              <svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-                <path d="M18 20V10M12 20V4M6 20v-6" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <TrendingUp size={18} />
               查看绩效
             </button>
           </div>
         </div>
 
         {/* Recent reviews */}
-        <div className="bg-white border border-[var(--border)] rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(99,102,241,0.06)]">
+        <div className="bg-[var(--bg3)] border border-[var(--border)] rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.2)]">
           <div className="px-5 pt-4 pb-3 border-b border-[var(--border)]">
             <h2 className={textSectionTitle}>
               最近评审记录
@@ -317,7 +269,7 @@ export default function ReviewWorkbench() {
                 {['歌曲', '创作者', '评分', '建议', '日期'].map((col) => (
                   <th
                     key={col}
-                    className="px-[18px] py-3 text-left text-xs font-semibold text-[var(--text3)] bg-[#fafbfe] whitespace-nowrap"
+                    className="px-[18px] py-3 text-left text-xs font-semibold text-[var(--text3)] bg-[var(--bg4)] whitespace-nowrap"
                   >
                     {col}
                   </th>
@@ -336,7 +288,7 @@ export default function ReviewWorkbench() {
                 <tr
                   key={row.id}
                   className="border-b border-[var(--border)] transition-colors"
-                  onMouseOver={(e) => { e.currentTarget.style.background = '#f8faff' }}
+                  onMouseOver={(e) => { e.currentTarget.style.background = 'var(--bg4)' }}
                   onMouseOut={(e) => { e.currentTarget.style.background = '' }}
                 >
                   <td className="px-[18px] py-3.5 text-sm font-medium text-[var(--text)]">

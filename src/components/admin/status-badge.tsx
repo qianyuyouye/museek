@@ -17,10 +17,10 @@ export function StatusBadge({ label, color, bg }: StatusBadgeProps) {
 
 // Maps realNameStatus string to a colored text span
 const REAL_NAME_MAP: Record<string, { label: string; color: string }> = {
-  verified: { label: '已认证', color: '#16a34a' },
-  pending: { label: '审核中', color: '#d97706' },
-  unverified: { label: '未认证', color: '#94a3b8' },
-  rejected: { label: '已拒绝', color: '#e53e3e' },
+  verified: { label: '已认证', color: 'var(--green2)' },
+  pending: { label: '审核中', color: 'var(--orange)' },
+  unverified: { label: '未认证', color: 'var(--text3)' },
+  rejected: { label: '已拒绝', color: 'var(--red)' },
 }
 
 interface RealNameBadgeProps {

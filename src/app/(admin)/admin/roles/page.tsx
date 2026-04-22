@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { XCircle, CheckCircle2 } from 'lucide-react'
 import { useConfirm } from '@/components/admin/confirm-dialog'
 import { PageHeader } from '@/components/admin/page-header'
 import { DataTable, Column } from '@/components/admin/data-table'
@@ -68,7 +69,7 @@ export default function AdminRolesPage() {
 
   const handleSave = async () => {
     if (!form.name.trim()) {
-      showToast('❌ 请输入角色名称')
+      showToast('请输入角色名称')
       return
     }
     if (editRole) {
@@ -78,7 +79,7 @@ export default function AdminRolesPage() {
         permissions: form.permissions,
       })
       if (res.ok) {
-        showToast('✅ 角色保存成功')
+        showToast('角色保存成功')
         setView('list')
         refetch()
       } else {
@@ -91,7 +92,7 @@ export default function AdminRolesPage() {
         permissions: form.permissions,
       })
       if (res.ok) {
-        showToast('✅ 角色创建成功')
+        showToast('角色创建成功')
         setView('list')
         refetch()
       } else {
@@ -102,7 +103,7 @@ export default function AdminRolesPage() {
 
   const handleDelete = async (role: Role) => {
     if (role.isBuiltin) {
-      showToast('❌ 内置角色不可删除')
+      showToast('内置角色不可删除')
       return
     }
     if (await confirm({ message: `确认删除角色「${role.name}」？`, danger: true })) {
@@ -122,7 +123,7 @@ export default function AdminRolesPage() {
     return (
       <div className={pageWrap}>
         {toast && (
-          <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
+          <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-[var(--bg3)] border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
             {toast}
           </div>
         )}

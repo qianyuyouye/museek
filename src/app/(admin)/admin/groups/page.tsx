@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { CheckCircle2, Pause, Pencil, Clipboard, Users } from 'lucide-react'
 import { useConfirm } from '@/components/admin/confirm-dialog'
 import { PageHeader } from '@/components/admin/page-header'
 import { StatCard } from '@/components/admin/stat-card'
@@ -91,7 +92,7 @@ export default function AdminGroupsPage() {
       {
         key: 'avatarUrl',
         title: '',
-        render: (v) => <span style={{ fontSize: 18 }}>{(v as string) || '👤'}</span>,
+        render: (v) => <span style={{ fontSize: 18 }}>{(v as string) || <Users className="w-4 h-4 text-[var(--text3)]" />}</span>,
       },
       {
         key: 'name',
@@ -150,7 +151,7 @@ export default function AdminGroupsPage() {
       <div className={pageWrap}>
         {/* Toast */}
         {toast && (
-          <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
+          <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-[var(--bg3)] border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
             {toast}
           </div>
         )}
@@ -168,12 +169,12 @@ export default function AdminGroupsPage() {
         <div className="grid grid-cols-2 gap-5">
           {/* 组信息 */}
           <div className={cardCls}>
-            <h3 className="text-base font-semibold mb-4">📋 组信息</h3>
+            <h3 className="text-base font-semibold mb-4">组信息</h3>
             {(
               [
                 ['组名', g.name],
                 ['描述', g.description || '—'],
-                ['状态', g.status === 'active' ? '✅ 启用' : '⏸️ 暂停'],
+                ['状态', g.status === 'active' ? '启用' : '暂停'],
                 ['创建时间', formatDateTime(g.createdAt)],
                 ['成员数', `${g.memberCount} 人`],
               ] as [string, string][]
@@ -184,7 +185,7 @@ export default function AdminGroupsPage() {
                   display: 'flex',
                   justifyContent: 'space-between',
                   padding: '8px 12px',
-                  background: '#f0f4fb',
+                  background: 'var(--bg4)',
                   borderRadius: 6,
                   marginBottom: 6,
                   fontSize: 13,
@@ -206,7 +207,7 @@ export default function AdminGroupsPage() {
                     ...(newDesc !== undefined ? { description: newDesc } : {}),
                   })
                   if (res.ok) {
-                    showToast('✅ 组信息已更新')
+                    showToast('组信息已更新')
                     refetchDetail()
                     refetch()
                   } else {
@@ -214,7 +215,7 @@ export default function AdminGroupsPage() {
                   }
                 }}
               >
-                ✏️ 编辑
+                <Pencil className="inline w-3.5 h-3.5 mr-1" />编辑
               </button>
               <button
                 className={g.status === 'active' ? `${btnDanger} ${btnSmall}` : `${btnSuccess} ${btnSmall}`}
@@ -230,14 +231,14 @@ export default function AdminGroupsPage() {
                   }
                 }}
               >
-                {g.status === 'active' ? '⏸️ 暂停' : '▶️ 启用'}
+                {g.status === 'active' ? '暂停' : '启用'}
               </button>
             </div>
           </div>
 
           {/* 专属邀请 */}
           <div className={cardCls}>
-            <h3 className="text-base font-semibold mb-4">🔗 专属邀请</h3>
+            <h3 className="text-base font-semibold mb-4">专属邀请</h3>
             <div style={{ marginBottom: 12 }}>
               <label className={labelCls}>邀请码</label>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -251,10 +252,10 @@ export default function AdminGroupsPage() {
                   className={btnGhost}
                   onClick={() => {
                     navigator.clipboard?.writeText(g.inviteCode)
-                    showToast('✅ 邀请码已复制到剪贴板')
+                    showToast('邀请码已复制到剪贴板')
                   }}
                 >
-                  📋 复制
+                  复制
                 </button>
               </div>
             </div>
@@ -266,10 +267,10 @@ export default function AdminGroupsPage() {
                   className={btnGhost}
                   onClick={() => {
                     navigator.clipboard?.writeText(g.inviteLink)
-                    showToast('✅ 注册链接已复制到剪贴板')
+                    showToast('注册链接已复制到剪贴板')
                   }}
                 >
-                  📋 复制
+                  复制
                 </button>
               </div>
             </div>
@@ -281,7 +282,7 @@ export default function AdminGroupsPage() {
                   const newCode = Math.random().toString(36).substring(2, 10).toUpperCase()
                   const res = await apiCall(`/api/admin/groups/${g.id}`, 'PUT', { inviteCode: newCode })
                   if (res.ok) {
-                    showToast('✅ 已重新生成邀请码和链接')
+                    showToast('已重新生成邀请码和链接')
                     refetchDetail()
                   } else {
                     showToast(res.message || '生成失败')
@@ -297,12 +298,12 @@ export default function AdminGroupsPage() {
         {/* 组成员 */}
         <div className={cardCls}>
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-base font-semibold">👥 组成员（{members.length}人）</h3>
+            <h3 className="text-base font-semibold">组成员（{members.length}人）</h3>
             <button
               className={btnGhost}
               onClick={() => {
                 navigator.clipboard?.writeText(g.inviteLink)
-                showToast('✅ 邀请链接已复制，可转发给新成员')
+                showToast('邀请链接已复制，可转发给新成员')
               }}
             >
               + 邀请成员
@@ -361,9 +362,9 @@ export default function AdminGroupsPage() {
       title: '状态',
       render: (v) =>
         v === 'active' ? (
-          <span style={{ color: 'var(--green2)', fontSize: 12 }}>✅ 活跃</span>
+          <span style={{ color: 'var(--green2)', fontSize: 12 }}><CheckCircle2 className="inline w-3 h-3 mr-0.5" />活跃</span>
         ) : (
-          <span style={{ color: 'var(--orange)', fontSize: 12 }}>⏸️ 暂停</span>
+          <span style={{ color: 'var(--orange)', fontSize: 12 }}><Pause className="inline w-3 h-3 mr-0.5" />暂停</span>
         ),
     },
     { key: 'createdAt', title: '创建时间', render: (v) => formatDateTime(v as string) },
@@ -379,7 +380,7 @@ export default function AdminGroupsPage() {
               setInviteModal(row as Group)
             }}
           >
-            🔗 邀请码
+            邀请码
           </button>
           <button
             className={`${btnGhost} ${btnSmall}`}
@@ -417,21 +418,21 @@ export default function AdminGroupsPage() {
       {/* StatCards */}
       <div className="grid grid-cols-3 gap-4">
         <StatCard
-          icon="🏘️"
+          icon={<Users size={18} />}
           label="总用户组"
           val={groups.length}
           color="#6c5ce7"
           iconBg="rgba(108,92,231,0.1)"
         />
         <StatCard
-          icon="✅"
+          icon={<CheckCircle2 size={18} />}
           label="活跃组"
           val={activeCount}
           color="#16a34a"
           iconBg="rgba(22,163,74,0.1)"
         />
         <StatCard
-          icon="⏸️"
+          icon={<Pause size={18} />}
           label="暂停组"
           val={pausedCount}
           color="#f59e0b"
@@ -460,7 +461,7 @@ export default function AdminGroupsPage() {
             const res = await apiCall('/api/admin/groups', 'POST', data)
             if (res.ok) {
               setCreateModal(false)
-              showToast('✅ 用户组创建成功！邀请码已自动生成')
+              showToast('用户组创建成功！邀请码已自动生成')
               refetch()
             } else {
               showToast(res.message || '创建失败')
@@ -524,7 +525,7 @@ function CreateGroupForm({ onSubmit }: { onSubmit: (data: { name: string; descri
           lineHeight: 1.6,
         }}
       >
-        💡 创建后系统将自动生成专属邀请码和注册链接。持有邀请码的用户可通过注册页面加入该组。
+        创建后系统将自动生成专属邀请码和注册链接。持有邀请码的用户可通过注册页面加入该组。
         <br />
         系统暂不开放公开注册，所有用户必须通过邀请码注册。
       </div>
@@ -550,7 +551,7 @@ function InviteCodePanel({
   const confirm = useConfirm()
   const [code, setCode] = useState(group.inviteCode)
   const [status, setStatus] = useState<'active' | 'paused'>(group.status)
-  const link = `https://aimusic.com/join/${code}`
+  const [link, setLink] = useState(group.inviteLink)
 
   async function regenerate() {
     if (!(await confirm({ message: '重新生成后原邀请码将立即失效，确定继续？', danger: true }))) return
@@ -558,7 +559,8 @@ function InviteCodePanel({
     const res = await apiCall(`/api/admin/groups/${group.id}`, 'PUT', { inviteCode: newCode })
     if (res.ok) {
       setCode(newCode)
-      showToast('✅ 已重新生成邀请码')
+      setLink(res.data?.inviteLink ?? link)
+      showToast('已重新生成邀请码')
     } else {
       showToast(res.message || '生成失败')
     }
@@ -583,7 +585,7 @@ function InviteCodePanel({
         style={{
           textAlign: 'center',
           padding: 24,
-          background: '#f0f4fb',
+          background: 'var(--bg4)',
           borderRadius: 12,
         }}
       >
@@ -610,10 +612,10 @@ function InviteCodePanel({
             className={btnGhost}
             onClick={() => {
               navigator.clipboard?.writeText(link)
-              showToast('✅ 已复制')
+              showToast('已复制')
             }}
           >
-            📋
+            <Clipboard className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
@@ -632,7 +634,7 @@ function InviteCodePanel({
           style={{ flex: 1, justifyContent: 'center', display: 'flex' }}
           onClick={toggleStatus}
         >
-          {status === 'active' ? '⏸️ 停用邀请码' : '▶️ 启用邀请码'}
+          {status === 'active' ? '停用邀请码' : '启用邀请码'}
         </button>
       </div>
     </div>

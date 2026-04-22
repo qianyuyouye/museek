@@ -19,7 +19,7 @@ export function Waveform({
   src,
   bars = 60,
   height = 60,
-  barColor = 'var(--border, #cbd5e1)',
+  barColor = 'var(--border2)',
   playedColor = 'var(--accent, #6366f1)',
   progress = 0,
 }: WaveformProps) {

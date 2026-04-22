@@ -1,44 +1,45 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
+import { Settings, Music, Headphones, Shield, Users, Coins, Globe, LineChart, Lock, AlertTriangle, CheckCircle, MessageSquare, BarChart3, Eye, EyeOff, X } from 'lucide-react'
 
 /* ── Portal theme config ── */
 const PORTAL_CONFIG: Record<string, {
   accent: string; accent2: string; accentRgb: string
   bg: string; shadow: string; decorDot: string
-  logo: string; logoGrad: string
+  logo: ReactNode; logoGrad: string
   title: string; subtitle: string
   heroTitle: string; heroSub: string
   placeholder: string; loginTitle: string
-  tipBg: string; tipBorder: string; tipText: string; tipIcon: string
-  features: { icon: string; text: string }[]
+  tipBg: string; tipBorder: string; tipText: string; tipIcon: ReactNode
+  features: { icon: ReactNode; text: string }[]
 }> = {
   admin: {
-    accent: '#d97706', accent2: '#b45309', accentRgb: '217,119,6',
-    bg: 'linear-gradient(140deg, #fef3c7 0%, #fde68a 15%, #f0f4fb 45%, #e8eef8 100%)',
-    shadow: '0 8px 40px rgba(217,119,6,.1), 0 2px 8px rgba(0,0,0,.05)',
-    decorDot: '#d97706', logo: '⚙️',
-    logoGrad: 'linear-gradient(135deg, #f59e0b, #d97706)',
+    accent: '#fbbf24', accent2: '#f59e0b', accentRgb: '251,191,36',
+    bg: 'linear-gradient(140deg, #0a0a14 0%, #14142a 40%, #1a1208 70%, #0a0a14 100%)',
+    shadow: '0 8px 40px rgba(251,191,36,.1), 0 2px 8px rgba(0,0,0,.4)',
+    decorDot: '#fbbf24', logo: <Settings size={24} />,
+    logoGrad: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
     title: 'AI音乐教学与版权代理平台',
     subtitle: '管理端 · 平台运营管理后台',
     heroTitle: '智慧中枢，\n驱动平台增长',
     heroSub: '全面掌控平台运营、用户管理、收益结算与内容发行',
     placeholder: '管理员账号 / 邮箱',
     loginTitle: '管理员登录',
-    tipBg: '#fffbeb', tipBorder: '#fde68a', tipText: '#92400e', tipIcon: '🔒',
+    tipBg: 'rgba(251,191,36,0.08)', tipBorder: 'rgba(251,191,36,0.25)', tipText: '#fbbf24', tipIcon: <Lock size={14} />,
     features: [
-      { icon: '📊', text: '运营看板 · 实时数据总览' },
-      { icon: '👥', text: '用户管理 · 组织与权限' },
-      { icon: '💰', text: '收益结算 · 多平台对账' },
-      { icon: '🚀', text: '内容发行 · 全渠道管理' },
+      { icon: <LineChart size={18} />, text: '运营看板 · 实时数据总览' },
+      { icon: <Users size={18} />, text: '用户管理 · 组织与权限' },
+      { icon: <Coins size={18} />, text: '收益结算 · 多平台对账' },
+      { icon: <Globe size={18} />, text: '内容发行 · 全渠道管理' },
     ],
   },
   creator: {
-    accent: '#6366f1', accent2: '#4f46e5', accentRgb: '99,102,241',
-    bg: 'linear-gradient(140deg, #dce6f8 0%, #e2e9f8 30%, #e8ecf8 55%, #dce9f8 80%, #deeef9 100%)',
-    shadow: '0 8px 40px rgba(99,102,241,.14), 0 2px 8px rgba(0,0,0,.05)',
-    decorDot: '#6b7fcf', logo: '🎵',
+    accent: '#818cf8', accent2: '#6366f1', accentRgb: '129,140,248',
+    bg: 'linear-gradient(140deg, #0a0a14 0%, #12122a 40%, #0e1028 70%, #0a0a14 100%)',
+    shadow: '0 8px 40px rgba(129,140,248,.12), 0 2px 8px rgba(0,0,0,.4)',
+    decorDot: '#818cf8', logo: <Music size={24} />,
     logoGrad: 'linear-gradient(135deg, #f97316, #ef4444)',
     title: 'AI音乐教学与版权代理平台',
     subtitle: '创作者端 · 创作 · 学习 · 发行 · 收益',
@@ -46,26 +47,26 @@ const PORTAL_CONFIG: Record<string, {
     heroSub: 'AI赋能音乐创作，版权代理全球发行，开启你的音乐人生',
     placeholder: '手机号 / 邮箱',
     loginTitle: '登录',
-    tipBg: '', tipBorder: '', tipText: '', tipIcon: '',
+    tipBg: '', tipBorder: '', tipText: '', tipIcon: null,
     features: [],
   },
   reviewer: {
-    accent: '#0694a2', accent2: '#0e7490', accentRgb: '6,148,162',
-    bg: 'linear-gradient(140deg, #dce6f8 0%, #e2e9f8 30%, #e8ecf8 55%, #dce9f8 80%, #deeef9 100%)',
-    shadow: '0 8px 40px rgba(6,148,162,.12), 0 2px 8px rgba(0,0,0,.05)',
-    decorDot: '#0694a2', logo: '🎧',
-    logoGrad: 'linear-gradient(135deg, #0694a2, #0e7490)',
+    accent: '#22d3ee', accent2: '#06b6d4', accentRgb: '34,211,238',
+    bg: 'linear-gradient(140deg, #0a0a14 0%, #0a1420 40%, #0e1a28 70%, #0a0a14 100%)',
+    shadow: '0 8px 40px rgba(34,211,238,.1), 0 2px 8px rgba(0,0,0,.4)',
+    decorDot: '#22d3ee', logo: <Headphones size={24} />,
+    logoGrad: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
     title: 'AI音乐教学与版权代理平台',
     subtitle: '评审端 · 专业评审工作台',
     heroTitle: '专业评审，\n发现优秀音乐作品',
     heroSub: '聆听、评分、反馈，帮助创作者成长',
     placeholder: '手机号 / 邮箱',
     loginTitle: '评审账号登录',
-    tipBg: '#f0fdf4', tipBorder: '#bbf7d0', tipText: '#166534', tipIcon: 'ℹ️',
+    tipBg: 'rgba(34,211,238,0.08)', tipBorder: 'rgba(34,211,238,0.25)', tipText: '#22d3ee', tipIcon: <Shield size={14} />,
     features: [
-      { icon: '🎧', text: '逐曲评审 · 专业打分' },
-      { icon: '📊', text: '绩效统计 · 工作量分析' },
-      { icon: '💬', text: '评语反馈 · 指导创作者' },
+      { icon: <Headphones size={18} />, text: '逐曲评审 · 专业打分' },
+      { icon: <BarChart3 size={18} />, text: '绩效统计 · 工作量分析' },
+      { icon: <MessageSquare size={18} />, text: '评语反馈 · 指导创作者' },
     ],
   },
 }
@@ -201,9 +202,9 @@ export function LoginForm({ portal }: { portal: string }) {
   }
 
   const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '11px 14px', background: '#fff',
-    border: '1.5px solid #e2e8f0', borderRadius: 9,
-    color: '#1e293b', fontSize: 14, outline: 'none',
+    width: '100%', padding: '11px 14px', background: 'var(--bg3)',
+    border: '1.5px solid var(--border)', borderRadius: 9,
+    color: 'var(--text)', fontSize: 14, outline: 'none',
     transition: 'border-color .2s', boxSizing: 'border-box',
   }
 
@@ -219,10 +220,10 @@ export function LoginForm({ portal }: { portal: string }) {
           ))}
         </div>
 
-        <h1 style={{ fontSize: 44, fontWeight: 900, color: '#1a1d35', lineHeight: 1.22, marginBottom: 14, letterSpacing: -0.5, whiteSpace: 'pre-line' }}>
+        <h1 style={{ fontSize: 44, fontWeight: 900, color: 'var(--text)', lineHeight: 1.22, marginBottom: 14, letterSpacing: -0.5, whiteSpace: 'pre-line' }}>
           {cfg.heroTitle}
         </h1>
-        <p style={{ fontSize: 16, color: '#4a5568', lineHeight: 1.65 }}>
+        <p style={{ fontSize: 16, color: 'var(--text2)', lineHeight: 1.65 }}>
           {cfg.heroSub}
         </p>
 
@@ -231,12 +232,12 @@ export function LoginForm({ portal }: { portal: string }) {
           <div style={{ marginTop: 32, display: 'flex', flexDirection: 'column', gap: 14 }}>
             {cfg.features.map((f, i) => (
               <div key={i} style={{
-                padding: '12px 16px', background: 'rgba(255,255,255,.65)', borderRadius: 12,
-                backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,.8)',
+                padding: '12px 16px', background: 'rgba(26,26,46,0.65)', borderRadius: 12,
+                backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,.12)',
                 display: 'flex', alignItems: 'center', gap: 12,
               }}>
-                <span style={{ fontSize: 22 }}>{f.icon}</span>
-                <span style={{ fontSize: 13.5, color: '#374151', fontWeight: 500 }}>{f.text}</span>
+                <span style={{ color: cfg.accent, display: 'flex' }}>{f.icon}</span>
+                <span style={{ fontSize: 13.5, color: 'var(--text)', fontWeight: 500 }}>{f.text}</span>
               </div>
             ))}
           </div>
@@ -244,26 +245,29 @@ export function LoginForm({ portal }: { portal: string }) {
           /* Creator illustration */
           <div style={{ height: 290, marginTop: 24, position: 'relative' }}>
             <svg width="172" height="172" viewBox="0 0 172 172" style={{ position: 'absolute', left: 40, top: 20 }}>
-              <circle cx="86" cy="86" r="86" fill="#1e1b4b" />
-              <circle cx="86" cy="86" r="68" fill="#312e81" />
-              <circle cx="86" cy="86" r="50" stroke="#4c1d95" strokeWidth="1" fill="none" opacity="0.4" />
-              <circle cx="86" cy="86" r="35" stroke="#4c1d95" strokeWidth="1" fill="none" opacity="0.3" />
-              <circle cx="86" cy="86" r="15" fill="#818cf8" />
-              <circle cx="86" cy="86" r="5" fill="#e0e7ff" />
+              <circle cx="86" cy="86" r="86" fill="#1a1a2e" />
+              <circle cx="86" cy="86" r="68" fill="#222240" />
+              <circle cx="86" cy="86" r="50" stroke={cfg.accent} strokeWidth="1" fill="none" opacity="0.4" />
+              <circle cx="86" cy="86" r="35" stroke={cfg.accent} strokeWidth="1" fill="none" opacity="0.3" />
+              <circle cx="86" cy="86" r="15" fill={cfg.accent} />
+              <circle cx="86" cy="86" r="5" fill="var(--text)" />
             </svg>
-            <span style={{ position: 'absolute', left: 180, bottom: 30, fontSize: 98, transform: 'rotate(-5deg)' }}>🎸</span>
-            <span style={{ position: 'absolute', right: 60, bottom: 10, fontSize: 76 }}>📻</span>
-            <span style={{ position: 'absolute', left: 10, top: 0, fontSize: 32, opacity: 0.5 }}>🌸</span>
-            <span style={{ position: 'absolute', right: 30, top: 20, fontSize: 28, opacity: 0.4 }}>🌿</span>
-            <span style={{ position: 'absolute', left: 120, top: -10, fontSize: 22, opacity: 0.6 }}>🎵</span>
-            <span style={{ position: 'absolute', right: 100, top: 0, fontSize: 18, opacity: 0.5 }}>⭐</span>
+            <svg width="80" height="80" viewBox="0 0 80 80" style={{ position: 'absolute', right: 80, bottom: 20, opacity: 0.3 }}>
+              <circle cx="40" cy="40" r="30" fill="none" stroke={cfg.accent} strokeWidth="1.5" />
+              <circle cx="40" cy="40" r="15" fill="none" stroke={cfg.accent} strokeWidth="1" />
+            </svg>
+            <div style={{ position: 'absolute', right: 10, top: 10, display: 'flex', gap: 8, opacity: 0.4 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: cfg.accent }} />
+              <div style={{ width: 12, height: 12, borderRadius: '50%', background: cfg.accent }} />
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.accent }} />
+            </div>
           </div>
         )}
       </div>
 
       {/* ── Right Card ── */}
       <div style={{ flex: '0 0 42%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 44px' }}>
-        <div style={{ width: '100%', maxWidth: 336, background: '#fff', borderRadius: 18, padding: '28px 26px', boxShadow: cfg.shadow }}>
+        <div style={{ width: '100%', maxWidth: 336, background: 'var(--bg3)', borderRadius: 18, padding: '28px 26px', boxShadow: cfg.shadow }}>
           {/* Logo */}
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
             <div style={{
@@ -273,13 +277,13 @@ export function LoginForm({ portal }: { portal: string }) {
             }}>
               {cfg.logo}
             </div>
-            <div style={{ fontSize: 14.5, fontWeight: 700, color: '#1e293b', marginBottom: 3 }}>{cfg.title}</div>
-            <div style={{ fontSize: 11.5, color: '#94a3b8' }}>{cfg.subtitle}</div>
+            <div style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--text)', marginBottom: 3 }}>{cfg.title}</div>
+            <div style={{ fontSize: 11.5, color: 'var(--text3)' }}>{cfg.subtitle}</div>
           </div>
 
           {/* Tab switcher (creator only) or static title */}
           {isCreator ? (
-            <div style={{ display: 'flex', marginBottom: 16, borderBottom: '1px solid #f0f4fb' }}>
+            <div style={{ display: 'flex', marginBottom: 16, borderBottom: '1px solid var(--border)' }}>
               {(['login', 'register'] as const).map(tab => (
                 <button
                   key={tab}
@@ -288,7 +292,7 @@ export function LoginForm({ portal }: { portal: string }) {
                     flex: 1, padding: '0 0 12px', background: 'none', border: 'none',
                     borderBottom: mode === tab ? `2px solid ${cfg.accent}` : '2px solid transparent',
                     fontSize: 15, fontWeight: mode === tab ? 600 : 400,
-                    color: mode === tab ? '#1e293b' : '#94a3b8',
+                    color: mode === tab ? 'var(--text)' : 'var(--text3)',
                     cursor: 'pointer', transition: 'all .2s',
                   }}
                 >
@@ -297,7 +301,7 @@ export function LoginForm({ portal }: { portal: string }) {
               ))}
             </div>
           ) : (
-            <div style={{ fontSize: 15, fontWeight: 600, color: '#1e293b', marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid #f0f4fb' }}>
+            <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
               {cfg.loginTitle}
             </div>
           )}
@@ -315,8 +319,8 @@ export function LoginForm({ portal }: { portal: string }) {
           {/* Error banner — only show lock warning in login mode */}
           {errorCount >= 3 && mode === 'login' && (
             <div style={{
-              padding: '7px 10px', background: '#fff0f0', border: '1px solid #fca5a5',
-              borderRadius: 7, marginBottom: 10, fontSize: 12, color: '#e53e3e',
+              padding: '7px 10px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+              borderRadius: 7, marginBottom: 10, fontSize: 12, color: 'var(--red)',
             }}>
               ⚠️ {errorCount >= 5 ? '账号已锁定，请联系管理员' : `已连续错误 ${errorCount} 次，5次后锁定`}
             </div>
@@ -331,7 +335,7 @@ export function LoginForm({ portal }: { portal: string }) {
                 value={account}
                 onChange={e => setAccount(e.target.value)}
                 onFocus={e => (e.currentTarget.style.borderColor = cfg.accent)}
-                onBlur={e => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}
               />
             </div>
             <div style={{ position: 'relative' }}>
@@ -342,17 +346,17 @@ export function LoginForm({ portal }: { portal: string }) {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 onFocus={e => (e.currentTarget.style.borderColor = cfg.accent)}
-                onBlur={e => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}
                 onKeyDown={e => e.key === 'Enter' && !isRegister && handleLogin()}
               />
               <button
                 onClick={() => setShowPw(!showPw)}
                 style={{
                   position: 'absolute', right: 11, top: '50%', transform: 'translateY(-50%)',
-                  background: 'none', border: 'none', fontSize: 14, color: '#94a3b8', cursor: 'pointer',
+                  background: 'none', border: 'none', fontSize: 14, color: 'var(--text3)', cursor: 'pointer',
                 }}
               >
-                {showPw ? '🙈' : '👁'}
+                {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
 
@@ -366,7 +370,7 @@ export function LoginForm({ portal }: { portal: string }) {
                     value={inviteCode}
                     onChange={e => setInviteCode(e.target.value)}
                     onFocus={e => (e.currentTarget.style.borderColor = cfg.accent)}
-                    onBlur={e => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                    onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}
                   />
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -376,7 +380,7 @@ export function LoginForm({ portal }: { portal: string }) {
                     value={smsCode}
                     onChange={e => setSmsCode(e.target.value)}
                     onFocus={e => (e.currentTarget.style.borderColor = cfg.accent)}
-                    onBlur={e => (e.currentTarget.style.borderColor = '#e2e8f0')}
+                    onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}
                   />
                   <button
                     disabled={smsCountdown > 0 || smsSending}
@@ -384,7 +388,7 @@ export function LoginForm({ portal }: { portal: string }) {
                     style={{
                       flexShrink: 0, padding: '0 14px', border: 'none', borderRadius: 9,
                       fontSize: 13, fontWeight: 500, color: '#fff', cursor: smsCountdown > 0 || smsSending ? 'not-allowed' : 'pointer',
-                      background: smsCountdown > 0 || smsSending ? '#cbd5e1' : `linear-gradient(135deg, ${cfg.accent}, ${cfg.accent2})`,
+                      background: smsCountdown > 0 || smsSending ? 'var(--text3)' : `linear-gradient(135deg, ${cfg.accent}, ${cfg.accent2})`,
                       whiteSpace: 'nowrap',
                     }}
                   >
@@ -394,15 +398,15 @@ export function LoginForm({ portal }: { portal: string }) {
 
                 {/* Agreement checkboxes */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#475569', cursor: 'pointer' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text2)', cursor: 'pointer' }}>
                     <input type="checkbox" checked={agreeService} onChange={e => setAgreeService(e.target.checked)} style={{ accentColor: cfg.accent }} />
-                    <span>《平台用户服务协议》<span style={{ color: '#e53e3e' }}>*</span></span>
+                    <span>《平台用户服务协议》<span style={{ color: 'var(--red)' }}>*</span></span>
                   </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#475569', cursor: 'pointer' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text2)', cursor: 'pointer' }}>
                     <input type="checkbox" checked={agreePrivacy} onChange={e => setAgreePrivacy(e.target.checked)} style={{ accentColor: cfg.accent }} />
-                    <span>《隐私政策》<span style={{ color: '#e53e3e' }}>*</span></span>
+                    <span>《隐私政策》<span style={{ color: 'var(--red)' }}>*</span></span>
                   </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#475569', cursor: 'pointer' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text2)', cursor: 'pointer' }}>
                     <input type="checkbox" checked={agreeMusic} onChange={e => setAgreeMusic(e.target.checked)} style={{ accentColor: cfg.accent }} />
                     <span>《音乐代理发行协议》</span>
                   </label>
@@ -412,7 +416,7 @@ export function LoginForm({ portal }: { portal: string }) {
           </div>
 
           {error && (
-            <p style={{ fontSize: 12, color: '#e53e3e', marginTop: 8 }}>{error}</p>
+            <p style={{ fontSize: 12, color: 'var(--red)', marginTop: 8 }}>{error}</p>
           )}
 
           {/* Action button */}
@@ -490,27 +494,30 @@ export function LoginForm({ portal }: { portal: string }) {
           onClick={() => setShowForgot(false)}
         >
           <div
-            style={{ background: '#fff', borderRadius: 16, padding: 28, width: 440, maxWidth: '90vw', animation: 'modalIn .3s ease' }}
+            style={{ background: 'var(--bg3)', borderRadius: 16, padding: 28, width: 440, maxWidth: '90vw', animation: 'modalIn .3s ease' }}
             onClick={e => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1e293b', margin: 0 }}>重置密码</h3>
-              <button onClick={() => setShowForgot(false)} style={{ background: 'none', border: 'none', fontSize: 18, color: '#94a3b8', cursor: 'pointer' }}>✕</button>
+              <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', margin: 0 }}>重置密码</h3>
+              <button onClick={() => setShowForgot(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }} aria-label="关闭">
+                <X className="w-4 h-4 text-[var(--text3)]" />
+              </button>
             </div>
 
             {forgotMsg && (
-              <div style={{ padding: '8px 12px', background: forgotMsg.startsWith('✅') ? '#f0fdf4' : '#fff0f0', border: `1px solid ${forgotMsg.startsWith('✅') ? '#bbf7d0' : '#fca5a5'}`, borderRadius: 8, marginBottom: 14, fontSize: 13, color: forgotMsg.startsWith('✅') ? '#166534' : '#e53e3e' }}>
-                {forgotMsg}
+              <div style={{ padding: '8px 12px', background: forgotMsg.startsWith('✅') ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', border: `1px solid ${forgotMsg.startsWith('✅') ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`, borderRadius: 8, marginBottom: 14, fontSize: 13, color: forgotMsg.startsWith('✅') ? 'var(--green2)' : 'var(--red)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                {forgotMsg.startsWith('✅') ? <CheckCircle className="w-4 h-4 flex-shrink-0" /> : <AlertTriangle className="w-4 h-4 flex-shrink-0" />}
+                {forgotMsg.replace(/^[✅❌]\s*/, '')}
               </div>
             )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 13, color: '#475569', marginBottom: 4, fontWeight: 500 }}>账号 / 邮箱</label>
+                <label style={{ display: 'block', fontSize: 13, color: 'var(--text2)', marginBottom: 4, fontWeight: 500 }}>账号 / 邮箱</label>
                 <input style={inputStyle} placeholder="请输入注册时的账号或邮箱" value={forgotAccount} onChange={e => setForgotAccount(e.target.value)} />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 13, color: '#475569', marginBottom: 4, fontWeight: 500 }}>验证码</label>
+                <label style={{ display: 'block', fontSize: 13, color: 'var(--text2)', marginBottom: 4, fontWeight: 500 }}>验证码</label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input style={{ ...inputStyle, flex: 1 }} placeholder="请输入验证码" value={forgotCode} onChange={e => setForgotCode(e.target.value)} />
                   <button
@@ -540,7 +547,7 @@ export function LoginForm({ portal }: { portal: string }) {
                     style={{
                       flexShrink: 0, padding: '0 16px', border: 'none', borderRadius: 9,
                       fontSize: 13, fontWeight: 500, color: '#fff', cursor: forgotSent ? 'not-allowed' : 'pointer',
-                      background: forgotSent ? '#cbd5e1' : `linear-gradient(135deg, ${cfg.accent}, ${cfg.accent2})`,
+                      background: forgotSent ? 'var(--text3)' : `linear-gradient(135deg, ${cfg.accent}, ${cfg.accent2})`,
                     }}
                   >
                     {forgotSent ? '已发送' : '发送验证码'}
@@ -548,11 +555,11 @@ export function LoginForm({ portal }: { portal: string }) {
                 </div>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 13, color: '#475569', marginBottom: 4, fontWeight: 500 }}>新密码</label>
+                <label style={{ display: 'block', fontSize: 13, color: 'var(--text2)', marginBottom: 4, fontWeight: 500 }}>新密码</label>
                 <input style={inputStyle} type="password" placeholder="请输入新密码" value={forgotPw} onChange={e => setForgotPw(e.target.value)} />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 13, color: '#475569', marginBottom: 4, fontWeight: 500 }}>确认密码</label>
+                <label style={{ display: 'block', fontSize: 13, color: 'var(--text2)', marginBottom: 4, fontWeight: 500 }}>确认密码</label>
                 <input style={inputStyle} type="password" placeholder="请再次输入新密码" value={forgotPw2} onChange={e => setForgotPw2(e.target.value)} />
               </div>
             </div>

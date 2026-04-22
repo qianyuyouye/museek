@@ -3,7 +3,9 @@
 import { useEditor, EditorContent, type Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { AdminModal } from '@/components/admin/admin-modal'
+import { FileUploader } from '@/components/admin/file-uploader'
 
 interface Props {
   value: string
@@ -15,11 +17,14 @@ interface Props {
 /**
  * 管理端 CMS 富文本编辑器。基于 TipTap：
  * - starter-kit：段落、标题、粗体、斜体、删除、引用、列表、代码块等
- * - image：插入图片（URL 粘贴，后续可接 /api/upload/token）
+ * - image：插入图片（支持上传，走 /api/upload/token）
  *
  * value / onChange 使用 HTML 字符串（服务端 sanitizeHtml 净化后存 DB）。
  */
 export function RichTextEditor({ value, onChange, placeholder, minHeight = 200 }: Props) {
+  const [imageModalOpen, setImageModalOpen] = useState(false)
+  const [pendingImageUrl, setPendingImageUrl] = useState<string | null>(null)
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -49,36 +54,53 @@ export function RichTextEditor({ value, onChange, placeholder, minHeight = 200 }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, value])
 
+  // 上传完成后插入图片
+  useEffect(() => {
+    if (pendingImageUrl && editor) {
+      editor.chain().focus().setImage({ src: pendingImageUrl }).run()
+      setPendingImageUrl(null)
+    }
+  }, [pendingImageUrl, editor])
+
   return (
-    <div className="border border-[var(--border)] rounded-lg overflow-hidden bg-white">
-      <Toolbar editor={editor} />
+    <div className="border border-[var(--border)] rounded-lg overflow-hidden bg-[var(--bg3)]">
+      <Toolbar editor={editor} onInsertImage={() => setImageModalOpen(true)} />
       <div className="border-t border-[var(--border)]">
         <EditorContent editor={editor} placeholder={placeholder} />
       </div>
+
+      <AdminModal open={imageModalOpen} onClose={() => setImageModalOpen(false)} title="插入图片" width={480}>
+        <div className="py-2">
+          <FileUploader
+            type="image"
+            value={null}
+            onChange={(url) => {
+              if (url) {
+                setPendingImageUrl(`/api/files/${url}`)
+                setImageModalOpen(false)
+              }
+            }}
+            placeholder="点击或拖拽上传图片"
+          />
+          <div className="mt-3 text-xs text-[var(--text3)] text-center">上传完成后图片将自动插入到编辑器</div>
+        </div>
+      </AdminModal>
     </div>
   )
 }
 
-function Toolbar({ editor }: { editor: Editor | null }) {
-  if (!editor) return <div className="h-9 bg-[#fafbff]" />
+function Toolbar({ editor, onInsertImage }: { editor: Editor | null; onInsertImage: () => void }) {
+  if (!editor) return <div className="h-9 bg-[var(--bg4)]" />
 
   const btn = (active: boolean) =>
     `px-2 py-0.5 rounded text-xs font-medium border cursor-pointer transition-colors ${
       active
         ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
-        : 'bg-white text-[var(--text2)] border-[var(--border)] hover:bg-[#f4f7fe]'
+        : 'bg-[var(--bg3)] text-[var(--text2)] border-[var(--border)] hover:bg-[var(--bg4)]'
     }`
 
-  function promptImage() {
-    if (!editor) return
-    const url = window.prompt('请输入图片 URL')
-    if (url && /^https?:\/\//.test(url.trim())) {
-      editor.chain().focus().setImage({ src: url.trim() }).run()
-    }
-  }
-
   return (
-    <div className="flex flex-wrap items-center gap-1 px-2 py-1.5 bg-[#fafbff]">
+    <div className="flex flex-wrap items-center gap-1 px-2 py-1.5 bg-[var(--bg4)]">
       <button type="button" className={btn(editor.isActive('bold'))} onClick={() => editor.chain().focus().toggleBold().run()}>
         B
       </button>
@@ -112,7 +134,7 @@ function Toolbar({ editor }: { editor: Editor | null }) {
         &lt;/&gt;
       </button>
       <span className="mx-1 h-4 w-px bg-[var(--border)]" />
-      <button type="button" className={btn(false)} onClick={promptImage}>
+      <button type="button" className={btn(false)} onClick={onInsertImage}>
         图片
       </button>
       <button type="button" className={btn(false)} onClick={() => editor.chain().focus().undo().run()}>

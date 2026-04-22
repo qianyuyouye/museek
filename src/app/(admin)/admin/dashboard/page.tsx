@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { PageHeader } from '@/components/admin/page-header'
 import { useApi } from '@/lib/use-api'
 import { pageWrap } from '@/lib/ui-tokens'
+import { Users, Music, ClipboardList, Rocket, Banknote } from 'lucide-react'
 
 interface DashboardData {
   stats: {
@@ -57,61 +58,14 @@ function smoothPath(points: { x: number; y: number }[]): string {
   return d
 }
 
-/* SVG icons for stat cards */
-function CardIcon({ type, size = 22 }: { type: string; size?: number }) {
-  const s = size
-  const color = '#fff'
-  switch (type) {
-    case 'users':
-      return (
-        <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
-          <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          <circle cx="9" cy="7" r="4" stroke={color} strokeWidth="2"/>
-          <path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      )
-    case 'music':
-      return (
-        <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
-          <path d="M9 18V5l12-2v13" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          <circle cx="6" cy="18" r="3" stroke={color} strokeWidth="2"/>
-          <circle cx="18" cy="16" r="3" stroke={color} strokeWidth="2"/>
-        </svg>
-      )
-    case 'clipboard':
-      return (
-        <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
-          <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          <rect x="8" y="2" width="8" height="4" rx="1" ry="1" stroke={color} strokeWidth="2"/>
-          <path d="M9 12h6M9 16h6" stroke={color} strokeWidth="2" strokeLinecap="round"/>
-        </svg>
-      )
-    case 'rocket':
-      return (
-        <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
-          <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11.95A22 22 0 0112 15z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      )
-    case 'yen':
-      return (
-        <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
-          <path d="M12 2L5 12h14L12 2z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M7 15h10M7 18h10M12 12v10" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      )
-    case 'group':
-      return (
-        <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
-          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          <circle cx="9" cy="7" r="4" stroke={color} strokeWidth="2"/>
-          <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      )
-    default:
-      return null
-  }
+/* Icon mapping for stat cards */
+const ICON_MAP: Record<string, React.ComponentType<{ size?: number; color?: string }>> = {
+  users: Users,
+  music: Music,
+  clipboard: ClipboardList,
+  rocket: Rocket,
+  yen: Banknote,
+  group: Users,
 }
 
 /* 3D chart illustration for banner */
@@ -255,52 +209,55 @@ export default function AdminDashboard() {
           gridTemplateColumns: 'repeat(6, 1fr)',
         }}
       >
-        {DASHBOARD_STATS.map((s, i) => (
-          <div
-            key={i}
-            onClick={() => s.pg && router.push(s.pg)}
-            className="bg-white border border-[var(--border)] rounded-xl cursor-pointer transition-all flex items-center"
-            style={{
-              padding: '18px 16px',
-              boxShadow: '0 1px 4px rgba(99,102,241,.05)',
-              gap: 14,
-            }}
-            onMouseOver={e => {
-              e.currentTarget.style.transform = 'translateY(-2px)'
-              e.currentTarget.style.boxShadow = '0 8px 20px rgba(99,102,241,.12)'
-            }}
-            onMouseOut={e => {
-              e.currentTarget.style.transform = ''
-              e.currentTarget.style.boxShadow = '0 1px 4px rgba(99,102,241,.05)'
-            }}
-          >
-            {/* Circular gradient icon */}
+        {DASHBOARD_STATS.map((s, i) => {
+          const IconComp = ICON_MAP[s.icon] || Users
+          return (
             <div
+              key={i}
+              onClick={() => s.pg && router.push(s.pg)}
+              className="bg-[var(--bg3)] border border-[var(--border)] rounded-xl cursor-pointer transition-all flex items-center"
               style={{
-                width: 48,
-                height: 48,
-                borderRadius: '50%',
-                background: s.grad,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                boxShadow: '0 4px 12px rgba(99,102,241,.2)',
+                padding: '18px 16px',
+                boxShadow: '0 1px 4px rgba(0,0,0,.2)',
+                gap: 14,
+              }}
+              onMouseOver={e => {
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow = '0 8px 20px rgba(129,140,248,.15)'
+              }}
+              onMouseOut={e => {
+                e.currentTarget.style.transform = ''
+                e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,.2)'
               }}
             >
-              <CardIcon type={s.icon} size={22} />
-            </div>
-
-            {/* Text content */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="text-[11px] text-[var(--text3)]" style={{ marginBottom: 3 }}>{s.label}</div>
-              <div className="text-2xl font-bold text-[var(--text)]" style={{ lineHeight: 1, marginBottom: 3 }}>
-                {s.val}
+              {/* Circular gradient icon */}
+              <div
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: '50%',
+                  background: s.grad,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  boxShadow: '0 4px 12px rgba(99,102,241,.2)',
+                }}
+              >
+                <IconComp size={22} color="#fff" />
               </div>
-              <div className="text-[11px] font-medium" style={{ color: s.subc }}>{s.sub}</div>
+
+              {/* Text content */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="text-[11px] text-[var(--text3)]" style={{ marginBottom: 3 }}>{s.label}</div>
+                <div className="text-2xl font-bold text-[var(--text)]" style={{ lineHeight: 1, marginBottom: 3 }}>
+                  {s.val}
+                </div>
+                <div className="text-[11px] font-medium" style={{ color: s.subc }}>{s.sub}</div>
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Two-column grid */}
@@ -308,10 +265,10 @@ export default function AdminDashboard() {
 
         {/* Revenue trend line chart */}
         <div
-          className="bg-white border border-[var(--border)] rounded-xl"
+          className="bg-[var(--bg3)] border border-[var(--border)] rounded-xl"
           style={{
             padding: '18px 16px 10px',
-            boxShadow: '0 1px 4px rgba(99,102,241,.05)',
+            boxShadow: '0 1px 4px rgba(0,0,0,.2)',
           }}
         >
           <div className="flex justify-between items-center mb-3">
@@ -319,7 +276,7 @@ export default function AdminDashboard() {
             <span
               className="text-[11px] text-[var(--text3)] border border-[var(--border)]"
               style={{
-                background: '#f4f7fe',
+                background: 'var(--bg4)',
                 padding: '2px 10px',
                 borderRadius: 20,
               }}
@@ -345,8 +302,8 @@ export default function AdminDashboard() {
               const y = PT + (1 - r) * (H - PT - PB)
               return (
                 <g key={i}>
-                  <line x1={PL} y1={y} x2={W - PR} y2={y} stroke="#f1f5f9" strokeWidth="1" />
-                  <text x={PL - 5} y={y + 4} textAnchor="end" fontSize="10" fill="#c8d5e4">
+                  <line x1={PL} y1={y} x2={W - PR} y2={y} stroke="var(--border)" strokeWidth="1" />
+                  <text x={PL - 5} y={y + 4} textAnchor="end" fontSize="10" fill="var(--text3)">
                     {Math.round((r * maxV) / 1000) + 'k'}
                   </text>
                 </g>
@@ -357,7 +314,7 @@ export default function AdminDashboard() {
             {trendMonths.map((m, i) => {
               const x = PL + (i / Math.max(trendValues.length - 1, 1)) * (W - PL - PR)
               return (
-                <text key={i} x={x} y={H + 2} textAnchor="middle" fontSize="10" fill="#c8d5e4">
+                <text key={i} x={x} y={H + 2} textAnchor="middle" fontSize="10" fill="var(--text3)">
                   {m}
                 </text>
               )
@@ -389,7 +346,7 @@ export default function AdminDashboard() {
                   cx={p.x}
                   cy={p.y}
                   r={hov === i ? 5 : 2.5}
-                  fill={hov === i ? '#6366f1' : '#fff'}
+                  fill={hov === i ? '#818cf8' : 'var(--text)'}
                   stroke="#6366f1"
                   strokeWidth="2.5"
                 />
@@ -405,8 +362,8 @@ export default function AdminDashboard() {
                   width="108"
                   height="38"
                   rx="8"
-                  fill="#fff"
-                  stroke="#e8edf5"
+                  fill="var(--bg3)"
+                  stroke="var(--border)"
                   strokeWidth="1"
                   filter="drop-shadow(0 2px 6px rgba(0,0,0,.08))"
                 />
@@ -430,10 +387,10 @@ export default function AdminDashboard() {
 
         {/* Conversion rates */}
         <div
-          className="bg-white border border-[var(--border)] rounded-xl"
+          className="bg-[var(--bg3)] border border-[var(--border)] rounded-xl"
           style={{
             padding: '18px 16px',
-            boxShadow: '0 1px 4px rgba(99,102,241,.05)',
+            boxShadow: '0 1px 4px rgba(0,0,0,.2)',
           }}
         >
           <span className="text-[13.5px] font-semibold text-[var(--text)] block mb-4">
@@ -463,7 +420,7 @@ export default function AdminDashboard() {
                 className="overflow-hidden"
                 style={{
                   height: 8,
-                  background: '#f4f7fe',
+                  background: 'var(--bg4)',
                   borderRadius: 4,
                 }}
               >

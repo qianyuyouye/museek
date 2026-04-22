@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { ReactNode, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface StatCardProps {
-  icon: string
+  icon: ReactNode
   label: string
   val: string | number
   sub?: string
@@ -29,15 +29,15 @@ export function StatCard({ icon, label, val, sub, subc, color, iconBg, page }: S
       onMouseLeave={() => setHovered(false)}
       style={{
         position: 'relative',
-        background: '#fff',
+        background: 'var(--bg3)',
         border: `1px solid ${hovered ? color + '55' : 'var(--border)'}`,
         borderRadius: 12,
         padding: '16px 13px',
         cursor: page ? 'pointer' : 'default',
         transform: hovered ? 'translateY(-2px)' : 'translateY(0)',
         boxShadow: hovered
-          ? `0 8px 24px rgba(0,0,0,0.10), 0 2px 8px ${color}22`
-          : '0 1px 4px rgba(0,0,0,0.04)',
+          ? `0 8px 24px rgba(0,0,0,0.30), 0 2px 8px ${color}22`
+          : '0 1px 4px rgba(0,0,0,0.2)',
         transition: 'all 0.2s ease',
         overflow: 'hidden',
       }}
@@ -66,7 +66,6 @@ export function StatCard({ icon, label, val, sub, subc, color, iconBg, page }: S
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: 20,
             flexShrink: 0,
           }}
         >

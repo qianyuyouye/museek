@@ -4,6 +4,7 @@ import { requirePermission, ok, err, safeHandler} from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
 import { toSignedUrl } from '@/lib/signed-url'
 
+// GET 歌曲详情（含签名 URL）— 当前前端用列表页直接编辑，此端点保留供后续详情页使用
 export const GET = safeHandler(async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

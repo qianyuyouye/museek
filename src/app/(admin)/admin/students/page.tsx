@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { CheckCircle2, XCircle, Circle, Ban, Music, User } from 'lucide-react'
 import { useConfirm } from '@/components/admin/confirm-dialog'
 import { PageHeader } from '@/components/admin/page-header'
 import { DataTable, Column } from '@/components/admin/data-table'
@@ -109,16 +110,16 @@ export default function AdminStudentsPage() {
     const s = detailStudent
 
     const roleLabel: Record<string, string> = {
-      creator: '🎵 创作者',
+      creator: '创作者',
       reviewer: '🎧 评审',
-      admin: '⚙️ 管理员',
+      admin: '管理员',
     }
 
     const adminLevelLabel =
       s.adminLevel === 'group_admin'
         ? '🔰 组管理员'
         : s.adminLevel === 'system_admin'
-          ? '🛡️ 系统管理员'
+          ? '系统管理员'
           : '无'
 
     const groupNames = s.groups.map((g) => g.name).join(', ') || '无'
@@ -138,7 +139,7 @@ export default function AdminStudentsPage() {
       <div className={pageWrap}>
         {/* Toast */}
         {toast && (
-          <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
+          <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-[var(--bg3)] border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
             {toast}
           </div>
         )}
@@ -165,7 +166,7 @@ export default function AdminStudentsPage() {
                   display: 'flex',
                   justifyContent: 'space-between',
                   padding: '8px 12px',
-                  background: '#f0f4fb',
+                  background: 'var(--bg4)',
                   borderRadius: 6,
                   marginBottom: 6,
                   fontSize: 13,
@@ -194,7 +195,7 @@ export default function AdminStudentsPage() {
                       color: 'var(--orange)',
                     }}
                   >
-                    ⏳ 待审核 — 用户已提交实名认证信息，请审核
+                    待审核 — 用户已提交实名认证信息，请审核
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button
@@ -202,7 +203,7 @@ export default function AdminStudentsPage() {
                       onClick={async () => {
                         const res = await apiCall(`/api/admin/students/${s.id}/verify`, 'POST', { action: 'approve' })
                         if (res.ok) {
-                          showToast('✅ 已通过实名认证')
+                          showToast('已通过实名认证')
                           refetchDetail()
                           refetch()
                         } else {
@@ -217,7 +218,7 @@ export default function AdminStudentsPage() {
                       onClick={async () => {
                         const res = await apiCall(`/api/admin/students/${s.id}/verify`, 'POST', { action: 'reject' })
                         if (res.ok) {
-                          showToast('❌ 已驳回，已通知用户修改后重新提交')
+                          showToast('已驳回，已通知用户修改后重新提交')
                           refetchDetail()
                           refetch()
                         } else {
@@ -244,7 +245,7 @@ export default function AdminStudentsPage() {
                       marginBottom: 10,
                     }}
                   >
-                    ✅ 已认证
+                    <CheckCircle2 className="inline w-3.5 h-3.5 mr-1" />已认证
                   </span>
                   {s.realName && (
                     <div style={{ fontSize: 12, display: 'grid', gap: 4 }}>
@@ -285,13 +286,13 @@ export default function AdminStudentsPage() {
                       color: 'var(--red)',
                     }}
                   >
-                    ❌ 已驳回 — 用户可修改后重新提交
+                    <XCircle className="inline w-3.5 h-3.5 mr-1" />已驳回 — 用户可修改后重新提交
                   </div>
                   <button
                     className={btnGhost}
                     onClick={async () => {
                       const res = await apiCall(`/api/admin/students/${s.id}/notify`, 'POST', { preset: 'realname_resubmit' })
-                      showToast(res.ok ? '✅ 已通知用户重新提交实名认证' : (res.message || '发送失败'))
+                      showToast(res.ok ? '已通知用户重新提交实名认证' : (res.message || '发送失败'))
                     }}
                   >
                     发送提醒
@@ -311,13 +312,13 @@ export default function AdminStudentsPage() {
                       color: 'var(--text3)',
                     }}
                   >
-                    ⚪ 未提交 — 用户尚未发起实名认证
+                    <Circle className="inline w-3.5 h-3.5 mr-1" />未提交 — 用户尚未发起实名认证
                   </div>
                   <button
                     className={btnGhost}
                     onClick={async () => {
                       const res = await apiCall(`/api/admin/students/${s.id}/notify`, 'POST', { preset: 'realname_unverified' })
-                      showToast(res.ok ? '✅ 已向用户发送实名认证提醒' : (res.message || '发送失败'))
+                      showToast(res.ok ? '已向用户发送实名认证提醒' : (res.message || '发送失败'))
                     }}
                   >
                     发送提醒
@@ -342,7 +343,7 @@ export default function AdminStudentsPage() {
                   }
                 }}
               >
-                🚫 禁用账号
+                <Ban className="inline w-3.5 h-3.5 mr-1" />禁用账号
               </button>
             </div>
           </div>
@@ -372,7 +373,7 @@ export default function AdminStudentsPage() {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span>{sg.cover || '🎵'}</span>
+                      <span>{sg.cover || <Music className="w-4 h-4 text-[var(--text3)]" />}</span>
                       <span>{sg.title}</span>
                     </div>
                     {statusInfo && (
@@ -415,7 +416,7 @@ export default function AdminStudentsPage() {
     {
       key: 'avatarUrl',
       title: '',
-      render: (v) => <span style={{ fontSize: 20 }}>{(v as string) || '👤'}</span>,
+      render: (v) => <span style={{ fontSize: 20 }}>{(v as string) || <User className="w-5 h-5 text-[var(--text3)]" />}</span>,
     },
     {
       key: 'name',

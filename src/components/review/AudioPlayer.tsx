@@ -1,6 +1,7 @@
 'use client'
 
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import { X } from 'lucide-react'
 
 export interface AudioMark {
   t: number
@@ -188,7 +189,7 @@ const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(function Aud
             className={`border-none rounded-md px-3 py-1 text-xs cursor-pointer transition-all duration-200 ${
               abLoopOn
                 ? 'bg-[var(--accent)] text-white shadow-[0_0_6px_rgba(99,102,241,0.3)]'
-                : 'bg-[#f8faff] text-[var(--text2)]'
+                : 'bg-[var(--bg4)] text-[var(--text2)]'
             } ${abStart == null || abEnd == null || abEnd <= abStart ? 'opacity-50 cursor-not-allowed' : ''}`}
             onClick={() => {
               if (abStart != null && abEnd != null && abEnd > abStart) {
@@ -212,7 +213,7 @@ const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(function Aud
         <select
           className="border-none rounded-md px-2 py-1 text-xs cursor-pointer font-medium"
           style={{
-            background: speed !== '1.0' ? 'var(--accent-glow)' : '#f8faff',
+            background: speed !== '1.0' ? 'var(--accent-glow)' : 'var(--bg4)',
             color: speed !== '1.0' ? 'var(--accent2)' : 'var(--text2)',
           }}
           value={speed}
@@ -310,7 +311,7 @@ const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(function Aud
                     onMarksChange(marks.filter((_, idx) => idx !== i))
                   }
                 >
-                  ✕
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             ))}

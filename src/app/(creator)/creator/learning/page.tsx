@@ -147,7 +147,7 @@ export default function CreatorLearning() {
               <div
                 style={{
                   height: 6,
-                  background: '#f0f4fb',
+                  background: 'var(--bg4)',
                   borderRadius: 3,
                   overflow: 'hidden',
                 }}
@@ -179,7 +179,7 @@ export default function CreatorLearning() {
                 style={{
                   textAlign: 'center',
                   padding: 12,
-                  background: '#f0f4fb',
+                  background: 'var(--bg4)',
                   borderRadius: 8,
                   opacity: a.earned ? 1 : 0.35,
                 }}

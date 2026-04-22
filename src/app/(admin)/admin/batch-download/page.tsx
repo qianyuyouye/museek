@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useRef, useEffect } from 'react'
+import { Rocket, CheckCircle2, X, XCircle, AlertTriangle, Star, BarChart3, Package } from 'lucide-react'
 import { PageHeader } from '@/components/admin/page-header'
 import { useApi, apiCall } from '@/lib/use-api'
 import { SONG_STATUS_MAP } from '@/lib/constants'
@@ -62,9 +63,9 @@ const inputCls =
 
 // ── Status filter mapping ───────────────────────────────────────
 const STATUS_FILTERS = [
-  { label: '🚀 待发行', value: 'ready_to_publish' },
-  { label: '✅ 已发行', value: 'published' },
-  { label: '📝 已评审', value: 'reviewed' },
+  { label: '待发行', value: 'ready_to_publish' },
+  { label: '已发行', value: 'published' },
+  { label: '已评审', value: 'reviewed' },
   { label: '全部', value: 'all' },
 ] as const
 
@@ -122,7 +123,7 @@ export default function BatchDownloadPage() {
       })
       if (!res.ok) {
         const json = await res.json().catch(() => ({ message: '请求失败' }))
-        showToast(`❌ ${json.message || '打包失败'}`)
+        showToast(json.message || '打包失败')
         return
       }
       const blob = await res.blob()
@@ -132,9 +133,9 @@ export default function BatchDownloadPage() {
       a.download = `批量下载_${new Date().toISOString().slice(0, 10)}.zip`
       a.click()
       URL.revokeObjectURL(url)
-      showToast('✅ 打包完成')
+      showToast('打包完成')
     } catch {
-      showToast('❌ 网络请求失败')
+      showToast('网络请求失败')
     } finally {
       setZipping(false)
     }
@@ -338,7 +339,7 @@ export default function BatchDownloadPage() {
               className={`${btnGhost} ${btnSmall}`}
               onClick={clearSelection}
             >
-              ✕ 清空选择
+              清空选择
             </button>
           )}
 
@@ -367,7 +368,7 @@ export default function BatchDownloadPage() {
               showToast(`已导出 ${selected.length} 首歌曲的元数据表`)
             }}
           >
-            📊 导出元数据表
+            <BarChart3 className="inline w-4 h-4 mr-1" />导出元数据表
           </button>
 
           <button
@@ -382,7 +383,7 @@ export default function BatchDownloadPage() {
               setPreviewIssues(selected.map(validateSong))
             }}
           >
-            {zipping ? '📦 打包中...' : `📦 批量打包${selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}`}
+            {zipping ? '打包中...' : `批量打包${selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}`}
           </button>
         </div>
       </div>
@@ -444,7 +445,7 @@ export default function BatchDownloadPage() {
                     song={song}
                     selected={selectedIds.has(song.id)}
                     onToggle={() => toggleOne(song.id)}
-                    onDownload={() => showToast(`⬇️ 开始下载「${song.title}」`)}
+                    onDownload={() => showToast(`开始下载「${song.title}」`)}
                   />
                 ))
               )}
@@ -476,7 +477,7 @@ function ValidationPreviewModal({
       onClick={onCancel}
     >
       <div
-        className="bg-white rounded-xl shadow-2xl w-[640px] max-h-[80vh] flex flex-col"
+        className="bg-[var(--bg3)] rounded-xl shadow-2xl w-[640px] max-h-[80vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-5 border-b border-[var(--border)]">
@@ -489,7 +490,7 @@ function ValidationPreviewModal({
           </p>
           {failed.length > 0 && (
             <p className="mt-2 text-xs text-[var(--orange)]">
-              ⚠️ 继续下载时，不合规项仍会入包，但 ZIP 内 `validation-report.txt` 会标红具体缺失项。
+              <AlertTriangle className="inline w-3.5 h-3.5 mr-1" />继续下载时，不合规项仍会入包，但 ZIP 内 `validation-report.txt` 会标红具体缺失项。
             </p>
           )}
         </div>
@@ -571,12 +572,12 @@ function SongRow({
   const isrcEl = song.isrc ? (
     <span className="text-[var(--green2)] font-mono text-xs">{song.isrc}</span>
   ) : (
-    <span className="text-[var(--red)] text-xs">⚠️ 无</span>
+    <span className="text-[var(--red)] text-xs"><AlertTriangle className="inline w-3 h-3 mr-0.5" />无</span>
   )
 
   return (
     <tr
-      className="hover:bg-[#f8faff] transition-colors"
+      className="hover:bg-[var(--bg4)] transition-colors"
     >
       <td className="px-3 py-3 text-sm border-b border-[var(--border)] whitespace-nowrap">
         <input
@@ -632,7 +633,7 @@ function SongRow({
           className={`${btnGhost} ${btnSmall}`}
           onClick={onDownload}
         >
-          ⬇️ 下载
+          下载
         </button>
       </td>
     </tr>

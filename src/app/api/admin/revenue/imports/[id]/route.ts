@@ -80,28 +80,46 @@ export const GET = safeHandler(async function GET(
   const importId = parseInt(id, 10)
   if (isNaN(importId)) return err('无效的 ID')
 
-  const record = await prisma.revenueImport.findUnique({
-    where: { id: importId },
-    include: {
-      rows: {
-        include: { mapping: true },
-        orderBy: { id: 'asc' },
-      },
-    },
+  // 返回分类详情（原 /detail 路由逻辑，已合并）
+  const rows = await prisma.revenueRow.findMany({
+    where: { importId },
+    include: { mapping: { include: { creator: { select: { name: true, realName: true } } } } },
+    orderBy: { id: 'asc' },
   })
 
-  if (!record) return err('导入记录不存在', 404)
+  const idConfirmed = rows
+    .filter((r) => r.matchStatus === 'matched')
+    .map((r) => ({
+      id: r.id,
+      songName: r.songName,
+      month: r.period,
+      douyinRevenue: parseFloat(r.douyinRevenue.toString()),
+      qishuiRevenue: parseFloat(r.qishuiRevenue.toString()),
+      matchStatus: r.matchStatus,
+    }))
 
-  const data = {
-    ...record,
-    totalRevenue: parseFloat(record.totalRevenue.toString()),
-    rows: record.rows.map((row) => ({
-      ...row,
-      douyinRevenue: parseFloat(row.douyinRevenue.toString()),
-      qishuiRevenue: parseFloat(row.qishuiRevenue.toString()),
-      totalRevenue: parseFloat(row.totalRevenue.toString()),
-    })),
-  }
+  const namePending = rows
+    .filter((r) => r.matchStatus === 'suspect')
+    .map((r) => ({
+      id: r.id,
+      songName: r.songName,
+      qishuiSongId: r.qishuiSongId,
+      matchedUserName: r.mapping?.creator?.realName ?? r.mapping?.creator?.name ?? null,
+      douyinRevenue: parseFloat(r.douyinRevenue.toString()),
+      qishuiRevenue: parseFloat(r.qishuiRevenue.toString()),
+      totalRevenue: parseFloat(r.totalRevenue.toString()),
+      matchStatus: r.matchStatus,
+    }))
 
-  return ok(data)
+  const unmatched = rows
+    .filter((r) => r.matchStatus === 'unmatched')
+    .map((r) => ({
+      id: r.id,
+      songName: r.songName,
+      qishuiSongId: r.qishuiSongId,
+      totalRevenue: parseFloat(r.totalRevenue.toString()),
+      matchStatus: r.matchStatus,
+    }))
+
+  return ok({ idConfirmed, namePending, unmatched })
 })

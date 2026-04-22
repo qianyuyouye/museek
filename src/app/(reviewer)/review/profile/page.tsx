@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle, textSectionTitle, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
+import { Pencil, Smartphone, Lock } from 'lucide-react'
 
 const rowCls = 'flex justify-between items-center px-3 py-2.5 bg-[var(--bg4)] rounded-md text-sm'
 
@@ -74,28 +75,28 @@ export default function ReviewerProfilePage() {
     if (!profile?.phone) return
     const res = await apiCall('/api/auth/sms/send', 'POST', { phone: profile.phone, purpose: 'change_phone' })
     if (res.ok) {
-      showToast('✅ 旧手机验证码已发送')
+      showToast('旧手机验证码已发送')
       setOldCodeCooldown(60)
     } else {
-      showToast(`❌ ${res.message || '发送失败'}`)
+      showToast(`${res.message || '发送失败'}`)
     }
   }
   async function sendNewCode() {
     if (!newPhone || !/^1[3-9]\d{9}$/.test(newPhone)) {
-      showToast('❌ 请先填写正确的新手机号'); return
+      showToast('请先填写正确的新手机号'); return
     }
     const res = await apiCall('/api/auth/sms/send', 'POST', { phone: newPhone, purpose: 'change_phone' })
     if (res.ok) {
-      showToast('✅ 新手机验证码已发送')
+      showToast('新手机验证码已发送')
       setNewCodeCooldown(60)
     } else {
-      showToast(`❌ ${res.message || '发送失败'}`)
+      showToast(`${res.message || '发送失败'}`)
     }
   }
 
   async function submitPhoneChange() {
     if (!profile?.phone || !oldCode || !newPhone || !newCode) {
-      showToast('❌ 请填写完整'); return
+      showToast('请填写完整'); return
     }
     const res = await apiCall('/api/profile/phone', 'POST', {
       oldPhone: profile.phone,
@@ -104,12 +105,12 @@ export default function ReviewerProfilePage() {
       newCode,
     })
     if (res.ok) {
-      showToast('✅ 手机号已更新，下次登录请使用新号码')
+      showToast('手机号已更新，下次登录请使用新号码')
       setModal(null)
       setOldCode(''); setNewCode(''); setNewPhone('')
       refetchProfile()
     } else {
-      showToast(`❌ ${res.message || '更新失败'}`)
+      showToast(`${res.message || '更新失败'}`)
     }
   }
 
@@ -126,7 +127,7 @@ export default function ReviewerProfilePage() {
           <div className="flex justify-between items-center mb-4">
             <h2 className={textSectionTitle}>基本信息</h2>
             <div className="flex gap-2">
-              <button className={btnGhost} onClick={() => setModal('edit')}>✏️ 编辑</button>
+              <button className={btnGhost} onClick={() => setModal('edit')}><Pencil className="w-3.5 h-3.5 inline mr-1" />编辑</button>
               <button className={btnGhost} onClick={() => setModal('phone')}>📱 改手机号</button>
               <button className={btnGhost} onClick={() => setModal('password')}>🔒 改密码</button>
             </div>
@@ -190,7 +191,7 @@ export default function ReviewerProfilePage() {
       {/* Edit Modal */}
       {modal === 'edit' && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setModal(null)}>
-          <div className="bg-white rounded-xl p-7 w-[400px]" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--bg3)] rounded-xl p-7 w-[400px]" onClick={e => e.stopPropagation()}>
             <h3 className="text-base font-semibold mb-5">编辑个人信息</h3>
             <div className="mb-3.5">
               <label className={labelCls}>昵称</label>
@@ -222,7 +223,7 @@ export default function ReviewerProfilePage() {
       {/* Phone Change Modal */}
       {modal === 'phone' && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setModal(null)}>
-          <div className="bg-white rounded-xl p-7 w-[420px]" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--bg3)] rounded-xl p-7 w-[420px]" onClick={e => e.stopPropagation()}>
             <h3 className="text-base font-semibold mb-4">更换手机号</h3>
             <p className="text-xs text-[var(--text3)] mb-5">
               旧手机号与新手机号需各自通过短信验证码校验。更新成功后，下次登录请使用新号码。
@@ -274,7 +275,7 @@ export default function ReviewerProfilePage() {
       {/* Password Modal */}
       {modal === 'password' && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setModal(null)}>
-          <div className="bg-white rounded-xl p-7 w-[400px]" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--bg3)] rounded-xl p-7 w-[400px]" onClick={e => e.stopPropagation()}>
             <h3 className="text-base font-semibold mb-5">修改密码</h3>
             <div className="mb-3.5">
               <label className={labelCls}>当前密码</label>

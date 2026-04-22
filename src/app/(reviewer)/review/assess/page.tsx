@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle, textSectionTitle, cardCls, btnPrimary, labelCls } from '@/lib/ui-tokens'
 import AudioPlayer, { type AudioMark, type AudioPlayerHandle } from '@/components/review/AudioPlayer'
+import { Bot, CheckCircle2 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -65,7 +66,7 @@ function AIAnalysisPanel({ songId, bpm }: { songId: number; bpm?: number }) {
   return (
     <details className="mt-4">
       <summary className="cursor-pointer text-sm text-[var(--accent2)] py-2">
-        🤖 AI预分析报告（仅供参考）{loading ? ' 分析中...' : data?.summary ? ` · ${data.summary}` : ''}
+        <Bot className="w-4 h-4 inline mr-1 -mt-0.5" />AI预分析报告（仅供参考）{loading ? ' 分析中...' : data?.summary ? ` · ${data.summary}` : ''}
       </summary>
       <div className="p-3 bg-[var(--bg4)] rounded-lg mt-2 text-xs grid grid-cols-2 gap-2">
         {items.map(([k, v]) => (
@@ -122,16 +123,23 @@ function useToast() {
 
 export default function ReviewAssessPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { show: showToast, Toast } = useToast()
 
   const [songId, setSongId] = useState<string | null>(null)
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('currentReviewSongId')
-      if (stored) setSongId(stored)
-    } catch { /* ignore */ }
-  }, [])
+    // 优先从 URL 参数读取，fallback localStorage（向后兼容）
+    const urlId = searchParams.get('songId')
+    if (urlId) {
+      setSongId(urlId)
+    } else {
+      try {
+        const stored = localStorage.getItem('currentReviewSongId')
+        if (stored) setSongId(stored)
+      } catch { /* ignore */ }
+    }
+  }, [searchParams])
 
   const { data: song, loading } = useApi<SongDetail>(
     songId ? `/api/review/songs/${songId}` : null,
@@ -180,7 +188,7 @@ export default function ReviewAssessPage() {
           if (Array.isArray(d.tags.marks)) setMarks(d.tags.marks)
         }
         if (d.comment || (d.tags && (d.tags.quick?.length || d.tags.marks?.length))) {
-          showToast('✨ 已恢复上次草稿')
+          showToast('已恢复上次草稿')
         }
       } catch { /* ignore */ }
     })()
@@ -286,7 +294,7 @@ export default function ReviewAssessPage() {
   }
 
   const handleSubmit = async () => {
-    if (comment.length < 20) { showToast('❌ 评语至少20字'); return }
+    if (comment.length < 20) { showToast('评语至少20字'); return }
 
     const tagsPayload = quickTags.length > 0 || marks.length > 0
       ? { quick: quickTags, marks }
@@ -314,10 +322,10 @@ export default function ReviewAssessPage() {
         localStorage.removeItem('currentReviewSongId')
         localStorage.removeItem('reviewSong')
       } catch { /* ignore */ }
-      showToast(`✅ 评审完成！总分 ${total}`)
+      showToast(`评审完成！总分 ${total}`)
       setTimeout(() => router.push('/review/queue'), 1200)
     } else {
-      showToast(`❌ ${res.message || '提交失败'}`)
+      showToast(`${res.message || '提交失败'}`)
     }
   }
 
@@ -542,7 +550,7 @@ export default function ReviewAssessPage() {
               disabled={submitting}
               onClick={handleSubmit}
             >
-              ✅ 提交评审
+              <CheckCircle2 className="w-5 h-5 inline mr-2" />提交评审
             </button>
           </div>
         </div>

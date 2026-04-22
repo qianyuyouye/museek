@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { CheckCircle2, AlertTriangle, Check } from 'lucide-react'
 import { PageHeader } from '@/components/admin/page-header'
 import { AdminTab } from '@/components/admin/admin-tab'
 import { DataTable, Column } from '@/components/admin/data-table'
@@ -103,10 +104,10 @@ export default function PublishConfirmPage() {
     const res = await apiCall(`/api/admin/publish-confirm/${trackId}`, 'POST', { action })
     if (res.ok) {
       const labels: Record<string, string> = {
-        submit: '📤 已提交发行，等待平台确认上架',
-        confirm: '✅ 已确认上架',
-        exception: '⚠️ 已标记为异常',
-        resubmit: '🔄 已重新提交',
+        submit: '已提交发行，等待平台确认上架',
+        confirm: '已确认上架',
+        exception: '已标记为异常',
+        resubmit: '已重新提交',
       }
       showToast(labels[action] ?? '操作成功')
       refetch()
@@ -221,7 +222,7 @@ export default function PublishConfirmPage() {
                   handleAction(t.id, 'submit')
                 }}
               >
-                {'📤'} {'提交发行'}
+                {'提交发行'}
               </button>
             )
           case 'submitted':
@@ -234,7 +235,7 @@ export default function PublishConfirmPage() {
                     handleAction(t.id, 'confirm')
                   }}
                 >
-                  {'✅'} {'确认上架'}
+                  {'确认上架'}
                 </button>
                 <button
                   className={`${btnDanger} ${btnSmall}`}
@@ -243,7 +244,7 @@ export default function PublishConfirmPage() {
                     handleAction(t.id, 'exception')
                   }}
                 >
-                  {'⚠️'} {'标记异常'}
+                  {'标记异常'}
                 </button>
               </div>
             )
@@ -257,7 +258,7 @@ export default function PublishConfirmPage() {
                     handleAction(t.id, 'resubmit')
                   }}
                 >
-                  {'🔄'} {'重新提交'}
+                  {'重新提交'}
                 </button>
                 <button
                   className={`${btnGhost} ${btnSmall}`}
@@ -302,7 +303,7 @@ export default function PublishConfirmPage() {
       ['平台', detailTrack.platform],
       ['提交日期', detailTrack.submittedAt ? `${detailTrack.submittedAt}（已提交${days}天）` : '-'],
       ['上架日期', detailTrack.liveDate ?? '-'],
-      ['本期数据', detailTrack.hasRevenue ? '✓ 有数据' : '未返回'],
+      ['本期数据', detailTrack.hasRevenue ? '有数据' : '未返回'],
       ['ISRC', detailTrack.isrc ?? '-'],
       ['版权编号', detailTrack.copyrightCode ?? '-'],
     ]
@@ -316,7 +317,7 @@ export default function PublishConfirmPage() {
               display: 'flex',
               justifyContent: 'space-between',
               padding: '8px 12px',
-              background: '#f0f4fb',
+              background: 'var(--bg4)',
               borderRadius: 6,
               fontSize: 13,
             }}
@@ -335,7 +336,7 @@ export default function PublishConfirmPage() {
     <div className={pageWrap}>
       {/* Toast */}
       {toast && (
-        <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
+        <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-[var(--bg3)] border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
           {toast}
         </div>
       )}

@@ -3,6 +3,14 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, err, safeHandler} from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
+import { getSetting } from '@/lib/system-settings'
+import { SETTING_KEYS } from '@/lib/system-settings'
+
+async function buildInviteLink(inviteCode: string): Promise<string> {
+  const domain = await getSetting<string>(SETTING_KEYS.INVITE_LINK_DOMAIN, '')
+  const baseUrl = domain || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  return `${baseUrl}/join/${inviteCode}`
+}
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -74,7 +82,7 @@ export const PUT = safeHandler(async function PUT(request: NextRequest, { params
     })
     if (codeExists) return err('邀请码已被其他用户组占用')
     data.inviteCode = inviteCode
-    data.inviteLink = `https://aimusic.com/join/${inviteCode}`
+    data.inviteLink = await buildInviteLink(inviteCode)
   }
 
   try {

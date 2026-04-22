@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle } from '@/lib/ui-tokens'
+import { Piano, Headphones, Music, BookOpen, Coffee, Scroll, Drum, Lightbulb, Mic, Bookmark, Rocket, X, AlertTriangle, FileVideo, FileText, Clock, GraduationCap, Eye, User } from 'lucide-react'
 
 // ── Constants ───────────────────────────────────────────────────
 
@@ -21,6 +22,21 @@ const COVER_GRADIENTS: Record<string, string> = {
   '🎤': 'linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)',
   '🔖': 'linear-gradient(135deg, #373b44 0%, #4286f4 100%)',
   '🚀': 'linear-gradient(135deg, #8360c3 0%, #2ebf91 100%)',
+}
+
+const COVER_ICONS: Record<string, React.ComponentType<{ size: number; className?: string }>> = {
+  '🎹': Piano,
+  '🎧': Headphones,
+  '🎼': Music,
+  '📖': BookOpen,
+  '🥤': Coffee,
+  '📜': Scroll,
+  '🥁': Drum,
+  '🎵': Music,
+  '💡': Lightbulb,
+  '🎤': Mic,
+  '🔖': Bookmark,
+  '🚀': Rocket,
 }
 
 const DEFAULT_GRADIENT = 'linear-gradient(135deg, #1a1a2e 0%, #3a3a5e 100%)'
@@ -49,6 +65,7 @@ interface CmsItem {
 
 function DetailModal({ item, onClose }: { item: CmsItem; onClose: () => void }) {
   const isVideo = item.type === 'video'
+  const CoverIcon = COVER_ICONS[item.cover] || Music
   const sections = Array.isArray(item.sections) && item.sections.length > 0 ? item.sections : null
 
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -138,7 +155,7 @@ function DetailModal({ item, onClose }: { item: CmsItem; onClose: () => void }) 
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-2xl w-[720px] max-h-[85vh] overflow-hidden flex flex-col"
+        className="bg-[var(--bg3)] rounded-xl shadow-2xl w-[720px] max-h-[85vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Cover */}
@@ -146,12 +163,12 @@ function DetailModal({ item, onClose }: { item: CmsItem; onClose: () => void }) 
           className="relative h-[180px] rounded-t-xl flex items-center justify-center shrink-0"
           style={{ background: COVER_GRADIENTS[item.cover] || DEFAULT_GRADIENT }}
         >
-          <span className="text-[72px] drop-shadow-lg">{item.cover}</span>
+          <CoverIcon size={72} className="text-white/60 drop-shadow-lg" />
           <button
             className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 backdrop-blur text-white flex items-center justify-center cursor-pointer hover:bg-white/30 transition border-0 text-lg"
             onClick={onClose}
           >
-            ✕
+            <X size={16} />
           </button>
         </div>
 
@@ -164,24 +181,24 @@ function DetailModal({ item, onClose }: { item: CmsItem; onClose: () => void }) 
               {item.category}
             </span>
             <span className="px-3 py-1 rounded-full text-xs font-medium bg-[#fef3c7] text-[var(--orange)]">
-              {isVideo ? '📹 视频课程' : '📖 图文科普'}
+              {isVideo ? <><FileVideo size={12} className="inline mr-1" />视频课程</> : <><FileText size={12} className="inline mr-1" />图文科普</>}
             </span>
             {item.level && (
               <span className="px-3 py-1 rounded-full text-xs font-medium bg-[#e0f7fa] text-[var(--green)]">
-                📊 {item.level}
+                <GraduationCap size={12} className="inline mr-1" />{item.level}
               </span>
             )}
             {item.author && (
-              <span className="text-xs text-[var(--text3)]">👤 {item.author}</span>
+              <span className="text-xs text-[var(--text3)]"><User size={12} className="inline mr-1" />{item.author}</span>
             )}
             <span className="text-xs text-[var(--text3)]">
-              👁 {item.views.toLocaleString()} 次浏览
+              <Eye size={12} className="inline mr-1" />{item.views.toLocaleString()} 次浏览
             </span>
           </div>
 
           {/* Summary */}
           {item.summary && (
-            <p className="text-sm text-[var(--text2)] mb-4 leading-relaxed bg-[#fafbff] px-4 py-3 rounded-lg border border-[var(--border)]">
+            <p className="text-sm text-[var(--text2)] mb-4 leading-relaxed bg-[var(--bg4)] px-4 py-3 rounded-lg border border-[var(--border)]">
               {item.summary}
             </p>
           )}
@@ -200,8 +217,8 @@ function DetailModal({ item, onClose }: { item: CmsItem; onClose: () => void }) 
             </div>
           )}
           {isVideo && !item.videoUrl && (
-            <div className="mb-5 p-6 bg-[#fef9ec] rounded-xl border border-[var(--orange)] text-sm text-[var(--text2)] text-center">
-              ⚠️ 本课程暂无视频资源
+            <div className="mb-5 p-6 bg-[var(--bg4)] rounded-xl border border-[var(--orange)] text-sm text-[var(--text2)] text-center">
+              <AlertTriangle size={16} className="inline mr-1" /> 本课程暂无视频资源
             </div>
           )}
 
@@ -255,11 +272,11 @@ function DetailModal({ item, onClose }: { item: CmsItem; onClose: () => void }) 
             <div className="flex items-center gap-4 pt-4 border-t border-[var(--border)]">
               {item.duration && (
                 <span className="text-xs text-[var(--text3)]">
-                  ⏱ {isVideo ? '时长' : '阅读时长'}：{item.duration}
+                  <Clock size={12} className="inline mr-1" />{isVideo ? '时长' : '阅读时长'}：{item.duration}
                 </span>
               )}
               {item.level && isVideo && (
-                <span className="text-xs text-[var(--text3)]">📊 难度：{item.level}</span>
+                <span className="text-xs text-[var(--text3)]"><GraduationCap size={12} className="inline mr-1" />难度：{item.level}</span>
               )}
             </div>
           )}
@@ -272,18 +289,17 @@ function DetailModal({ item, onClose }: { item: CmsItem; onClose: () => void }) 
 // ── Course Card ─────────────────────────────────────────────────
 
 function CourseCard({ item, onClick }: { item: CmsItem; onClick: () => void }) {
+  const IconComp = COVER_ICONS[item.cover] || Music
   return (
     <div
-      className="rounded-xl overflow-hidden bg-white border border-[var(--border)] shadow-[0_2px_8px_rgba(0,0,0,0.06)] cursor-pointer transition-all hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(99,102,241,0.12)] group"
+      className="rounded-xl overflow-hidden bg-[var(--bg3)] border border-[var(--border)] shadow-[0_2px_8px_rgba(0,0,0,0.06)] cursor-pointer transition-all hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(99,102,241,0.12)] group"
       onClick={onClick}
     >
       <div
         className="relative h-[140px] flex items-center justify-center overflow-hidden"
         style={{ background: COVER_GRADIENTS[item.cover] || DEFAULT_GRADIENT }}
       >
-        <span className="text-[56px] drop-shadow-md group-hover:scale-110 transition-transform duration-300">
-          {item.cover}
-        </span>
+        <IconComp size={56} className="text-white/40 drop-shadow-md group-hover:scale-110 transition-transform duration-300" />
         <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded text-[10px] font-medium bg-black/30 backdrop-blur-sm text-white">
           {item.category}
         </span>
@@ -303,8 +319,8 @@ function CourseCard({ item, onClick }: { item: CmsItem; onClick: () => void }) {
           </p>
         )}
         <div className="flex items-center justify-between text-[11px] text-[var(--text3)]">
-          <span>{item.type === 'video' ? '📹 视频课程' : '📖 图文科普'}</span>
-          <span>👁 {item.views.toLocaleString()}</span>
+          <span>{item.type === 'video' ? <><FileVideo size={10} className="inline mr-1" />视频课程</> : <><FileText size={10} className="inline mr-1" />图文科普</>}</span>
+          <span><Eye size={10} className="inline mr-1" />{item.views.toLocaleString()}</span>
         </div>
       </div>
     </div>

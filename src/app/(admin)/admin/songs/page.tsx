@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { Cloud, Circle, CheckCircle2, Music, FileText, Lightbulb } from 'lucide-react'
 import { PageHeader } from '@/components/admin/page-header'
 import { AdminTab } from '@/components/admin/admin-tab'
 import { DataTable, Column } from '@/components/admin/data-table'
@@ -57,12 +58,12 @@ interface SongItem {
   distributions?: SongDist[]
 }
 
-const CHANNEL_META: { key: string; icon: string }[] = [
-  { key: 'QQ音乐', icon: '🎵' },
-  { key: '网易云音乐', icon: '☁️' },
-  { key: 'Apple Music', icon: '🍎' },
-  { key: 'Spotify', icon: '🟢' },
-  { key: '酷狗音乐', icon: '🎶' },
+const CHANNEL_META: { key: string; icon: React.ReactNode }[] = [
+  { key: 'QQ音乐', icon: <Music className="w-4 h-4 inline" /> },
+  { key: '网易云音乐', icon: <Cloud className="w-4 h-4 inline" /> },
+  { key: 'Apple Music', icon: <Music className="w-4 h-4 inline" /> },
+  { key: 'Spotify', icon: <Circle className="w-4 h-4 inline text-[var(--green2)]" /> },
+  { key: '酷狗音乐', icon: <Music className="w-4 h-4 inline" /> },
 ]
 
 const DIST_STATUS_LABEL: Record<string, { label: string; color: string }> = {
@@ -74,7 +75,7 @@ const DIST_STATUS_LABEL: Record<string, { label: string; color: string }> = {
 }
 
 function sourceLabel(source: string): string {
-  return source === 'assignment' ? '📝作业' : '⬆️自由'
+  return source === 'assignment' ? '作业' : '自由上传'
 }
 
 // ── Main component ───────────────────────────────────────────────
@@ -316,6 +317,23 @@ export default function AdminSongsPage() {
               查看渠道
             </button>
             <button
+              className={`${btnGhost} ${btnSmall}`}
+              onClick={async (ev) => {
+                ev.stopPropagation()
+                const res = await fetch(`/api/admin/songs/${song.id}/agency-pdf`)
+                if (res.ok) {
+                  const blob = await res.blob()
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url; a.download = `${song.title}_代理发行证书.pdf`
+                  document.body.appendChild(a); a.click(); a.remove()
+                  URL.revokeObjectURL(url)
+                }
+              }}
+            >
+              下载PDF
+            </button>
+            <button
               className={`${btnDanger} ${btnSmall}`}
               onClick={(e) => { e.stopPropagation(); handleStatusChange(song.id, 'archive') }}
             >
@@ -349,7 +367,7 @@ export default function AdminSongsPage() {
       {/* Toast */}
       {toast && (
         <div
-          className={`fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white text-sm font-medium shadow-lg border ${
+          className={`fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-[var(--bg3)] text-sm font-medium shadow-lg border ${
             toastType === 'error'
               ? 'border-[var(--red)] text-[var(--red)]'
               : 'border-[var(--green)] text-[var(--green)]'
@@ -400,7 +418,7 @@ export default function AdminSongsPage() {
             className="p-3 rounded-lg text-xs leading-relaxed text-[var(--accent2)]"
             style={{ background: 'rgba(108,92,231,.08)' }}
           >
-            💡 ISRC（国际标准录音制品编码）是歌曲发行的必要条件。绑定后将用于数字音乐分发与版税追踪。
+            ISRC（国际标准录音制品编码）是歌曲发行的必要条件。绑定后将用于数字音乐分发与版税追踪。
           </div>
           <button
             className={`${btnPrimary} w-full flex justify-center`}
@@ -431,7 +449,7 @@ export default function AdminSongsPage() {
                     <div
                       key={ch.key}
                       className="rounded-lg flex justify-between items-center text-[13px]"
-                      style={{ padding: '12px 14px', background: '#f0f4fb' }}
+                      style={{ padding: '12px 14px', background: 'var(--bg4)' }}
                     >
                       <span>{ch.icon} {ch.key}</span>
                       <span className="text-[11px] font-medium" style={{ color: meta.color }}>
@@ -514,7 +532,7 @@ function EditModal({ song, onClose, onSuccess, showToast }: {
       }
       const res = await apiCall(`/api/admin/songs/${song.id}`, 'PUT', payload)
       if (res.ok) {
-        showToast('✅ 歌曲信息已更新')
+        showToast('歌曲信息已更新')
         onSuccess()
       } else {
         showToast(res.message || '更新失败', 'error')
@@ -532,7 +550,7 @@ function EditModal({ song, onClose, onSuccess, showToast }: {
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-[2px]" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-[560px] max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-[var(--bg3)] rounded-xl shadow-2xl w-[560px] max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="p-5 border-b border-[var(--border)]">
           <h2 className="text-lg font-semibold text-[var(--text)]">编辑歌曲元数据</h2>
           <p className="mt-1 text-xs text-[var(--text3)]">[{song.copyrightCode}] {song.title}</p>

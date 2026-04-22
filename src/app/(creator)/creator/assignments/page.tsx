@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle, cardCls, btnPrimary, btnGhost, btnSuccess, inputCls, labelCls } from '@/lib/ui-tokens'
 import { formatDate } from '@/lib/format'
+import { CheckCircle2 } from 'lucide-react'
 
 // ── Status Maps ────────────────────────────────────────────────
 
@@ -112,7 +113,7 @@ export default function CreatorAssignmentsPage() {
       })
       const tokenJson = await tokenRes.json()
       if (tokenJson.code !== 200) {
-        showToast(`❌ ${tokenJson.message || '获取上传凭证失败'}`)
+        showToast(`${tokenJson.message || '获取上传凭证失败'}`)
         return
       }
 
@@ -125,7 +126,7 @@ export default function CreatorAssignmentsPage() {
       })
 
       if (!putRes.ok) {
-        showToast('❌ 文件上传失败')
+        showToast('文件上传失败')
         return
       }
 
@@ -133,9 +134,9 @@ export default function CreatorAssignmentsPage() {
       setAudioUrl(key)
       setAudioFileName(file.name)
       setAudioSize((file.size / 1024 / 1024).toFixed(1) + 'MB')
-      showToast(`✅ ${file.name} 上传成功`)
+      showToast(`${file.name} 上传成功`)
     } catch {
-      showToast('❌ 上传出错')
+      showToast('上传出错')
     } finally {
       setUploading(false)
     }
@@ -233,7 +234,9 @@ export default function CreatorAssignmentsPage() {
 
         <div className={cardCls}>
           <div className="text-center py-8">
-            <div className="text-[56px]">✅</div>
+            <div className="text-[56px] text-[var(--green2)]">
+              <CheckCircle2 size={56} className="mx-auto" />
+            </div>
             <h3 className="text-lg font-semibold mt-3">你已提交本次作业</h3>
             <p className="text-[var(--text3)] mt-2 text-[13px]">
               等待评审中...
@@ -274,7 +277,9 @@ export default function CreatorAssignmentsPage() {
           </div>
           <div className={cardCls}>
             <div className="text-center py-8">
-              <div className="text-[56px]">✅</div>
+              <div className="text-[56px] text-[var(--green2)]">
+                <CheckCircle2 size={56} className="mx-auto" />
+              </div>
               <h3 className="text-lg font-semibold mt-3">你已提交本次作业</h3>
               <div className="mt-4">
                 <button className={btnGhost} onClick={resetForm}>
@@ -336,7 +341,9 @@ export default function CreatorAssignmentsPage() {
               </div>
             ) : audioUploaded ? (
               <div>
-                <span className="text-4xl">✅</span>
+                <span className="text-4xl text-[var(--green)]">
+                  <CheckCircle2 size={36} className="mx-auto" />
+                </span>
                 <p className="mt-1.5 text-[var(--green)] text-[13px]">
                   {audioFileName} 已上传 ({audioSize})
                 </p>
@@ -392,7 +399,7 @@ export default function CreatorAssignmentsPage() {
                             className={`px-3 py-1.5 rounded-lg text-sm border cursor-pointer transition-all ${
                               active
                                 ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
-                                : 'bg-white text-[var(--text2)] border-[var(--border)] hover:border-[var(--accent)]'
+                                : 'bg-[var(--bg3)] text-[var(--text2)] border-[var(--border)] hover:border-[var(--accent)]'
                             }`}
                             onClick={() => {
                               setFormData((p) => ({
@@ -568,7 +575,7 @@ export default function CreatorAssignmentsPage() {
                         )}
                         {asn.submissionStatus === 'reviewed' && (
                           <span className="text-[var(--green2)]">
-                            ✅ 评审完成{asn.submissionScore != null ? ` · ${asn.submissionScore}分` : ''}
+                            <CheckCircle2 size={12} className="inline mr-1" />评审完成{asn.submissionScore != null ? ` · ${asn.submissionScore}分` : ''}
                           </span>
                         )}
                         {asn.submissionStatus === 'needs_revision' && (

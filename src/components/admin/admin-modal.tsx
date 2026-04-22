@@ -1,6 +1,7 @@
 'use client'
 
 import { ReactNode } from 'react'
+import { X } from 'lucide-react'
 
 interface AdminModalProps {
   open: boolean
@@ -25,9 +26,9 @@ export function AdminModal({ open, onClose, title, children, width = 520, disabl
           width,
           maxWidth: '90vw',
           borderRadius: 'var(--radius-lg)',
-          background: '#fff',
+          background: 'var(--bg3)',
           padding: 24,
-          boxShadow: '0 20px 60px rgba(99,102,241,0.12)',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
           animation: 'modalIn 0.3s ease both',
         }}
       >
@@ -36,10 +37,10 @@ export function AdminModal({ open, onClose, title, children, width = 520, disabl
           <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>{title}</h2>
           <button
             onClick={onClose}
-            className="flex items-center justify-center w-7 h-7 rounded-full text-[var(--text3)] hover:text-[var(--text)] hover:bg-[var(--bg2)] transition-colors text-sm"
+            className="flex items-center justify-center w-7 h-7 rounded-full text-[var(--text3)] hover:text-[var(--text)] hover:bg-[var(--bg2)] transition-colors"
             aria-label="关闭"
           >
-            ✕
+            <X className="w-4 h-4" />
           </button>
         </div>
 

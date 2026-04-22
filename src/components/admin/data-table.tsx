@@ -1,6 +1,7 @@
 'use client'
 
 import { ReactNode } from 'react'
+import { Inbox } from 'lucide-react'
 
 export interface Column<T> {
   key: string
@@ -43,7 +44,8 @@ export function DataTable<T extends Record<string, unknown>>({
                 colSpan={columns.length}
                 className="px-3 py-10 text-center text-sm text-[var(--text3)]"
               >
-                📭 暂无数据
+                <Inbox size={20} className="mx-auto mb-2 opacity-40" />
+                <div>暂无数据</div>
               </td>
             </tr>
           ) : (
@@ -56,7 +58,7 @@ export function DataTable<T extends Record<string, unknown>>({
                   transition: 'background 0.15s',
                 }}
                 onMouseEnter={(e) => {
-                  if (onRowClick) (e.currentTarget as HTMLTableRowElement).style.background = '#f8faff'
+                  if (onRowClick) (e.currentTarget as HTMLTableRowElement).style.background = 'var(--bg4)'
                 }}
                 onMouseLeave={(e) => {
                   (e.currentTarget as HTMLTableRowElement).style.background = ''

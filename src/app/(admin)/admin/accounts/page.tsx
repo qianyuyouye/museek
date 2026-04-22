@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Shield, CheckCircle2, Ban, Settings, AlertTriangle, Clipboard, Check, Users } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useConfirm } from '@/components/admin/confirm-dialog'
 import { PageHeader } from '@/components/admin/page-header'
@@ -124,8 +125,8 @@ export default function AdminAccountsPage() {
 
   // ── Tab config ──────────────────────────────────────────────
   const tabs = [
-    { key: 'reviewer', label: '🎧 评审账号', count: reviewers.length },
-    { key: 'creator', label: '👥 创作者账号管控', count: creators.length },
+    { key: 'reviewer', label: '评审账号', count: reviewers.length },
+    { key: 'creator', label: '创作者账号管控', count: creators.length },
   ]
 
   // ── Reviewer columns ───────────────────────────────────────
@@ -142,12 +143,12 @@ export default function AdminAccountsPage() {
       title: '用户属性',
       render: (_v, row) => {
         const r = row as ReviewerAccount
-        const parts: string[] = ['评审']
+        const parts: React.ReactNode[] = ['评审']
         if (r.adminLevel === 'group_admin') parts.push('🔰 组管理员')
-        if (r.adminLevel === 'system_admin') parts.push('🛡️ 系统管理员')
+        if (r.adminLevel === 'system_admin') parts.push(<><Shield className="inline w-3 h-3 mr-0.5" />系统管理员</>)
         return (
           <span style={{ fontSize: 12, color: 'var(--accent2)' }}>
-            {parts.join(' · ')}
+            {parts.map((p, i) => <span key={i}>{i > 0 ? ' · ' : ''}{p}</span>)}
           </span>
         )
       },
@@ -169,9 +170,9 @@ export default function AdminAccountsPage() {
       title: '状态',
       render: (v) =>
         v === 'active' ? (
-          <span style={{ color: 'var(--green2)', fontSize: 12 }}>✅ 启用</span>
+          <span style={{ color: 'var(--green2)', fontSize: 12 }}><CheckCircle2 className="inline w-3 h-3 mr-0.5" />启用</span>
         ) : (
-          <span style={{ color: 'var(--red)', fontSize: 12 }}>🚫 已禁用</span>
+          <span style={{ color: 'var(--red)', fontSize: 12 }}><Ban className="inline w-3 h-3 mr-0.5" />已禁用</span>
         ),
     },
     { key: 'lastLogin', title: '最后登录' },
@@ -201,7 +202,7 @@ export default function AdminAccountsPage() {
                     setCopied(false)
                     setResetPwd({ name: r.name, password: res.data.password })
                   } else {
-                    showToast(`✅ 已重置 ${r.name} 的密码`)
+                    showToast(`已重置 ${r.name} 的密码`)
                   }
                   refetch()
                 } else showToast(res.message ?? '重置失败')
@@ -251,12 +252,12 @@ export default function AdminAccountsPage() {
       title: '属性',
       render: (_v, row) => {
         const r = row as CreatorAccount
-        const parts: string[] = ['创作者']
+        const parts: React.ReactNode[] = ['创作者']
         if (r.adminLevel === 'group_admin') parts.push('🔰 组管理员')
-        if (r.adminLevel === 'system_admin') parts.push('🛡️ 系统管理员')
+        if (r.adminLevel === 'system_admin') parts.push(<><Shield className="inline w-3 h-3 mr-0.5" />系统管理员</>)
         return (
           <span style={{ fontSize: 12, color: 'var(--accent2)' }}>
-            {parts.join(' · ')}
+            {parts.map((p, i) => <span key={i}>{i > 0 ? ' · ' : ''}{p}</span>)}
           </span>
         )
       },
@@ -305,7 +306,7 @@ export default function AdminAccountsPage() {
                     setCopied(false)
                     setResetPwd({ name: r.name, password: res.data.password })
                   } else {
-                    showToast(`✅ 已重置 ${r.name} 的密码`)
+                    showToast(`已重置 ${r.name} 的密码`)
                   }
                   refetch()
                 } else showToast(res.message ?? '重置失败')
@@ -337,7 +338,7 @@ export default function AdminAccountsPage() {
     <div className={pageWrap}>
       {/* Toast */}
       {toast && (
-        <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
+        <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-[var(--bg3)] border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
           {toast}
         </div>
       )}
@@ -361,7 +362,7 @@ export default function AdminAccountsPage() {
               className={btnGhost}
               onClick={() => router.push('/admin/admins')}
             >
-              ⚙️ 平台管理员 →
+              <Settings className="inline w-3.5 h-3.5 mr-1" />平台管理员 →
             </button>
           </div>
         }
@@ -401,7 +402,7 @@ export default function AdminAccountsPage() {
             const res = await apiCall('/api/admin/accounts/create-reviewer', 'POST', body)
             if (res.ok) {
               setCreateReviewerModal(false)
-              showToast('✅ 评审账号创建成功')
+              showToast('评审账号创建成功')
               refetch()
             } else {
               showToast(res.message ?? '创建失败')
@@ -422,7 +423,7 @@ export default function AdminAccountsPage() {
             const res = await apiCall('/api/admin/accounts/create-creator', 'POST', body)
             if (res.ok) {
               setCreateCreatorModal(false)
-              showToast('✅ 创作者账号创建成功')
+              showToast('创作者账号创建成功')
               refetch()
             } else {
               showToast(res.message ?? '创建失败')
@@ -445,7 +446,7 @@ export default function AdminAccountsPage() {
               const res = await apiCall(`/api/admin/accounts/${permModal.id}/permissions`, 'PUT', body)
               if (res.ok) {
                 setPermModal(null)
-                showToast('✅ 权限已变更')
+                showToast('权限已变更')
                 refetch()
               } else {
                 showToast(res.message ?? '变更失败')
@@ -474,7 +475,7 @@ export default function AdminAccountsPage() {
                 lineHeight: 1.6,
               }}
             >
-              ⚠️ 此密码仅显示一次，请立即复制并通过安全渠道发送给用户。关闭弹窗后无法再查看。
+              <AlertTriangle className="inline w-3.5 h-3.5 mr-1" />此密码仅显示一次，请立即复制并通过安全渠道发送给用户。关闭弹窗后无法再查看。
             </div>
             <div>
               <label className={labelCls}>新密码</label>
@@ -499,7 +500,7 @@ export default function AdminAccountsPage() {
                     }
                   }}
                 >
-                  {copied ? '✅ 已复制' : '📋 点击复制'}
+                  {copied ? <><CheckCircle2 className="inline w-3.5 h-3.5 mr-1" />已复制</> : <><Clipboard className="inline w-3.5 h-3.5 mr-1" />点击复制</>}
                 </button>
               </div>
             </div>
@@ -567,7 +568,7 @@ function CreateReviewerForm({ groups, onSubmit }: { groups: UserGroup[]; onSubmi
           lineHeight: 1.6,
         }}
       >
-        💡 创建后评审用户即可使用手机号/邮箱 + 密码登录评审端。
+        创建后评审用户即可使用手机号/邮箱 + 密码登录评审端。
       </div>
       <button
         className={`${btnPrimary} w-full flex justify-center`}
@@ -630,7 +631,7 @@ function CreateCreatorForm({ groups, onSubmit }: { groups: UserGroup[]; onSubmit
           lineHeight: 1.6,
         }}
       >
-        💡 创建后创作者即可使用手机号 + 密码登录创作者端，无需走短信注册。
+        创建后创作者即可使用手机号 + 密码登录创作者端，无需走短信注册。
       </div>
       <button
         className={`${btnPrimary} w-full flex justify-center`}
@@ -658,9 +659,9 @@ function PermissionForm({
   const [roleAttr, setRoleAttr] = useState(currentRole)
   const [adminPerm, setAdminPerm] = useState(
     user.adminLevel === 'group_admin'
-      ? '🔰 组管理员'
+      ? '组管理员'
       : user.adminLevel === 'system_admin'
-        ? '🛡️ 系统管理员'
+        ? '系统管理员'
         : '无特殊权限'
   )
 
@@ -677,8 +678,8 @@ function PermissionForm({
   }
 
   function resolveAdminLevel(): string | null {
-    if (adminPerm.includes('组管理员')) return 'group_admin'
-    if (adminPerm.includes('系统管理员')) return 'system_admin'
+    if (adminPerm === '组管理员') return 'group_admin'
+    if (adminPerm === '系统管理员') return 'system_admin'
     return null
   }
 
@@ -727,8 +728,8 @@ function PermissionForm({
           onChange={(e) => setAdminPerm(e.target.value)}
         >
           <option value="无特殊权限">无特殊权限</option>
-          <option value="🔰 组管理员">🔰 组管理员</option>
-          <option value="🛡️ 系统管理员">🛡️ 系统管理员</option>
+          <option value="组管理员">组管理员</option>
+          <option value="系统管理员">系统管理员</option>
         </select>
       </div>
 
@@ -748,13 +749,13 @@ function PermissionForm({
                   fontSize: 12,
                   fontWeight: 500,
                   border: active ? '1.5px solid var(--accent)' : '1.5px solid var(--border)',
-                  background: active ? 'rgba(99,102,241,.1)' : '#fff',
+                  background: active ? 'rgba(99,102,241,.1)' : 'var(--bg3)',
                   color: active ? 'var(--accent)' : 'var(--text2)',
                   cursor: 'pointer',
                   transition: 'all 0.15s',
                 }}
               >
-                {active ? '✓ ' : ''}{g.name}
+                {active ? <Check className="inline w-3 h-3 mr-0.5" /> : ''}{g.name}
               </button>
             )
           })}

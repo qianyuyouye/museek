@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { CheckCircle2, Clipboard, FileAudio, Download, FileText } from 'lucide-react'
 import { PageHeader } from '@/components/admin/page-header'
 import { StatCard } from '@/components/admin/stat-card'
 import { DataTable, Column } from '@/components/admin/data-table'
@@ -55,7 +56,7 @@ export default function AdminIsrcPage() {
         const res = await apiCall(`/api/admin/songs/${idCell}/isrc`, 'POST', { isrc: isrcCell })
         if (res.ok) ok++; else fail++
       }
-      showToast(`✅ 回填完成：成功 ${ok} · 失败 ${fail}`)
+      showToast(`回填完成：成功 ${ok} · 失败 ${fail}`)
       refetch()
     } catch {
       showToast('文件读取失败')
@@ -213,7 +214,7 @@ export default function AdminIsrcPage() {
     <div className={pageWrap}>
       {/* Toast */}
       {toast && (
-        <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
+        <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-[var(--bg3)] border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
           {toast}
         </div>
       )}
@@ -226,7 +227,7 @@ export default function AdminIsrcPage() {
       {/* StatCards */}
       <div className="grid grid-cols-3 gap-4">
         <StatCard
-          icon="📋"
+          icon={<Clipboard size={18} />}
           label="待申报"
           val={pendingSongs.length}
           color="var(--accent)"
@@ -240,7 +241,7 @@ export default function AdminIsrcPage() {
           iconBg="rgba(245,158,11,0.1)"
         />
         <StatCard
-          icon="✅"
+          icon={<CheckCircle2 className="w-5 h-5" />}
           label="已获取ISRC"
           val={isrcCount}
           color="var(--green2)"
@@ -277,7 +278,7 @@ export default function AdminIsrcPage() {
                     const res = await apiCall(`/api/admin/songs/${id}/isrc`, 'POST', { isrc: cleaned })
                     if (res.ok) ok++; else fail++
                   }
-                  showToast(`✅ 批量录入完成：成功 ${ok} · 失败 ${fail}`)
+                  showToast(`批量录入完成：成功 ${ok} · 失败 ${fail}`)
                   refetch()
                 }}
               >
@@ -297,10 +298,10 @@ export default function AdminIsrcPage() {
                     'ISRC编码（待申报后填写）': '',
                   }))
                   downloadCSV(rows, `ISRC申报清单_${today()}.csv`)
-                  showToast(`✅ 已导出 ${rows.length} 首歌曲的申报清单`)
+                  showToast(`已导出 ${rows.length} 首歌曲的申报清单`)
                 }}
               >
-                📥 导出申报清单
+                <Download className="inline w-4 h-4 mr-1" />导出申报清单
               </button>
             </div>
           </div>
@@ -344,12 +345,12 @@ export default function AdminIsrcPage() {
             className="text-center rounded-xl py-10 px-5 transition-all"
             style={{
               border: `2px dashed ${dragOver ? 'var(--accent)' : '#e0e4ed'}`,
-              background: dragOver ? 'rgba(99,102,241,0.04)' : '#fafbfd',
+              background: dragOver ? 'rgba(99,102,241,0.04)' : 'var(--bg4)',
               cursor: importing ? 'wait' : 'pointer',
               opacity: importing ? 0.6 : 1,
             }}
           >
-            <div className="text-[40px] mb-3 opacity-50">📄</div>
+            <div className="mb-3 opacity-50"><FileText className="w-10 h-10 text-[var(--text3)]" /></div>
             <div className="text-sm text-[var(--text2)] mb-1">
               {importing ? '处理中...' : '点击或将 CSV 拖到此处'}
             </div>

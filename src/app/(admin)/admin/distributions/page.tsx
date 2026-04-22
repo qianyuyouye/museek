@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { CheckCircle2, Hourglass, Clipboard } from 'lucide-react'
 import { PageHeader } from '@/components/admin/page-header'
 import { AdminModal } from '@/components/admin/admin-modal'
 import { useApi, apiCall } from '@/lib/use-api'
@@ -20,11 +21,11 @@ interface DistributionsApiData {
 
 const STATUS_CONFIG: Record<
   string,
-  { label: string; color: string; bg: string; icon: string }
+  { label: string; color: string; bg: string; icon: React.ReactNode }
 > = {
-  live: { label: '已上架', color: 'var(--green2)', bg: '#f0fdf4', icon: '✅' },
-  submitted: { label: '已提交', color: 'var(--orange)', bg: '#fef9ec', icon: '⏳' },
-  pending: { label: '待提交', color: '#3b82f6', bg: '#eff6ff', icon: '📋' },
+  live: { label: '已上架', color: 'var(--green2)', bg: '#f0fdf4', icon: <CheckCircle2 className="w-3.5 h-3.5 inline" /> },
+  submitted: { label: '已提交', color: 'var(--orange)', bg: '#fef9ec', icon: <Hourglass className="w-3.5 h-3.5 inline" /> },
+  pending: { label: '待提交', color: '#3b82f6', bg: '#eff6ff', icon: <Clipboard className="w-3.5 h-3.5 inline" /> },
   none: { label: '未安排', color: 'var(--text3)', bg: 'transparent', icon: '—' },
 }
 
@@ -88,7 +89,7 @@ export default function AdminDistributionsPage() {
     })
     setSaving(false)
     if (res.ok) {
-      showToast(`✅ ${editing.songTitle} · ${editing.platform} 已更新`)
+      showToast(`${editing.songTitle} · ${editing.platform} 已更新`)
       setEditing(null)
       refetch()
     } else {
@@ -100,7 +101,7 @@ export default function AdminDistributionsPage() {
     <div className={pageWrap}>
       {/* Toast */}
       {toast && (
-        <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
+        <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-[var(--bg3)] border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
           {toast}
         </div>
       )}
@@ -129,7 +130,7 @@ export default function AdminDistributionsPage() {
             {distributions.map((item) => (
               <tr
                 key={item.songId}
-                className="border-b border-[#f0f4fb] last:border-b-0 hover:bg-[#fafaff] transition-colors"
+                className="border-b border-[var(--border)] last:border-b-0 hover:bg-[var(--bg4)] transition-colors"
               >
                 <td className="px-5 py-3.5">
                   <span className="text-sm font-medium text-[var(--text)]">

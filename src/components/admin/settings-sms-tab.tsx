@@ -55,13 +55,17 @@ export function SettingsSmsTab({ initial, onSaved, showToast }: Props) {
       if (newAccessKeyId.trim()) payload.accessKeyId = newAccessKeyId.trim()
       if (newAccessKeySecret.trim()) payload.accessKeySecret = newAccessKeySecret.trim()
 
-      const res = await apiCall('/api/admin/settings', 'PUT', {
+      const res = await apiCall<Record<string, any>>('/api/admin/settings', 'PUT', {
         settings: [{ key: 'sms_config', value: payload }],
       })
       if (res.ok) {
         showToast('保存成功', 'success')
         setNewAccessKeyId('')
         setNewAccessKeySecret('')
+        // 立即更新表单为服务器返回的脱敏值
+        if (res.data?.sms_config) {
+          setForm({ ...res.data.sms_config })
+        }
         onSaved()
       } else {
         showToast(res.message || '保存失败', 'error')

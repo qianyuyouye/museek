@@ -3,13 +3,14 @@
 import { useState, useMemo } from 'react'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle } from '@/lib/ui-tokens'
+import { Flame, Star, Music, Play, Pause, Heart, Share2, Inbox } from 'lucide-react'
 
 // ── Constants ───────────────────────────────────────────────────
 
 const TABS = [
-  { key: 'hot', label: '🔥 热门' },
-  { key: 'featured', label: '⭐ 精选' },
-  { key: 'all', label: '🎵 全部' },
+  { key: 'hot', label: '热门', icon: Flame },
+  { key: 'featured', label: '精选', icon: Star },
+  { key: 'all', label: '全部', icon: Music },
 ] as const
 
 type TabKey = (typeof TABS)[number]['key']
@@ -51,7 +52,7 @@ function Toast({ message }: { message: string }) {
   if (!message) return null
   return (
     <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-[fadeInDown_0.3s_ease]">
-      <div className="px-5 py-3 rounded-xl text-sm font-medium shadow-lg bg-[#ede9fe] text-[var(--accent)] border border-[#c4b5fd]">
+      <div className="px-5 py-3 rounded-xl text-sm font-medium shadow-lg bg-[var(--bg3)] text-[var(--accent)] border border-[var(--border)]">
         {message}
       </div>
     </div>
@@ -111,7 +112,7 @@ function SongCard({
   const authorName = song.authorName ?? '未知作者'
 
   return (
-    <div className="rounded-xl overflow-hidden bg-white border border-[var(--border)] shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(99,102,241,0.12)] group">
+    <div className="rounded-xl overflow-hidden bg-[var(--bg3)] border border-[var(--border)] shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(99,102,241,0.15)] group">
       {/* Cover */}
       <div
         className="relative h-[140px] flex items-center justify-center overflow-hidden"
@@ -120,12 +121,12 @@ function SongCard({
         {song.coverUrl ? (
           <img src={song.coverUrl} alt={song.title} className="w-full h-full object-cover" />
         ) : (
-          <span className="text-[56px]">🎵</span>
+          <Music size={56} className="text-white/40" />
         )}
         {/* Score badge */}
         {song.score != null && (
-          <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded text-[10px] font-bold bg-black/30 backdrop-blur-sm text-white">
-            ⭐ {song.score}
+          <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded text-[10px] font-bold bg-black/30 backdrop-blur-sm text-white flex items-center gap-1">
+            <Star size={10} className="inline" /> {song.score}
           </span>
         )}
         {/* Genre badge */}
@@ -148,8 +149,8 @@ function SongCard({
           className="flex items-center gap-2 mb-3 cursor-pointer"
           onClick={onTogglePlay}
         >
-          <button className="w-7 h-7 rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] text-white flex items-center justify-center cursor-pointer border-0 shadow-sm text-[11px] shrink-0">
-            {playing ? '⏸' : '▶'}
+          <button className="w-7 h-7 rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] text-white flex items-center justify-center cursor-pointer border-0 shadow-sm shrink-0">
+            {playing ? <Pause size={11} /> : <Play size={11} className="ml-0.5" />}
           </button>
           <div className="flex-1 min-w-0">
             <MiniWaveform playing={playing} />
@@ -163,13 +164,13 @@ function SongCard({
             style={{ color: liked ? 'var(--red)' : 'var(--text3)' }}
             onClick={onToggleLike}
           >
-            {liked ? '❤️' : '🤍'} {song.likeCount}
+            <Heart size={13} fill={liked ? 'currentColor' : 'none'} /> {song.likeCount}
           </button>
           <button
             className="flex items-center gap-1 text-[12px] text-[var(--text3)] border-0 bg-transparent cursor-pointer hover:text-[var(--accent)] transition-colors px-0"
             onClick={onShare}
           >
-            🔗 分享
+            <Share2 size={13} /> 分享
           </button>
         </div>
       </div>
@@ -239,7 +240,7 @@ export default function CreatorCommunityPage() {
   }
 
   function handleShare(song: PublishedSong) {
-    showToast(`🔗 分享链接已复制：/s/${song.copyrightCode}`)
+    showToast(`分享链接已复制：/s/${song.copyrightCode}`)
   }
 
   function togglePlay(songId: number) {
@@ -271,19 +272,23 @@ export default function CreatorCommunityPage() {
 
       {/* Tabs */}
       <div className="flex items-center gap-2">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            className={`px-4 py-[7px] rounded-full text-[13px] font-medium border-0 cursor-pointer transition-all ${
-              activeTab === tab.key
-                ? 'bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] text-white shadow-[0_2px_8px_rgba(99,102,241,0.3)]'
-                : 'bg-[var(--bg4)] text-[var(--text2)] hover:bg-[var(--border)]'
-            }`}
-            onClick={() => setActiveTab(tab.key)}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {TABS.map((tab) => {
+          const IconComp = tab.icon
+          return (
+            <button
+              key={tab.key}
+              className={`px-4 py-[7px] rounded-full text-[13px] font-medium border-0 cursor-pointer transition-all flex items-center gap-1.5 ${
+                activeTab === tab.key
+                  ? 'bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] text-white shadow-[0_2px_8px_rgba(99,102,241,0.3)]'
+                  : 'bg-[var(--bg4)] text-[var(--text2)] hover:bg-[var(--border)]'
+              }`}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              <IconComp size={14} />
+              {tab.label}
+            </button>
+          )
+        })}
       </div>
 
       {/* Song Grid */}
@@ -304,7 +309,7 @@ export default function CreatorCommunityPage() {
       {/* Empty State */}
       {filteredSongs.length === 0 && (
         <div className="text-center py-20 text-[var(--text3)]">
-          <span className="text-4xl block mb-3">📭</span>
+          <Inbox size={40} className="mx-auto mb-3 opacity-40" />
           <p className="text-sm">暂无作品</p>
         </div>
       )}

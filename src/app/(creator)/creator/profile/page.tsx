@@ -7,10 +7,10 @@ import { pageWrap, textPageTitle, cardCls, btnPrimary as btnPrimaryBase, inputCl
 // ── Style helpers ───────────────────────────────────────────────
 
 const btnGhost =
-  'bg-transparent text-[var(--text2)] border border-[var(--border)] px-3 py-1 rounded-lg text-xs font-medium cursor-pointer hover:bg-[#f8faff] transition-colors'
+  'bg-transparent text-[var(--text2)] border border-[var(--border)] px-3 py-1 rounded-lg text-xs font-medium cursor-pointer hover:bg-[var(--bg4)] transition-colors'
 const btnPrimary = `${btnPrimaryBase} w-full flex items-center justify-center`
 const rowCls =
-  'flex justify-between items-center px-3 py-2.5 bg-[#f0f4fb] rounded-md text-[13px]'
+  'flex justify-between items-center px-3 py-2.5 bg-[var(--bg4)] rounded-md text-[13px]'
 
 // ── 固定文案数据（协议条款内容，非 API 数据） ──────────────────
 
@@ -67,7 +67,7 @@ function Modal({
     >
       <div className="absolute inset-0 bg-black/40" />
       <div
-        className="relative bg-white rounded-xl shadow-2xl p-6"
+        className="relative bg-[var(--bg3)] rounded-xl shadow-2xl p-6"
         style={{ width, maxWidth: '90vw' }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -77,7 +77,7 @@ function Modal({
           </h3>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-[#f0f4fb] text-[var(--text3)] text-lg cursor-pointer border-0 bg-transparent"
+            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-[var(--bg4)] text-[var(--text3)] text-lg cursor-pointer border-0 bg-transparent"
           >
             x
           </button>
@@ -188,7 +188,7 @@ export default function CreatorProfile() {
     if (!user?.phone) return
     const res = await apiCall('/api/auth/sms/send', 'POST', { phone: user.phone, purpose: 'change_phone' })
     if (res.ok) {
-      showToast('✅ 旧手机验证码已发送')
+      showToast('旧手机验证码已发送')
       setOldCodeCooldown(60)
     } else {
       showToast(res.message || '发送失败')
@@ -196,11 +196,11 @@ export default function CreatorProfile() {
   }
   async function sendNewCode() {
     if (!newPhone || !/^1[3-9]\d{9}$/.test(newPhone)) {
-      showToast('❌ 请先填写正确的新手机号'); return
+      showToast('请先填写正确的新手机号'); return
     }
     const res = await apiCall('/api/auth/sms/send', 'POST', { phone: newPhone, purpose: 'change_phone' })
     if (res.ok) {
-      showToast('✅ 新手机验证码已发送')
+      showToast('新手机验证码已发送')
       setNewCodeCooldown(60)
     } else {
       showToast(res.message || '发送失败')
@@ -208,13 +208,13 @@ export default function CreatorProfile() {
   }
   async function submitPhoneChange() {
     if (!user?.phone || !oldCode || !newPhone || !newCode) {
-      showToast('❌ 请填写完整'); return
+      showToast('请填写完整'); return
     }
     const res = await apiCall('/api/profile/phone', 'POST', {
       oldPhone: user.phone, oldCode, newPhone, newCode,
     })
     if (res.ok) {
-      showToast('✅ 手机号已更新，下次登录请使用新号码')
+      showToast('手机号已更新，下次登录请使用新号码')
       setPhoneModal(false)
       setOldCode(''); setNewCode(''); setNewPhone('')
       refetch()
@@ -311,7 +311,7 @@ export default function CreatorProfile() {
               }}
             />
             <div
-              className="relative w-[72px] h-[72px] rounded-full bg-[#f0f4fb] border-2 border-[var(--border)] flex items-center justify-center text-4xl cursor-pointer transition-all overflow-hidden"
+              className="relative w-[72px] h-[72px] rounded-full bg-[var(--bg4)] border-2 border-[var(--border)] flex items-center justify-center text-4xl cursor-pointer transition-all overflow-hidden"
               onMouseEnter={() => setAvatarHover(true)}
               onMouseLeave={() => setAvatarHover(false)}
               onClick={() => !avatarUploading && avatarInputRef.current?.click()}
@@ -685,7 +685,7 @@ export default function CreatorProfile() {
                 if (res.ok) {
                   setVerifyModal(false)
                   setRnIdCard('')
-                  showToast('✅ 认证申请已提交，等待审核')
+                  showToast('认证申请已提交，等待审核')
                   refetch()
                 } else {
                   showToast(res.message || '提交失败')
@@ -757,7 +757,7 @@ export default function CreatorProfile() {
         }}
         width={600}
       >
-        <div className="p-4 bg-[#f0f4fb] rounded-lg max-h-[300px] overflow-auto text-[13px] text-[var(--text2)] leading-[1.8] mb-4">
+        <div className="p-4 bg-[var(--bg4)] rounded-lg max-h-[300px] overflow-auto text-[13px] text-[var(--text2)] leading-[1.8] mb-4">
           <p className="font-semibold text-[var(--text)]">
             《音乐代理发行协议》v1.0
           </p>

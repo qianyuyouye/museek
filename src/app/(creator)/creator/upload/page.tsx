@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { apiCall, useApi } from '@/lib/use-api'
 import { extractAudioFeatures, type AudioFeatures } from '@/lib/audio-extract'
 import { pageWrap, textPageTitle, cardCls, btnPrimary, btnGhost, btnSuccess, inputCls, labelCls } from '@/lib/ui-tokens'
+import { CheckCircle2, Bot } from 'lucide-react'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -129,7 +130,7 @@ function StepIndicator({ current }: { current: number }) {
                     : 'bg-[var(--bg4)] text-[var(--text3)]'
               }`}
             >
-              {current > s.n ? '✓' : s.n}
+              {current > s.n ? <CheckCircle2 size={16} /> : s.n}
             </div>
             <span
               className={`text-[13px] ${
@@ -151,15 +152,10 @@ function StepIndicator({ current }: { current: number }) {
 
 function Toast({ message }: { message: string }) {
   if (!message) return null
-  const isError = message.startsWith('❌')
   return (
     <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-[fadeInDown_0.3s_ease]">
       <div
-        className={`px-5 py-3 rounded-xl text-sm font-medium shadow-lg ${
-          isError
-            ? 'bg-red-50 text-red-700 border border-red-200'
-            : 'bg-green-50 text-green-700 border border-green-200'
-        }`}
+        className="px-5 py-3 rounded-xl text-sm font-medium shadow-lg bg-[var(--text)] text-white"
       >
         {message}
       </div>
@@ -209,13 +205,13 @@ export default function CreatorUploadPage() {
         audioFeatures?: AudioFeatures | null; status?: string;
       }; message?: string }) => {
         if (json.code !== 200 || !json.data) {
-          setToast(`❌ ${json.message || '加载作品失败'}`)
+          setToast(`${json.message || '加载作品失败'}`)
           setTimeout(() => setToast(''), 3000)
           return
         }
         const s = json.data
         if (s.status && s.status !== 'needs_revision') {
-          setToast('❌ 仅需修改状态的作品可重新提交')
+          setToast('仅需修改状态的作品可重新提交')
           setTimeout(() => setToast(''), 3000)
           setRevisionSongId(null)
           return
@@ -242,7 +238,7 @@ export default function CreatorUploadPage() {
         })
       })
       .catch(() => {
-        setToast('❌ 加载作品失败')
+        setToast('加载作品失败')
         setTimeout(() => setToast(''), 3000)
       })
       .finally(() => {
@@ -280,21 +276,22 @@ export default function CreatorUploadPage() {
       })
       const tokenJson = await tokenRes.json()
       if (tokenJson.code !== 200) {
-        showToast(`❌ ${tokenJson.message || '获取上传凭证失败'}`)
+        showToast(`${tokenJson.message || '获取上传凭证失败'}`)
         return
       }
 
       const { uploadUrl, key, headers: extraHeaders } = tokenJson.data
 
       // 2. 直接 PUT 文件到上传地址
+      // 注意：必须使用 extraHeaders 中的 Content-Type（OSS 签名时绑定的值）
       const putRes = await fetch(uploadUrl, {
         method: 'PUT',
         body: file,
-        headers: { 'Content-Type': file.type, ...extraHeaders },
+        headers: extraHeaders ? { ...extraHeaders } : { 'Content-Type': file.type },
       })
 
       if (!putRes.ok) {
-        showToast('❌ 文件上传失败')
+        showToast('文件上传失败')
         return
       }
 
@@ -314,9 +311,10 @@ export default function CreatorUploadPage() {
       } else {
         setForm(prev => ({ ...prev, coverUploaded: true, coverUrl: key }))
       }
-      showToast(`✅ ${file.name} 上传成功`)
-    } catch {
-      showToast('❌ 上传出错')
+      showToast(`${file.name} 上传成功`)
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      showToast(`上传出错: ${msg}`)
     } finally {
       setUploading(false)
     }
@@ -331,7 +329,7 @@ export default function CreatorUploadPage() {
 
   function goToStep2() {
     if (!form.audioUploaded) {
-      showToast('❌ 请先上传音频文件')
+      showToast('请先上传音频文件')
       return
     }
     setStep(2)
@@ -349,29 +347,29 @@ export default function CreatorUploadPage() {
     if (!form.creationDesc) missing.push('创作过程说明')
 
     if (missing.length > 0) {
-      showToast(`❌ 请填写：${missing.join('、')}`)
+      showToast(`请填写：${missing.join('、')}`)
       return
     }
     if (form.prompt.length < 10) {
-      showToast('❌ Prompt提示词至少10个字')
+      showToast('Prompt提示词至少10个字')
       return
     }
     if (form.lyrics.length < 20) {
-      showToast('❌ 歌词正文至少20个字')
+      showToast('歌词正文至少20个字')
       return
     }
     if (form.creationDesc.length < 30) {
-      showToast('❌ 创作过程说明至少30个字')
+      showToast('创作过程说明至少30个字')
       return
     }
     if (!form.originality) {
-      showToast('❌ 请勾选原创性声明')
+      showToast('请勾选原创性声明')
       return
     }
 
     const bpmNum = Number(form.bpm)
     if (!form.bpm || isNaN(bpmNum) || bpmNum < 30 || bpmNum > 300) {
-      showToast('❌ BPM需在30-300之间')
+      showToast('BPM需在30-300之间')
       return
     }
 
@@ -382,12 +380,12 @@ export default function CreatorUploadPage() {
 
   async function handleSubmit() {
     if (!form.originality) {
-      showToast('❌ 请先勾选原创性声明')
+      showToast('请先勾选原创性声明')
       setStep(2)
       return
     }
     if (!form.title || !form.lyricist || !form.composer) {
-      showToast('❌ 歌曲信息不完整，请返回修改')
+      showToast('歌曲信息不完整，请返回修改')
       setStep(2)
       return
     }
@@ -420,7 +418,7 @@ export default function CreatorUploadPage() {
       )
       setTimeout(() => router.push('/creator/songs'), 1500)
     } else {
-      showToast(`❌ ${res.message || '提交失败'}`)
+      showToast(`${res.message || '提交失败'}`)
     }
   }
 
@@ -434,7 +432,7 @@ export default function CreatorUploadPage() {
     ['流派', form.genre],
     ['BPM', form.bpm],
     ['创作贡献', form.contribution],
-    ['原创声明', form.originality ? '✅ 已确认' : '❌ 未确认'],
+    ['原创声明', form.originality ? '已确认' : '未确认'],
   ]
 
   return (
@@ -484,7 +482,7 @@ export default function CreatorUploadPage() {
                 <div><span className="text-[40px]">⏳</span><p className="mt-2 text-[var(--accent)] font-medium">上传中...</p></div>
               ) : form.audioUploaded ? (
                 <div>
-                  <span className="text-[40px]">✅</span>
+                  <CheckCircle2 size={40} className="mx-auto text-[var(--green)]" />
                   <p className="mt-2 text-[var(--green)] font-medium">
                     {form.audioFileName} 已上传 ({form.audioSize})
                   </p>
@@ -520,7 +518,7 @@ export default function CreatorUploadPage() {
             >
               {form.coverUploaded ? (
                 <div>
-                  <span className="text-[32px]">✅</span>
+                  <CheckCircle2 size={32} className="mx-auto text-[var(--green)]" />
                   <p className="text-[13px] text-[var(--green)] font-medium">
                     封面已上传
                   </p>
@@ -708,9 +706,9 @@ export default function CreatorUploadPage() {
             </div>
 
             {/* AI Declaration block */}
-            <div className="mt-6 p-5 bg-[#f0f4fb] rounded-xl border border-[rgba(108,92,231,0.3)]">
-              <h4 className="text-sm font-semibold text-[var(--accent2)] mb-3.5">
-                🤖 AI创作声明（必填）
+            <div className="mt-6 p-5 bg-[var(--bg4)] rounded-xl border border-[rgba(108,92,231,0.3)]">
+              <h4 className="text-sm font-semibold text-[var(--accent2)] mb-3.5 flex items-center gap-2">
+                <Bot size={16} /> AI创作声明（必填）
               </h4>
 
               {/* Contribution radio */}
@@ -784,7 +782,7 @@ export default function CreatorUploadPage() {
               {previewItems.map(([key, val]) => (
                 <div
                   key={key}
-                  className="p-3 bg-[#f0f4fb] rounded-lg"
+                  className="p-3 bg-[var(--bg4)] rounded-lg"
                 >
                   <span className="text-[var(--text3)]">{key}：</span>
                   <span className="font-medium">{val}</span>
@@ -793,7 +791,7 @@ export default function CreatorUploadPage() {
             </div>
 
             {/* Prompt preview */}
-            <div className="mt-4 p-3 bg-[#f0f4fb] rounded-lg text-[13px]">
+            <div className="mt-4 p-3 bg-[var(--bg4)] rounded-lg text-[13px]">
               <span className="text-[var(--text3)]">Prompt提示词：</span>
               <p className="mt-1 font-medium whitespace-pre-wrap">
                 {form.prompt || '未填写'}
@@ -801,7 +799,7 @@ export default function CreatorUploadPage() {
             </div>
 
             {/* Lyrics preview */}
-            <div className="mt-4 p-3 bg-[#f0f4fb] rounded-lg text-[13px]">
+            <div className="mt-4 p-3 bg-[var(--bg4)] rounded-lg text-[13px]">
               <span className="text-[var(--text3)]">歌词正文：</span>
               <p className="mt-1 font-medium whitespace-pre-wrap">
                 {form.lyrics || '未填写'}
@@ -809,7 +807,7 @@ export default function CreatorUploadPage() {
             </div>
 
             {/* Creation description preview */}
-            <div className="mt-4 p-3 bg-[#f0f4fb] rounded-lg text-[13px]">
+            <div className="mt-4 p-3 bg-[var(--bg4)] rounded-lg text-[13px]">
               <span className="text-[var(--text3)]">创作过程说明：</span>
               <p className="mt-1 font-medium whitespace-pre-wrap">
                 {form.creationDesc || '未填写'}
@@ -817,7 +815,7 @@ export default function CreatorUploadPage() {
             </div>
 
             {/* Audio preview */}
-            <div className="mt-4 p-3 bg-[#f0f4fb] rounded-lg">
+            <div className="mt-4 p-3 bg-[var(--bg4)] rounded-lg">
               <div className="text-[13px] text-[var(--text3)] mb-1.5">
                 试听预览
               </div>
@@ -834,7 +832,7 @@ export default function CreatorUploadPage() {
                 ← 修改
               </button>
               <button className={btnSuccess} onClick={handleSubmit}>
-                ✅ 提交作品
+                <CheckCircle2 size={16} className="inline mr-1" /> 提交作品
               </button>
             </div>
           </div>

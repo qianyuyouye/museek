@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { apiCall } from '@/lib/use-api'
 import { cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
+import { CheckCircle2, XCircle, Bot } from 'lucide-react'
 
 interface AiConfig {
   enabled: boolean
@@ -48,12 +49,16 @@ export function SettingsAiTab({ initial, onSaved, showToast }: Props) {
         timeoutMs: form.timeoutMs,
       }
       if (newApiKey.trim()) payload.apiKey = newApiKey.trim()
-      const res = await apiCall('/api/admin/settings', 'PUT', {
+      const res = await apiCall<Record<string, any>>('/api/admin/settings', 'PUT', {
         settings: [{ key: 'ai_config', value: payload }],
       })
       if (res.ok) {
         showToast('保存成功', 'success')
         setNewApiKey('')
+        // 立即更新表单为服务器返回的脱敏值
+        if (res.data?.ai_config) {
+          setForm({ ...res.data.ai_config })
+        }
         onSaved()
       } else {
         showToast(res.message || '保存失败', 'error')
@@ -80,7 +85,7 @@ export function SettingsAiTab({ initial, onSaved, showToast }: Props) {
       if (res.ok && res.data) {
         const data = res.data
         showToast(
-          data.ok ? `✅ ${data.message}` : `❌ ${data.message}`,
+          data.ok ? `${data.message}` : `${data.message}`,
           data.ok ? 'success' : 'error',
         )
       } else {
@@ -93,7 +98,7 @@ export function SettingsAiTab({ initial, onSaved, showToast }: Props) {
 
   return (
     <div className={cardCls}>
-      <h3 className="text-lg font-semibold mb-2">🤖 AI 预分析配置</h3>
+      <h3 className="text-lg font-semibold mb-2"><Bot className="w-5 h-5 inline mr-1 -mt-0.5" />AI 预分析配置</h3>
       <p className="text-sm text-gray-500 mb-4">
         配置 OpenAI 兼容 API。未启用或未配置时，评审页 AI 报告将显示占位「暂无分析数据」。
       </p>

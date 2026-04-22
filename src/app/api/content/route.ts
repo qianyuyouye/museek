@@ -22,5 +22,15 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     prisma.cmsContent.count({ where }),
   ])
 
-  return ok({ list, total, page, pageSize })
+  // 列表页每加载一条记录 views +1（记录被浏览的次数）
+  for (const item of list) {
+    await prisma.cmsContent.update({ where: { id: item.id }, data: { views: { increment: 1 } } })
+  }
+
+  const listWithViews = list.map((item) => ({
+    ...item,
+    views: item.views + 1,
+  }))
+
+  return ok({ list: listWithViews, total, page, pageSize })
 })

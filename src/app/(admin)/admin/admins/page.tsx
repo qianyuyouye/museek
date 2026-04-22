@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { CheckCircle2, XCircle, User } from 'lucide-react'
 import { PageHeader } from '@/components/admin/page-header'
 import { DataTable, Column } from '@/components/admin/data-table'
 import { useApi, apiCall } from '@/lib/use-api'
@@ -109,7 +110,7 @@ export default function AdminAdminsPage() {
     if (!confirm(`确认删除管理员「${admin.name}」（${admin.account}）？`)) return
     const res = await apiCall(`/api/admin/admins/${admin.id}`, 'DELETE')
     if (res.ok) {
-      showToast('✅ 管理员已删除')
+      showToast('管理员已删除')
       refetch()
     } else {
       showToast(res.message || '删除失败')
@@ -123,13 +124,13 @@ export default function AdminAdminsPage() {
   const [showResetModal, setShowResetModal] = useState(false)
 
   async function handleResetPassword() {
-    if (!resetPw || !resetConfirmPw) { showToast('❌ 请填写所有密码字段'); return }
-    if (resetPw !== resetConfirmPw) { showToast('❌ 两次密码不一致'); return }
-    if (resetPw.length < 8) { showToast('❌ 密码至少8位'); return }
+    if (!resetPw || !resetConfirmPw) { showToast('请填写所有密码字段'); return }
+    if (resetPw !== resetConfirmPw) { showToast('两次密码不一致'); return }
+    if (resetPw.length < 8) { showToast('密码至少8位'); return }
     if (!resetAdminId) return
     const res = await apiCall(`/api/admin/admins/${resetAdminId}/reset-password`, 'POST', { password: resetPw })
     if (res.ok) {
-      showToast('✅ 密码已重置')
+      showToast('密码已重置')
       setShowResetModal(false)
       setResetPw(''); setResetConfirmPw(''); setResetAdminId(null)
     } else {
@@ -144,19 +145,19 @@ export default function AdminAdminsPage() {
         '/api/upload/token', 'POST', { fileName: file.name, fileSize: file.size, type: 'image' }
       )
       if (!tokenRes.ok || !tokenRes.data) {
-        showToast(`❌ ${tokenRes.message || '获取上传凭证失败'}`)
+        showToast(tokenRes.message || '获取上传凭证失败')
         return
       }
       const { uploadUrl, fileUrl, headers } = tokenRes.data
       const putRes = await fetch(uploadUrl, { method: 'PUT', body: file, headers })
       if (!putRes.ok) {
-        showToast('❌ 文件上传失败')
+        showToast('文件上传失败')
         return
       }
       setForm(f => ({ ...f, avatar: fileUrl }))
-      showToast('✅ 头像上传成功')
+      showToast('头像上传成功')
     } catch {
-      showToast('❌ 上传出错')
+      showToast('上传出错')
     } finally {
       setAvatarUploading(false)
     }
@@ -202,12 +203,12 @@ export default function AdminAdminsPage() {
   }
 
   async function handleSave() {
-    if (!form.account.trim()) { showToast('❌ 请输入账号'); return }
-    if (!form.name.trim()) { showToast('❌ 请输入名称'); return }
-    if (!form.roleId) { showToast('❌ 请选择角色'); return }
-    if (view === 'add' && !form.password.trim()) { showToast('❌ 请输入密码'); return }
+    if (!form.account.trim()) { showToast('请输入账号'); return }
+    if (!form.name.trim()) { showToast('请输入名称'); return }
+    if (!form.roleId) { showToast('请选择角色'); return }
+    if (view === 'add' && !form.password.trim()) { showToast('请输入密码'); return }
     if (view === 'add' && form.password !== form.confirmPassword) {
-      showToast('❌ 两次密码不一致'); return
+      showToast('两次密码不一致'); return
     }
 
     if (editAdmin) {
@@ -219,7 +220,7 @@ export default function AdminAdminsPage() {
         avatarUrl: form.avatar || null,
       })
       if (res.ok) {
-        showToast('✅ 管理员信息更新成功')
+        showToast('管理员信息更新成功')
         setView('list')
         refetch()
       } else {
@@ -236,7 +237,7 @@ export default function AdminAdminsPage() {
         avatarUrl: form.avatar || null,
       })
       if (res.ok) {
-        showToast('✅ 管理员添加成功')
+        showToast('管理员添加成功')
         setView('list')
         refetch()
       } else {
@@ -261,7 +262,7 @@ export default function AdminAdminsPage() {
     return (
       <div className={pageWrap}>
         {toast && (
-          <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
+          <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-[var(--bg3)] border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
             {toast}
           </div>
         )}
@@ -460,7 +461,7 @@ export default function AdminAdminsPage() {
         if (url && (url.startsWith('http') || url.startsWith('/'))) {
           return <img src={url} alt="头像" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
         }
-        return <span style={{ fontSize: 24 }}>{url || '👤'}</span>
+        return <User className="w-8 h-8 text-[var(--text3)]" />
       },
     },
     {
@@ -632,7 +633,7 @@ export default function AdminAdminsPage() {
               创建时间: a.createdAt ? formatDateTime(a.createdAt) : '',
             }))
             downloadCSV(rows, `管理员列表_${today()}.csv`)
-            showToast(`✅ 已导出 ${admins.length} 条管理员记录`)
+            showToast(`已导出 ${admins.length} 条管理员记录`)
           }}
         >
           导出
@@ -651,7 +652,7 @@ export default function AdminAdminsPage() {
       {/* Password Reset Modal */}
       {showResetModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setShowResetModal(false)}>
-          <div className="bg-white rounded-xl p-7 w-[400px]" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--bg3)] rounded-xl p-7 w-[400px]" onClick={e => e.stopPropagation()}>
             <h3 className="text-base font-semibold mb-5">修改管理员密码</h3>
             <div className="mb-3.5">
               <label className={labelCls}>新密码</label>

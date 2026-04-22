@@ -6,6 +6,7 @@ import { useApi } from '@/lib/use-api'
 import { SONG_STATUS_MAP } from '@/lib/constants'
 import { pageWrap, textPageTitle, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'
 import { formatDateTime } from '@/lib/format'
+import { CheckCircle2, Hourglass, Heart } from 'lucide-react'
 import { Waveform } from '@/components/audio/waveform'
 
 // ── Types ──────────────────────────────────────────────────────
@@ -172,7 +173,7 @@ function WaveformPlayer({
                 type="button"
                 key={`mark-row-${i}`}
                 onClick={() => seekTo(m.t)}
-                className="flex items-center gap-2 text-xs bg-white rounded px-2 py-1 border border-[var(--border)] hover:border-[var(--accent)] text-left cursor-pointer"
+                className="flex items-center gap-2 text-xs bg-[var(--bg3)] rounded px-2 py-1 border border-[var(--border)] hover:border-[var(--accent)] text-left cursor-pointer"
               >
                 <span className="text-[var(--accent2)] font-mono shrink-0">{formatTime(m.t)}</span>
                 <span className="flex-1 text-[var(--text2)] break-words">{m.note}</span>
@@ -195,7 +196,7 @@ function formatTime(sec: number): string {
 // ── Badge ───────────────────────────────────────────────────────
 
 function Badge({ status }: { status: string }) {
-  const st = SONG_STATUS_MAP[status] || { label: status, color: '#64748b', bg: '#f1f5f9' }
+  const st = SONG_STATUS_MAP[status] || { label: status, color: 'var(--text2)', bg: '#f1f5f9' }
   return (
     <span
       className="text-xs px-2.5 py-0.5 rounded-full font-medium inline-block"
@@ -276,7 +277,7 @@ export default function CreatorSongsPage() {
           <div className={cardCls}>
             {/* Cover + status + title */}
             <div className="flex items-center gap-4 mb-4">
-              <div className="text-[56px] w-20 h-20 bg-[#f0f4fb] rounded-xl flex items-center justify-center">
+              <div className="text-[56px] w-20 h-20 bg-[var(--bg4)] rounded-xl flex items-center justify-center">
                 <span>🎵</span>
               </div>
               <div>
@@ -309,7 +310,7 @@ export default function CreatorSongsPage() {
                   ['ISRC', song.isrc || '待申报'],
                 ] as [string, string][]
               ).map(([k, v]) => (
-                <div key={k} className="px-2 py-2 bg-[#f0f4fb] rounded-md">
+                <div key={k} className="px-2 py-2 bg-[var(--bg4)] rounded-md">
                   <span className="text-[var(--text3)]">{k}：</span>
                   {v}
                 </div>
@@ -343,7 +344,7 @@ export default function CreatorSongsPage() {
                   ).map(([label, value, weight]) => (
                     <div
                       key={label}
-                      className="text-center p-3 bg-[#f0f4fb] rounded-lg"
+                      className="text-center p-3 bg-[var(--bg4)] rounded-lg"
                     >
                       <div
                         className="text-2xl font-bold"
@@ -370,7 +371,7 @@ export default function CreatorSongsPage() {
                 </div>
 
                 {/* Teacher comment */}
-                <div className="text-[13px] text-[var(--text2)] leading-relaxed p-3 bg-[#f0f4fb] rounded-lg">
+                <div className="text-[13px] text-[var(--text2)] leading-relaxed p-3 bg-[var(--bg4)] rounded-lg">
                   <div className="font-semibold mb-1.5 text-[var(--text)]">老师评语：</div>
                   {review.comment}
                 </div>
@@ -397,7 +398,7 @@ export default function CreatorSongsPage() {
                               : 'var(--text3)',
                       }}
                     >
-                      {d.status === 'live' ? '✅ 已上架' : '⏳ ' + d.status}
+                      {d.status === 'live' ? (<> <CheckCircle2 size={12} className="inline mr-1" />已上架</>) : (<><Hourglass size={12} className="inline mr-1" />{d.status}</>)}
                     </span>
                   </div>
                 ))}
@@ -407,7 +408,7 @@ export default function CreatorSongsPage() {
             {!review && (
               <div className={cardCls}>
                 <div className="text-center py-5">
-                  <div className="text-[40px]">⏳</div>
+                  <div className="text-[40px] text-[var(--text3)]"><Hourglass size={40} className="mx-auto" /></div>
                   <p className="mt-2 text-[var(--text2)] text-sm">等待老师评分中...</p>
                 </div>
               </div>
@@ -444,7 +445,7 @@ export default function CreatorSongsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-[#f0f4fb] rounded-lg p-1 w-fit">
+      <div className="flex gap-1 bg-[var(--bg4)] rounded-lg p-1 w-fit">
         {TAB_DEFS.map((t) => {
           const count = tabCounts[t.key]
           const active = tab === t.key
@@ -454,7 +455,7 @@ export default function CreatorSongsPage() {
               onClick={() => { setTab(t.key); setDetail(null) }}
               className={`px-3.5 py-1.5 rounded-md text-[13px] font-medium border-0 cursor-pointer transition-all ${
                 active
-                  ? 'bg-white text-[var(--accent2)] shadow-sm'
+                  ? 'bg-[var(--bg3)] text-[var(--accent2)] shadow-sm'
                   : 'bg-transparent text-[var(--text2)] hover:text-[var(--text)]'
               }`}
             >
@@ -473,7 +474,7 @@ export default function CreatorSongsPage() {
             className={`${cardCls} cursor-pointer transition-all duration-200 overflow-hidden hover:border-[var(--accent)] hover:-translate-y-0.5`}
           >
             {/* Cover */}
-            <div className="text-5xl text-center py-4 bg-[#f0f4fb] rounded-[10px] mb-2.5">
+            <div className="text-5xl text-center py-4 bg-[var(--bg4)] rounded-[10px] mb-2.5">
               <span>🎵</span>
             </div>
 
@@ -491,7 +492,7 @@ export default function CreatorSongsPage() {
 
             {/* Like count for published */}
             {s.status === 'published' && (
-              <div className="text-[11px] text-[var(--text3)] mt-1">❤️ {s.likeCount}</div>
+              <div className="text-[11px] text-[var(--text3)] mt-1"><Heart size={12} className="inline text-[var(--red)] fill-[var(--red)]" /> {s.likeCount}</div>
             )}
           </div>
         ))}

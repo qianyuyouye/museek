@@ -18,6 +18,8 @@ export const SETTING_KEYS = {
   SMS_CONFIG: 'sms_config',
   NOTIFICATION_TEMPLATES: 'notification_templates',
   AGENCY_TERMS: 'agency_terms',
+  SERVICE_AGREEMENT: 'service_agreement',
+  PRIVACY_POLICY: 'privacy_policy',
   INVITE_LINK_DOMAIN: 'invite_link_domain',
 } as const
 

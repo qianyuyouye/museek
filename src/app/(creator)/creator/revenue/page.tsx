@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useApi } from '@/lib/use-api'
 import { pageWrap, textPageTitle } from '@/lib/ui-tokens'
+import { Coins, CheckCircle2, Hourglass } from 'lucide-react'
 
 function getCurrentQuarter(): string {
   const now = new Date()
@@ -53,11 +54,11 @@ interface RevenueData {
 
 // ── Stat Card ──────────────────────────────────────────────────
 
-function StatCard({ icon, label, value, color }: { icon: string; label: string; value: string; color: string }) {
+function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: string; color: string }) {
   return (
-    <div className="bg-white rounded-xl border border-[var(--border)] px-5 py-4 flex items-center gap-4">
+    <div className="bg-[var(--bg3)] rounded-xl border border-[var(--border)] px-5 py-4 flex items-center gap-4">
       <div
-        className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
+        className="w-10 h-10 rounded-lg flex items-center justify-center"
         style={{ background: `${color}18`, color }}
       >
         {icon}
@@ -94,7 +95,7 @@ function Pagination({ current, total, pageSize, onChange }: {
     <div className="flex items-center justify-end gap-1.5 mt-4 text-xs text-[var(--text2)]">
       <span>第 {(current - 1) * pageSize + 1}-{Math.min(current * pageSize, total)} 条/共 {total} 条</span>
       <button
-        className="w-7 h-7 rounded border border-[var(--border)] bg-white flex items-center justify-center cursor-pointer hover:border-[var(--accent)] disabled:opacity-40 disabled:cursor-not-allowed transition"
+        className="w-7 h-7 rounded border border-[var(--border)] bg-[var(--bg3)] flex items-center justify-center cursor-pointer hover:border-[var(--accent)] disabled:opacity-40 disabled:cursor-not-allowed transition"
         disabled={current === 1}
         onClick={() => onChange(current - 1)}
       >
@@ -109,7 +110,7 @@ function Pagination({ current, total, pageSize, onChange }: {
             className={`w-7 h-7 rounded border flex items-center justify-center cursor-pointer transition text-xs ${
               p === current
                 ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
-                : 'bg-white border-[var(--border)] hover:border-[var(--accent)] text-[var(--text2)]'
+                : 'bg-[var(--bg3)] border-[var(--border)] hover:border-[var(--accent)] text-[var(--text2)]'
             }`}
             onClick={() => onChange(p)}
           >
@@ -118,7 +119,7 @@ function Pagination({ current, total, pageSize, onChange }: {
         )
       )}
       <button
-        className="w-7 h-7 rounded border border-[var(--border)] bg-white flex items-center justify-center cursor-pointer hover:border-[var(--accent)] disabled:opacity-40 disabled:cursor-not-allowed transition"
+        className="w-7 h-7 rounded border border-[var(--border)] bg-[var(--bg3)] flex items-center justify-center cursor-pointer hover:border-[var(--accent)] disabled:opacity-40 disabled:cursor-not-allowed transition"
         disabled={current === totalPages}
         onClick={() => onChange(current + 1)}
       >
@@ -156,8 +157,8 @@ export default function CreatorRevenuePage() {
   const qishuiData = qishuiDetails.slice((qishuiPage - 1) * pageSize, qishuiPage * pageSize)
 
   const tabs = [
-    { key: 'platform' as const, label: '📊 平台分发收益' },
-    { key: 'qishui' as const, label: '🎵 汽水音乐收益' },
+    { key: 'platform' as const, label: '平台分发收益' },
+    { key: 'qishui' as const, label: '汽水音乐收益' },
   ]
 
   if (loading) {
@@ -178,17 +179,17 @@ export default function CreatorRevenuePage() {
 
       {/* Update time */}
       <div className="flex items-center gap-2 text-xs text-[var(--text3)]">
-        <span>🕐 数据更新于 2026-04-10 10:00</span>
+        <span>数据更新于 2026-04-10 10:00</span>
         <span className="opacity-50">·</span>
         <span>下次更新: 2026-07-10 (Q2 数据)</span>
       </div>
 
       {/* Stat Cards */}
       <div className="grid grid-cols-4 gap-4">
-        <StatCard icon="💰" label="平台分发收益" value={`¥${stats.total.toFixed(0)}`} color="#10b981" />
-        <StatCard icon="🎵" label="汽水音乐收益" value={`¥${stats.qishuiTotal.toFixed(2)}`} color="var(--pink)" />
-        <StatCard icon="✅" label="已打款" value={`¥${stats.paid.toFixed(0)}`} color="var(--accent)" />
-        <StatCard icon="⏳" label="待结算" value={`¥${stats.pending.toFixed(0)}`} color="var(--orange)" />
+        <StatCard icon={<Coins size={20} />} label="平台分发收益" value={`¥${stats.total.toFixed(0)}`} color="#10b981" />
+        <StatCard icon={<span className="text-lg">🎵</span>} label="汽水音乐收益" value={`¥${stats.qishuiTotal.toFixed(2)}`} color="var(--pink)" />
+        <StatCard icon={<CheckCircle2 size={20} />} label="已打款" value={`¥${stats.paid.toFixed(0)}`} color="var(--accent)" />
+        <StatCard icon={<Hourglass size={20} />} label="待结算" value={`¥${stats.pending.toFixed(0)}`} color="var(--orange)" />
       </div>
 
       {/* Tabs */}
@@ -210,7 +211,7 @@ export default function CreatorRevenuePage() {
 
       {/* Platform Revenue Table */}
       {activeTab === 'platform' && (
-        <div className="bg-white rounded-xl border border-[var(--border)] p-5">
+        <div className="bg-[var(--bg3)] rounded-xl border border-[var(--border)] p-5">
           <h3 className="text-[15px] font-semibold text-[var(--text)] mb-4">平台分发收益明细 - {getCurrentQuarter()}</h3>
           <table className="w-full text-sm">
             <thead>
@@ -227,7 +228,7 @@ export default function CreatorRevenuePage() {
               {platformData.map((row) => {
                 const st = SETTLE_STATUS[row.status]
                 return (
-                  <tr key={row.id} className="border-b border-[var(--bg4)] hover:bg-[#fafbfe] transition">
+                  <tr key={row.id} className="border-b border-[var(--bg4)] hover:bg-[var(--bg4)] transition">
                     <td className="py-3 text-[var(--text2)]">{row.songTitle}</td>
                     <td className="py-3 text-[var(--text2)]">{row.platform}</td>
                     <td className="py-3 text-[var(--text2)]">{(row.plays ?? 0).toLocaleString()}</td>
@@ -252,7 +253,7 @@ export default function CreatorRevenuePage() {
 
       {/* Qishui Revenue Table */}
       {activeTab === 'qishui' && (
-        <div className="bg-white rounded-xl border border-[var(--border)] p-5">
+        <div className="bg-[var(--bg3)] rounded-xl border border-[var(--border)] p-5">
           <h3 className="text-[15px] font-semibold text-[var(--text)] mb-4">汽水音乐收益明细</h3>
           {qishuiDetails.length > 0 ? (
             <>
@@ -268,7 +269,7 @@ export default function CreatorRevenuePage() {
                 </thead>
                 <tbody>
                   {qishuiData.map((row) => (
-                    <tr key={row.id} className="border-b border-[var(--bg4)] hover:bg-[#fafbfe] transition">
+                    <tr key={row.id} className="border-b border-[var(--bg4)] hover:bg-[var(--bg4)] transition">
                       <td className="py-3 text-[var(--text2)]">{row.songName}</td>
                       <td className="py-3 text-[var(--text2)]">{row.month ?? row.period ?? '—'}</td>
                       <td className="py-3 text-[var(--text2)]">¥{(row.douyinRevenue ?? 0).toFixed(2)}</td>
@@ -289,8 +290,7 @@ export default function CreatorRevenuePage() {
             </>
           ) : (
             <div className="text-center py-16 text-[var(--text3)]">
-              <span className="text-4xl block mb-3">📭</span>
-              <p className="text-sm">暂无汽水音乐收益数据</p>
+              <p className="text-sm mb-1">暂无汽水音乐收益数据</p>
             </div>
           )}
         </div>

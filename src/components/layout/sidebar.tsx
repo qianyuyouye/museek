@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { Music, LogOut } from 'lucide-react'
 
 export interface MenuItem {
   key: string
@@ -39,8 +40,8 @@ export function Sidebar({ items, portalLabel, portalColor, onLogout }: SidebarPr
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-[200px] flex-col" style={{ background: 'linear-gradient(180deg, #4f46e5 0%, #6366f1 40%, #7c7cf7 100%)' }}>
       <div className="flex flex-col items-center gap-1 px-4 py-5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-lg text-white shadow-md">
-          🎵
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-white shadow-md">
+          <Music size={18} />
         </div>
         <span className="text-sm font-semibold text-white">AI音乐平台</span>
         <span
@@ -74,7 +75,7 @@ export function Sidebar({ items, portalLabel, portalColor, onLogout }: SidebarPr
                     : 'text-white/75 hover:bg-white/10 hover:text-white'
                 )}
               >
-                <span className="text-base">{item.icon}</span>
+                <span className="flex items-center">{item.icon}</span>
                 <span className="flex-1">{item.label}</span>
                 {item.badge !== undefined && item.badge > 0 && (
                   <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--red)] px-1 text-[10px] font-bold text-white">
@@ -92,7 +93,7 @@ export function Sidebar({ items, portalLabel, portalColor, onLogout }: SidebarPr
           onClick={handleLogout}
           className="flex w-full items-center justify-center gap-1 rounded-lg py-2 text-[12px] text-white/60 transition-colors hover:bg-white/10 hover:text-white"
         >
-          🚪 退出登录
+          <LogOut size={14} /> 退出登录
         </button>
       </div>
     </aside>

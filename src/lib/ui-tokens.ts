@@ -38,10 +38,10 @@ export const gridForm2 = 'grid grid-cols-2 gap-4'
 // ─── 卡片 ──────────────────────────────
 /** 标准卡片 */
 export const cardCls =
-  'bg-white border border-[var(--border)] rounded-xl p-5 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
+  'bg-[var(--bg3)] border border-[var(--border)] rounded-xl p-5 shadow-[0_1px_4px_rgba(0,0,0,0.3)]'
 /** 紧凑卡片（列表项、统计小卡） */
 export const cardCompact =
-  'bg-white border border-[var(--border)] rounded-xl p-4 shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
+  'bg-[var(--bg3)] border border-[var(--border)] rounded-xl p-4 shadow-[0_1px_4px_rgba(0,0,0,0.3)]'
 
 // ─── 按钮 ──────────────────────────────
 /** 主按钮（渐变） */
@@ -52,7 +52,7 @@ export const btnGhost =
   'bg-transparent text-[var(--text2)] border border-[var(--border)] px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer hover:bg-[var(--bg4)] transition-colors'
 /** 小按钮（表格操作列等） */
 export const btnSmall =
-  'text-xs px-2.5 py-1 rounded-md border border-[var(--border)] bg-white text-[var(--text2)] cursor-pointer hover:bg-[var(--bg4)] transition-colors'
+  'text-xs px-2.5 py-1 rounded-md border border-[var(--border)] bg-[var(--bg3)] text-[var(--text2)] cursor-pointer hover:bg-[var(--bg4)] transition-colors'
 /** 成功按钮（绿色渐变） */
 export const btnSuccess =
   'bg-gradient-to-r from-[var(--green2)] to-[var(--green)] text-white px-4 py-2.5 rounded-lg text-sm font-semibold cursor-pointer border-0 transition-all hover:-translate-y-[1px]'
@@ -65,7 +65,7 @@ export const btnDanger =
 export const labelCls = 'block text-xs text-[var(--text2)] mb-1.5 font-medium'
 /** 输入框 / select / 都用这个 */
 export const inputCls =
-  'w-full px-3.5 py-2.5 bg-white border-[1.5px] border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] transition-colors disabled:bg-[var(--bg2)] disabled:text-[var(--text3)]'
+  'w-full px-3.5 py-2.5 bg-[var(--bg3)] border-[1.5px] border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] transition-colors disabled:bg-[var(--bg2)] disabled:text-[var(--text3)]'
 /** 文本域 */
 export const textareaCls = `${inputCls} resize-none`
 
@@ -74,10 +74,15 @@ export const tableHeadCell = 'px-3 py-2.5 text-xs font-medium text-[var(--text3)
 export const tableBodyCell = 'px-3 py-3 text-sm text-[var(--text)]'
 
 // ─── 阴影 ──────────────────────────────
-export const shadowCard = 'shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
-export const shadowBtn = 'shadow-[0_2px_8px_rgba(99,102,241,0.25)]'
-export const shadowModal = 'shadow-[0_20px_60px_rgba(99,102,241,0.12)]'
+export const shadowCard = 'shadow-[0_1px_4px_rgba(0,0,0,0.3)]'
+export const shadowBtn = 'shadow-[0_2px_8px_rgba(129,140,248,0.2)]'
+export const shadowModal = 'shadow-[0_20px_60px_rgba(0,0,0,0.5)]'
 
 // ─── 徽章 / 状态标签 ──────────────────────────────
 /** 基础徽章（配合语义色使用） */
 export const badgeBase = 'inline-flex items-center gap-1 px-2.5 py-[3px] text-xs font-medium rounded-full'
+
+// ─── 骨架屏 ──────────────────────────────
+export const skeletonBase = 'bg-[var(--bg4)] rounded animate-skeleton-pulse'
+export const skeletonText = 'h-4 bg-[var(--bg4)] rounded animate-skeleton-pulse'
+export const skeletonCard = 'h-24 bg-[var(--bg4)] rounded-xl animate-skeleton-pulse'

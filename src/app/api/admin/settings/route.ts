@@ -60,6 +60,9 @@ const PRESET_KEYS: Record<string, unknown> = {
   [SETTING_KEYS.STORAGE_CONFIG]: DEFAULT_STORAGE_CONFIG,
   [SETTING_KEYS.SMS_CONFIG]: DEFAULT_SMS_CONFIG,
   [SETTING_KEYS.NOTIFICATION_TEMPLATES]: DEFAULT_NOTIFICATION_TEMPLATES,
+  [SETTING_KEYS.AGENCY_TERMS]: { termYears: 3, scope: '全平台', exclusive: true },
+  [SETTING_KEYS.SERVICE_AGREEMENT]: { content: '', version: '1.0', updatedAt: '' },
+  [SETTING_KEYS.PRIVACY_POLICY]: { content: '', version: '1.0', updatedAt: '' },
 }
 
 /** 这些 key 走 setSetting（支持加密字段 + 合并补丁）路径 */
@@ -115,6 +118,26 @@ export const PUT = safeHandler(async function PUT(request: NextRequest) {
         }
       }
       await setSetting(s.key, patch)
+    } else if (s.key === SETTING_KEYS.NOTIFICATION_TEMPLATES) {
+      // 通知模板：合并默认值，避免未编辑的模板被清空
+      const existingRow = await prisma.systemSetting.findUnique({ where: { key: s.key } })
+      const existing = (existingRow?.value as Record<string, unknown>) ?? DEFAULT_NOTIFICATION_TEMPLATES
+      const incoming = s.value as Record<string, unknown> | undefined
+      if (incoming && typeof incoming === 'object') {
+        // 用用户编辑的值覆盖默认值（未编辑的保留默认）
+        const merged = { ...existing, ...incoming }
+        await prisma.systemSetting.upsert({
+          where: { key: s.key },
+          update: { value: merged as Prisma.InputJsonValue },
+          create: { key: s.key, value: merged as Prisma.InputJsonValue },
+        })
+      } else {
+        await prisma.systemSetting.upsert({
+          where: { key: s.key },
+          update: { value: s.value as Prisma.InputJsonValue },
+          create: { key: s.key, value: s.value as Prisma.InputJsonValue },
+        })
+      }
     } else {
       await prisma.systemSetting.upsert({
         where: { key: s.key },
@@ -133,5 +156,16 @@ export const PUT = safeHandler(async function PUT(request: NextRequest) {
     targetType: 'system_setting',
     detail: { keys: settings.map((s) => s.key) },
   })
-  return ok(null)
+
+  // 返回保存后的当前值（敏感字段脱敏），前端可直接展示，无需重新 GET
+  const result: Record<string, unknown> = {}
+  for (const s of settings) {
+    if (PATCH_KEYS.has(s.key)) {
+      result[s.key] = await getSettingMasked(s.key)
+    } else {
+      const row = await prisma.systemSetting.findUnique({ where: { key: s.key } })
+      result[s.key] = row?.value ?? s.value
+    }
+  }
+  return ok(result)
 })

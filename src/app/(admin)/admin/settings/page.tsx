@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Check, AlertTriangle } from 'lucide-react'
 import { PageHeader } from '@/components/admin/page-header'
 import { AdminTab } from '@/components/admin/admin-tab'
 import { AdminModal } from '@/components/admin/admin-modal'
@@ -16,15 +17,15 @@ import { SettingsNotificationTab } from '@/components/admin/settings-notificatio
 // ── Tab definitions ──────────────────────────────────────────────
 
 const TABS = [
-  { key: 'scores', label: '⚖️ 评分规则' },
-  { key: 'commission', label: '💰 分成比例' },
-  { key: 'templates', label: '💬 评语模板' },
-  { key: 'platforms', label: '🌐 平台管理' },
-  { key: 'options', label: '🎛 选项管理' },
-  { key: 'ai', label: '🤖 AI 配置' },
-  { key: 'storage', label: '📦 存储配置' },
-  { key: 'sms', label: '📱 短信配置' },
-  { key: 'notifications', label: '📬 通知模板' },
+  { key: 'scores', label: '评分规则' },
+  { key: 'commission', label: '分成比例' },
+  { key: 'templates', label: '评语模板' },
+  { key: 'platforms', label: '平台管理' },
+  { key: 'options', label: '选项管理' },
+  { key: 'ai', label: 'AI 配置' },
+  { key: 'storage', label: '存储配置' },
+  { key: 'sms', label: '短信配置' },
+  { key: 'notifications', label: '通知模板' },
 ]
 
 // ── Settings types ──────────────────────────────────────────────
@@ -167,7 +168,7 @@ export default function AdminSettingsPage() {
     <div className={pageWrap}>
       {/* Toast */}
       {toast && (
-        <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
+        <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-[var(--bg3)] border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
           {toast}
         </div>
       )}
@@ -290,7 +291,7 @@ function ScoresTab({ showToast, onSave, initialData }: { showToast: (msg: string
 
       <div
         className="mt-5 p-4 rounded-lg"
-        style={{ background: '#f0f4fb' }}
+        style={{ background: 'var(--bg4)' }}
       >
         <h4 className="text-sm font-semibold mb-2.5">自动入库阈值</h4>
         <div className="grid grid-cols-2 gap-3">
@@ -828,7 +829,7 @@ function PlatformsTab({
             style={{ color: v ? 'var(--green2)' : 'var(--text3)' }}
             onClick={() => toggle(index, 'status')}
           >
-            {v ? '✓ 启用' : '○ 停用'}
+            {v ? (<><Check className="inline w-3 h-3 mr-0.5" />启用</>) : '○ 停用'}
           </button>
         )
       },
@@ -843,7 +844,7 @@ function PlatformsTab({
             className="bg-transparent border-0 cursor-pointer text-xs text-[var(--text2)]"
             onClick={() => toggle(index, 'mapping')}
           >
-            {v ? '✅ 已配置' : '⚠️ 待配置'}
+            {v ? (<><Check className="inline w-3 h-3 mr-0.5" />已配置</>) : (<><AlertTriangle className="inline w-3 h-3 mr-0.5" />待配置</>)}
           </button>
         )
       },
