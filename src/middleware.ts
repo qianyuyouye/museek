@@ -79,9 +79,14 @@ export async function middleware(request: NextRequest) {
     if (!origin && !referer) {
       return NextResponse.json({ code: 403, message: 'CSRF 检查失败：缺少来源头' }, { status: 403 })
     }
-    const allowedOrigins = [`http://${host}`, `https://${host}`]
-    const originOk = !origin || allowedOrigins.includes(origin)
-    const refererOk = !referer || allowedOrigins.some(a => referer.startsWith(a))
+    // 同时信任 host 和 origin 里的域名（适配反向代理场景）
+    const hostDomain = host?.split(':')[0] // 去掉端口
+    const originDomain = origin ? new URL(origin).hostname : null
+    const allowedHosts = new Set<string>()
+    if (hostDomain) { allowedHosts.add(hostDomain); allowedHosts.add(`http://${host}`); allowedHosts.add(`https://${host}`) }
+    if (originDomain) { allowedHosts.add(`http://${originDomain}`); allowedHosts.add(`https://${originDomain}`) }
+    const originOk = !origin || allowedHosts.has(origin)
+    const refererOk = !referer || Array.from(allowedHosts).some(a => referer.startsWith(a))
     if ((origin && !originOk) || (!origin && referer && !refererOk)) {
       return NextResponse.json({ code: 403, message: 'CSRF 检查失败：来源不可信' }, { status: 403 })
     }
