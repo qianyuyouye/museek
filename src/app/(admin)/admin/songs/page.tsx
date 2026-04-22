@@ -49,6 +49,8 @@ interface SongItem {
   copyrightCode: string
   isrc: string | null
   status: string
+  genre?: string
+  bpm?: number | null
   creatorName?: string
   agencyContract?: boolean
   realNameStatus?: string
@@ -89,6 +91,9 @@ export default function AdminSongsPage() {
 
   // Channel modal
   const [channelModal, setChannelModal] = useState<SongItem | null>(null)
+
+  // Edit modal
+  const [editModal, setEditModal] = useState<SongItem | null>(null)
 
   const { data, loading, refetch } = useApi<{ list: SongItem[]; total: number; statusCounts?: Record<string, number> }>(
     `/api/admin/songs?status=${activeTab}&page=${page}`,
@@ -254,6 +259,7 @@ export default function AdminSongsPage() {
       case 'ready_to_publish':
         return (
           <div style={{ display: 'flex', gap: 4 }}>
+            <button className={`${btnGhost} ${btnSmall}`} onClick={(e) => { e.stopPropagation(); setEditModal(song) }}>编辑</button>
             <button
               className={`${btnSuccess} ${btnSmall}`}
               onClick={(e) => { e.stopPropagation(); handleStatusChange(song.id, 'publish') }}
@@ -276,11 +282,15 @@ export default function AdminSongsPage() {
         )
       case 'pending_review':
         return (
-          <span style={{ fontSize: 11, color: 'var(--text3)' }}>在评审端处理</span>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button className={`${btnGhost} ${btnSmall}`} onClick={(e) => { e.stopPropagation(); setEditModal(song) }}>编辑</button>
+            <span style={{ fontSize: 11, color: 'var(--text3)' }}>在评审端处理</span>
+          </div>
         )
       case 'reviewed':
         return (
           <div style={{ display: 'flex', gap: 4 }}>
+            <button className={`${btnGhost} ${btnSmall}`} onClick={(e) => { e.stopPropagation(); setEditModal(song) }}>编辑</button>
             <button
               className={`${btnPrimary} ${btnSmall}`}
               onClick={(e) => { e.stopPropagation(); handleStatusChange(song.id, 'publish') }}
@@ -298,6 +308,7 @@ export default function AdminSongsPage() {
       case 'published':
         return (
           <div style={{ display: 'flex', gap: 4 }}>
+            <button className={`${btnGhost} ${btnSmall}`} onClick={(e) => { e.stopPropagation(); setEditModal(song) }}>编辑</button>
             <button
               className={`${btnGhost} ${btnSmall}`}
               onClick={(e) => { e.stopPropagation(); setChannelModal(song) }}
@@ -316,12 +327,15 @@ export default function AdminSongsPage() {
         return <span style={{ fontSize: 11, color: 'var(--text3)' }}>—</span>
       case 'archived':
         return (
-          <button
-            className={`${btnGhost} ${btnSmall}`}
-            onClick={(e) => { e.stopPropagation(); handleStatusChange(song.id, 'restore') }}
-          >
-            恢复
-          </button>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button className={`${btnGhost} ${btnSmall}`} onClick={(e) => { e.stopPropagation(); setEditModal(song) }}>编辑</button>
+            <button
+              className={`${btnGhost} ${btnSmall}`}
+              onClick={(e) => { e.stopPropagation(); handleStatusChange(song.id, 'restore') }}
+            >
+              恢复
+            </button>
+          </div>
         )
       default:
         return null
@@ -434,6 +448,130 @@ export default function AdminSongsPage() {
           )
         })()}
       </AdminModal>
+
+      {/* Edit Modal */}
+      {editModal && (
+        <EditModal
+          song={editModal}
+          onClose={() => setEditModal(null)}
+          onSuccess={() => { setEditModal(null); refetch() }}
+          showToast={showToast}
+        />
+      )}
+    </div>
+  )
+}
+
+// ── Edit Modal ──────────────────────────────────────────────────
+
+const EDIT_FIELDS = ['genre', 'bpm', 'lyrics', 'lyricist', 'composer', 'performer', 'albumName', 'albumArtist', 'creationDesc', 'aiTools'] as const
+const EDIT_LABELS: Record<string, string> = {
+  genre: '风格', bpm: 'BPM', lyrics: '歌词', lyricist: '作词', composer: '作曲',
+  performer: '表演者', albumName: '专辑名', albumArtist: '专辑艺术家',
+  creationDesc: '创作描述', aiTools: 'AI工具',
+}
+
+function EditModal({ song, onClose, onSuccess, showToast }: {
+  song: SongItem
+  onClose: () => void
+  onSuccess: () => void
+  showToast: (msg: string, type?: 'success' | 'error') => void
+}) {
+  const [form, setForm] = useState<Record<string, string>>({
+    genre: song.genre ?? '',
+    bpm: song.bpm != null ? String(song.bpm) : '',
+    lyrics: '',
+    lyricist: '',
+    composer: '',
+    performer: '',
+    albumName: '',
+    albumArtist: '',
+    creationDesc: '',
+    aiTools: '',
+  })
+  const [saving, setSaving] = useState(false)
+
+  async function handleSave() {
+    setSaving(true)
+    try {
+      const payload: Record<string, unknown> = {}
+      for (const key of EDIT_FIELDS) {
+        const val = form[key]?.trim()
+        if (val) {
+          if (key === 'bpm') {
+            const n = parseInt(val, 10)
+            if (!isNaN(n)) payload[key] = n
+          } else if (key === 'aiTools') {
+            payload[key] = val.split(',').map(s => s.trim()).filter(Boolean)
+          } else {
+            payload[key] = val
+          }
+        }
+      }
+      if (Object.keys(payload).length === 0) {
+        showToast('请填写至少一个字段', 'error')
+        return
+      }
+      const res = await apiCall(`/api/admin/songs/${song.id}`, 'PUT', payload)
+      if (res.ok) {
+        showToast('✅ 歌曲信息已更新')
+        onSuccess()
+      } else {
+        showToast(res.message || '更新失败', 'error')
+      }
+    } catch {
+      showToast('网络请求失败', 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function upd(key: string, val: string) {
+    setForm(prev => ({ ...prev, [key]: val }))
+  }
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-[2px]" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl w-[560px] max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="p-5 border-b border-[var(--border)]">
+          <h2 className="text-lg font-semibold text-[var(--text)]">编辑歌曲元数据</h2>
+          <p className="mt-1 text-xs text-[var(--text3)]">[{song.copyrightCode}] {song.title}</p>
+        </div>
+        <div className="flex-1 overflow-y-auto p-5 space-y-3">
+          {EDIT_FIELDS.map(key => {
+            const label = EDIT_LABELS[key]
+            if (key === 'lyrics' || key === 'creationDesc') {
+              return (
+                <div key={key}>
+                  <label className="block text-xs font-medium text-[var(--text2)] mb-1">{label}</label>
+                  <textarea
+                    className={`w-full px-3 py-2 bg-white border border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] ${key === 'lyrics' ? 'min-h-[120px]' : 'min-h-[80px]'}`}
+                    value={form[key]}
+                    onChange={(e) => upd(key, e.target.value)}
+                  />
+                </div>
+              )
+            }
+            return (
+              <div key={key}>
+                <label className="block text-xs font-medium text-[var(--text2)] mb-1">{label}</label>
+                <input
+                  className="w-full px-3 py-2 bg-white border border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                  value={form[key]}
+                  onChange={(e) => upd(key, e.target.value)}
+                  placeholder={key === 'bpm' ? '数字' : key === 'aiTools' ? '逗号分隔' : ''}
+                />
+              </div>
+            )
+          })}
+        </div>
+        <div className="p-4 border-t border-[var(--border)] flex justify-end gap-2">
+          <button className={`${btnGhost} ${btnSmall}`} onClick={onClose} disabled={saving}>取消</button>
+          <button className={`${btnPrimary} ${btnSmall}`} onClick={handleSave} disabled={saving}>
+            {saving ? '保存中...' : '保存'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

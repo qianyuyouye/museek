@@ -44,7 +44,7 @@ const INITIAL_FORM: UploadForm = {
   bpm: '120',
   prompt: '',
   lyrics: '',
-  contribution: '主导',
+  contribution: 'lead',
   creationDesc: '',
   originality: false,
   audioFeatures: null,
@@ -53,9 +53,8 @@ const INITIAL_FORM: UploadForm = {
 const AI_TOOLS = ['汽水创作实验室', 'Suno', 'Udio', '其他']
 const GENRES = ['Pop', 'Rock', 'R&B', 'Hip-Hop', '电子', '古典', '民谣']
 const CONTRIBUTIONS = [
-  { value: '主导', desc: '我提供完整构思，AI辅助生成' },
-  { value: '协作', desc: '我提供核心方向，AI完成主要生成' },
-  { value: '编辑', desc: 'AI生成初稿后，我进行实质性修改' },
+  { value: 'lead', label: '主导', desc: '我提供完整构思，AI辅助生成' },
+  { value: 'participant', label: '参与', desc: 'AI生成初稿后，我进行实质性修改' },
 ]
 
 const STEPS = [
@@ -170,7 +169,7 @@ function Toast({ message }: { message: string }) {
 
 // ── Main Component ───────────────────────────────────────────────
 
-const CONTRIBUTION_BACK: Record<string, string> = { lead: '主导', participant: '协作' }
+const CONTRIBUTION_BACK: Record<string, string> = { lead: 'lead', participant: 'participant' }
 
 export default function CreatorUploadPage() {
   const router = useRouter()
@@ -393,7 +392,6 @@ export default function CreatorUploadPage() {
       return
     }
 
-    const contributionMap: Record<string, string> = { '主导': 'lead', '协作': 'participant', '编辑': 'participant' }
     const res = await apiCall<{ id: number; copyrightCode: string }>('/api/creator/upload', 'POST', {
       songId: revisionSongId ?? undefined,
       title: form.title,
@@ -404,7 +402,7 @@ export default function CreatorUploadPage() {
       bpm: parseInt(form.bpm, 10),
       lyrics: form.lyrics,
       styleDesc: form.prompt,
-      contribution: contributionMap[form.contribution] || 'lead',
+      contribution: form.contribution as 'lead' | 'participant',
       creationDesc: form.creationDesc,
       audioUrl: form.audioUrl || undefined,
       audioFeatures: form.audioFeatures || undefined,
@@ -731,7 +729,7 @@ export default function CreatorUploadPage() {
                       checked={form.contribution === c.value}
                       onChange={() => upd('contribution', c.value)}
                     />
-                    {c.value}：{c.desc}
+                    {c.label}：{c.desc}
                   </label>
                 ))}
               </div>

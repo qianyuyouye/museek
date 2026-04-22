@@ -50,32 +50,34 @@ export const PUT = safeHandler(async function PUT(
   const song = await prisma.platformSong.findUnique({ where: { id: songId } })
   if (!song) return err('歌曲不存在', 404)
 
+  // v6.0 PRD §1.2 字段白名单
+  const ALLOWED = ['genre', 'bpm', 'lyrics', 'lyricist', 'composer', 'performer', 'albumName', 'albumArtist', 'creationDesc', 'aiTools'] as const
   const body = await request.json()
-  const { title, genre, bpm, performer, lyricist, composer, lyrics, styleDesc, albumName, albumArtist, contribution, creationDesc } = body
+  const changes: Record<string, unknown> = {}
+  const before: Record<string, unknown> = {}
+
+  for (const key of ALLOWED) {
+    if (key in body) {
+      before[key] = (song as Record<string, unknown>)[key]
+      changes[key] = body[key]
+    }
+  }
+
+  // 拒绝不在白名单中的字段
+  const forbidden = Object.keys(body).filter(k => !ALLOWED.includes(k as typeof ALLOWED[number]))
+  if (forbidden.length > 0) return err(`不允许修改字段：${forbidden.join(', ')}`)
+  if (Object.keys(changes).length === 0) return err('无有效更新字段')
 
   const updated = await prisma.platformSong.update({
     where: { id: songId },
-    data: {
-      ...(title !== undefined && { title }),
-      ...(genre !== undefined && { genre }),
-      ...(bpm !== undefined && { bpm }),
-      ...(performer !== undefined && { performer }),
-      ...(lyricist !== undefined && { lyricist }),
-      ...(composer !== undefined && { composer }),
-      ...(lyrics !== undefined && { lyrics }),
-      ...(styleDesc !== undefined && { styleDesc }),
-      ...(albumName !== undefined && { albumName }),
-      ...(albumArtist !== undefined && { albumArtist }),
-      ...(contribution !== undefined && { contribution }),
-      ...(creationDesc !== undefined && { creationDesc }),
-    },
+    data: changes as Record<string, unknown>,
   })
 
   await logAdminAction(request, {
-    action: 'update_song',
+    action: 'edit_song_meta',
     targetType: 'platform_song',
     targetId: songId,
-    detail: { title: updated.title, copyrightCode: updated.copyrightCode, changes: Object.keys(body).filter(k => body[k as keyof typeof body] !== undefined) },
+    detail: { copyrightCode: updated.copyrightCode, before, after: changes },
   })
   return ok(updated)
 })

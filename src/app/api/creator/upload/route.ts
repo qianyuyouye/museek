@@ -21,6 +21,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   const { songId, title, lyricist, composer, aiTool, aiTools, genre, bpm, prompt, lyrics, contribution, creationDesc, styleDesc, audioUrl, coverUrl, audioFeatures, performer, albumName, albumArtist } = body
 
   if (!title) return err('标题不能为空')
+  if (contribution && !['lead', 'participant'].includes(contribution)) return err('无效的创作贡献类型')
 
   const normalizedAiTools = aiTools || (aiTool ? [aiTool] : undefined)
   const normalizedBpm = bpm ? parseInt(String(bpm), 10) : undefined
