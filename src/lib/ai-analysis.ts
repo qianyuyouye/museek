@@ -76,7 +76,7 @@ async function loadConfig(): Promise<AiConfig> {
     baseUrl: fromDb.baseUrl || process.env.AI_API_BASE_URL || 'https://api.openai.com/v1',
     apiKey: fromDb.apiKey || process.env.AI_API_KEY || '',
     model: fromDb.model || process.env.AI_MODEL || 'gpt-4o-mini',
-    timeoutMs: fromDb.timeoutMs ?? 10000,
+    timeoutMs: fromDb.timeoutMs ?? 5000,
   }
 }
 
@@ -87,6 +87,7 @@ export async function analyzeSong(input: AnalysisInput): Promise<AIAnalysisResul
     return DEFAULT_RESULT
   }
   if (!config.apiKey) {
+    console.error('[AI Analysis] ⚠️ AI_API_KEY 未配置，预分析功能已禁用')
     await logUnavailable('AI_API_KEY 未配置')
     return DEFAULT_RESULT
   }
