@@ -122,11 +122,11 @@ export default function AdminDashboard() {
     const publishedSub = s ? `发行率 ${s.publishRate}%` : ''
     return [
       { icon: 'users', label: '注册用户', val: s?.totalUsers ?? '-', sub: totalUsersSub, subc: STAT_COLORS.green, grad: 'linear-gradient(135deg, var(--accent), var(--accent2))', pg: '/admin/students' },
-      { icon: 'music', label: '作品总数', val: s?.totalSongs ?? '-', sub: totalSongsSub, subc: STAT_COLORS.green, grad: 'linear-gradient(135deg, var(--pink), #f472b6)', pg: '/admin/songs' },
-      { icon: 'clipboard', label: '评审中', val: s?.pendingReview ?? '-', sub: '', subc: STAT_COLORS.green, grad: 'linear-gradient(135deg, #0694a2, var(--green))', pg: '/admin/songs' },
-      { icon: 'rocket', label: '已发行', val: s?.published ?? '-', sub: publishedSub, subc: STAT_COLORS.green, grad: 'linear-gradient(135deg, #3b82f6, #60a5fa)', pg: '/admin/songs' },
-      { icon: 'yen', label: '总收益', val: s ? `¥${s.totalRevenue.toLocaleString()}` : '-', sub: '', subc: STAT_COLORS.green, grad: 'linear-gradient(135deg, var(--orange), #fbbf24)', pg: '/admin/revenue' },
-      { icon: 'group', label: '用户组', val: s?.groupCount ?? '-', sub: '', subc: STAT_COLORS.green, grad: 'linear-gradient(135deg, #14b8a6, #5eead4)', pg: '/admin/groups' },
+      { icon: 'music', label: '作品总数', val: s?.totalSongs ?? '-', sub: totalSongsSub, subc: STAT_COLORS.green, grad: 'linear-gradient(135deg, var(--pink), var(--pink))', pg: '/admin/songs' },
+      { icon: 'clipboard', label: '评审中', val: s?.pendingReview ?? '-', sub: '', subc: STAT_COLORS.green, grad: 'linear-gradient(135deg, var(--green), var(--green))', pg: '/admin/songs' },
+      { icon: 'rocket', label: '已发行', val: s?.published ?? '-', sub: publishedSub, subc: STAT_COLORS.green, grad: 'linear-gradient(135deg, var(--accent), var(--accent2))', pg: '/admin/songs' },
+      { icon: 'yen', label: '总收益', val: s ? `¥${s.totalRevenue.toLocaleString()}` : '-', sub: '', subc: STAT_COLORS.green, grad: 'linear-gradient(135deg, var(--orange), var(--orange))', pg: '/admin/revenue' },
+      { icon: 'group', label: '用户组', val: s?.groupCount ?? '-', sub: '', subc: STAT_COLORS.green, grad: 'linear-gradient(135deg, var(--green), var(--green2))', pg: '/admin/groups' },
     ]
   }, [data])
 
@@ -153,7 +153,7 @@ export default function AdminDashboard() {
         className="rounded-xl overflow-hidden relative"
         style={{
           minHeight: 100,
-          background: 'linear-gradient(135deg, var(--accent2) 0%, #4f46e5 40%, #4338ca 70%, var(--accent2) 100%)',
+          background: 'linear-gradient(135deg, var(--accent2) 0%, var(--accent) 40%, var(--accent2) 70%, var(--accent) 100%)',
           boxShadow: '0 8px 32px rgba(99,102,241,.28)',
         }}
       >

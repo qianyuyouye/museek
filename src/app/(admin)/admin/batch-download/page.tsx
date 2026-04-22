@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useRef, useEffect } from 'react'
-import { Rocket, CheckCircle2, X, XCircle, AlertTriangle, Star, BarChart3, Package } from 'lucide-react'
+import { Rocket, CheckCircle2, X, XCircle, AlertTriangle, Star, BarChart3, Package, Search } from 'lucide-react'
 import { PageHeader } from '@/components/ui/page-header'
 import { useApi, apiCall } from '@/lib/use-api'
 import { SONG_STATUS_MAP } from '@/lib/constants'
@@ -304,12 +304,15 @@ export default function BatchDownloadPage() {
           </select>
 
           {/* 关键词 */}
-          <input
-            className={`${inputCls} w-52`}
-            placeholder="🔍 歌名或创作者姓名"
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-          />
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text3)]" />
+            <input
+              className={`${inputCls} w-52 pl-9`}
+              placeholder="搜索歌名或创作者姓名"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
@@ -402,7 +405,7 @@ export default function BatchDownloadPage() {
           <table className="w-full border-collapse">
             <thead>
               <tr>
-                <th className="px-3 py-2.5 text-left text-xs font-medium text-[var(--text2)] border-b border-[var(--border)] whitespace-nowrap w-8">
+                <th className="px-4 py-2.5 text-left text-xs font-semibold text-[var(--text3)] uppercase tracking-wide border-b border-[var(--border)] whitespace-nowrap w-8">
                   <input
                     type="checkbox"
                     ref={headerCheckRef}
@@ -415,7 +418,7 @@ export default function BatchDownloadPage() {
                   (h) => (
                     <th
                       key={h}
-                      className="px-3 py-2.5 text-left text-xs font-medium text-[var(--text2)] border-b border-[var(--border)] whitespace-nowrap"
+                      className="px-4 py-2.5 text-left text-xs font-semibold text-[var(--text3)] uppercase tracking-wide border-b border-[var(--border)] whitespace-nowrap"
                     >
                       {h}
                     </th>

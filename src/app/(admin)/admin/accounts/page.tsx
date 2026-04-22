@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Shield, CheckCircle2, Ban, Settings, AlertTriangle, Clipboard, Check, Users } from 'lucide-react'
+import { Shield, CheckCircle2, Ban, Settings, AlertTriangle, Clipboard, Check, Users, User } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useConfirm } from '@/components/ui/confirm-dialog'
 import { PageHeader } from '@/components/ui/page-header'
@@ -30,7 +30,7 @@ interface ReviewerAccount {
 interface CreatorAccount {
   id: number
   name: string
-  avatar: string
+  avatar: string | null
   phone: string
   role: string
   adminLevel: 'group_admin' | 'system_admin' | null
@@ -104,7 +104,7 @@ export default function AdminAccountsPage() {
     .map((u) => ({
       id: u.id,
       name: u.name ?? u.realName ?? '',
-      avatar: u.avatarUrl ?? '👤',
+      avatar: u.avatarUrl ?? null,
       phone: u.phone ?? '',
       role: 'creator',
       adminLevel: u.adminLevel as CreatorAccount['adminLevel'],
@@ -238,7 +238,7 @@ export default function AdminAccountsPage() {
     {
       key: 'avatar',
       title: '',
-      render: (v) => <span style={{ fontSize: 18 }}>{v as string}</span>,
+      render: (v) => v ? <img src={v as string} alt="" className="w-5 h-5 rounded-full object-cover" /> : <User className="w-5 h-5 text-[var(--text3)]" />,
     },
     {
       key: 'name',
@@ -464,10 +464,7 @@ export default function AdminAccountsPage() {
       >
         {resetPwd && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div
-              className="p-[10px] rounded-lg text-xs"
-              style={{ background: 'rgba(255,107,107,.08)', color: 'var(--red)', lineHeight: 1.6 }}
-            >
+            <div className="p-3 rounded-md text-[13px] bg-[rgba(255,107,107,.08)] border border-[rgba(255,107,107,.15)] text-[var(--red)]" style={{ lineHeight: 1.6 }}>
               <AlertTriangle className="inline w-3.5 h-3.5 mr-1" />此密码仅显示一次，请立即复制并通过安全渠道发送给用户。关闭弹窗后无法再查看。
             </div>
             <div>

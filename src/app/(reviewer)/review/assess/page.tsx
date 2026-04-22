@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle, textSectionTitle, cardCls, btnPrimary, labelCls } from '@/lib/ui-tokens'
 import AudioPlayer, { type AudioMark, type AudioPlayerHandle } from '@/components/review/AudioPlayer'
-import { Bot, CheckCircle2 } from 'lucide-react'
+import { Bot, CheckCircle2, Music, ClipboardList } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -365,7 +365,7 @@ export default function ReviewAssessPage() {
               <div className="text-5xl w-[72px] h-[72px] bg-[var(--bg4)] rounded-[10px] flex items-center justify-center shrink-0 overflow-hidden">
                 {song.coverUrl
                   ? <img src={song.coverUrl} alt={song.title} className="w-full h-full object-cover" />
-                  : <span>🎵</span>}
+                  : <Music className="w-8 h-8 text-[var(--text3)]" />}
               </div>
               <div>
                 <div className="text-lg font-semibold text-[var(--text)]">{song.title}</div>
@@ -441,7 +441,7 @@ export default function ReviewAssessPage() {
         {/* RIGHT */}
         <div>
           <div className={cardCls}>
-            <h3 className={`${textSectionTitle} mb-5`}>📝 评分表单</h3>
+            <h3 className={`${textSectionTitle} mb-5 flex items-center gap-2`}><ClipboardList className="w-4 h-4" /> 评分表单</h3>
 
             {(
               [
@@ -519,9 +519,9 @@ export default function ReviewAssessPage() {
             <div className="mb-5">
               <label className={labelCls}>发行建议</label>
               {[
-                { v: 'strongly_recommend', l: '🌟 强烈推荐发行', c: 'var(--green2)' },
-                { v: 'recommend_after_revision', l: '📝 建议修改后发行', c: 'var(--orange)' },
-                { v: 'not_recommend', l: '⏸ 暂不推荐', c: 'var(--text3)' },
+                { v: 'strongly_recommend', l: '强烈推荐发行', c: 'var(--green2)' },
+                { v: 'recommend_after_revision', l: '建议修改后发行', c: 'var(--orange)' },
+                { v: 'not_recommend', l: '暂不推荐', c: 'var(--text3)' },
               ].map((o) => (
                 <label
                   key={o.v}

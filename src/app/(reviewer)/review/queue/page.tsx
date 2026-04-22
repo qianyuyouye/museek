@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { Search } from 'lucide-react'
 import { PageHeader } from '@/components/ui/page-header'
 import { DataTable, Column } from '@/components/ui/data-table'
 import { useApi } from '@/lib/use-api'
@@ -137,7 +138,7 @@ export default function ReviewQueuePage() {
         </select>
 
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text3)] text-sm">🔍</span>
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text3)]" />
           <input
             type="text"
             placeholder="请输入学生姓名"

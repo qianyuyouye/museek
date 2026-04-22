@@ -5,64 +5,65 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Custom theme variables - dark tech/Sci-fi */
-  --bg: #0a0a14;
-  --bg2: #12121f;
-  --bg3: #1a1a2e;
-  --bg4: #222240;
-  --text: #e2e8f0;
-  --text2: #94a3b8;
-  --text3: #64748b;
-  --accent: #818cf8;
-  --accent2: #6366f1;
-  --accent-glow: rgba(129, 140, 248, 0.15);
-  --green: #22d3ee;
-  --green2: #34d399;
-  --orange: #fbbf24;
-  --red: #f87171;
-  --pink: #f472b6;
-  --border: #1e293b;
-  --border2: #334155;
+  /* Custom theme variables — dark neon (Spotify / 网易云音乐 style) */
+  --bg: #050508;
+  --bg2: #0c0c14;
+  --bg3: #141422;
+  --bg4: #1e1e32;
+  --text: #e8e8f0;
+  --text2: #a0a0b8;
+  --text3: #6a6a82;
+  --accent: #9b8ef0;
+  --accent2: #7c5cfc;
+  --accent-glow: rgba(155, 142, 240, 0.25);
+  --green: #00e5a0;
+  --green2: #00cc8e;
+  --orange: #ffb347;
+  --red: #ff6b6b;
+  --pink: #f06292;
+  --border: #22223a;
+  --border2: #2e2e48;
   --radius: 10px;
   --radius-lg: 16px;
 
-  /* shadcn/ui variables - dark mode */
-  --background: oklch(0.18 0.02 270);
-  --foreground: oklch(0.92 0 0);
-  --card: oklch(0.22 0.02 270);
-  --card-foreground: oklch(0.92 0 0);
-  --popover: oklch(0.22 0.02 270);
-  --popover-foreground: oklch(0.92 0 0);
-  --primary: oklch(0.65 0.2 270);
-  --primary-foreground: oklch(0.15 0 0);
-  --secondary: oklch(0.28 0.02 270);
-  --secondary-foreground: oklch(0.92 0 0);
-  --muted: oklch(0.28 0.02 270);
-  --muted-foreground: oklch(0.6 0 0);
-  --accent-foreground: oklch(0.92 0 0);
-  --destructive: oklch(0.65 0.2 25);
-  --input: oklch(0.3 0.02 270);
-  --ring: oklch(0.65 0.2 270);
-  --chart-1: oklch(0.65 0.2 270);
-  --chart-2: oklch(0.55 0.2 160);
-  --chart-3: oklch(0.55 0.25 45);
-  --chart-4: oklch(0.55 0.2 330);
-  --chart-5: oklch(0.55 0.15 200);
-  --sidebar: oklch(0.15 0.02 270);
-  --sidebar-foreground: oklch(0.92 0 0);
-  --sidebar-primary: oklch(0.65 0.2 270);
-  --sidebar-primary-foreground: oklch(0.92 0 0);
-  --sidebar-accent: oklch(0.25 0.02 270);
-  --sidebar-accent-foreground: oklch(0.92 0 0);
-  --sidebar-border: oklch(0.3 0.02 270);
-  --sidebar-ring: oklch(0.65 0.2 270);
+  /* shadcn/ui variables — dark neon */
+  --background: oklch(0.12 0.015 270);
+  --foreground: oklch(0.94 0 0);
+  --card: oklch(0.18 0.015 270);
+  --card-foreground: oklch(0.94 0 0);
+  --popover: oklch(0.18 0.015 270);
+  --popover-foreground: oklch(0.94 0 0);
+  --primary: oklch(0.7 0.22 280);
+  --primary-foreground: oklch(0.12 0 0);
+  --secondary: oklch(0.22 0.015 270);
+  --secondary-foreground: oklch(0.94 0 0);
+  --muted: oklch(0.22 0.015 270);
+  --muted-foreground: oklch(0.62 0 0);
+  --accent-foreground: oklch(0.94 0 0);
+  --destructive: oklch(0.7 0.22 25);
+  --input: oklch(0.24 0.015 270);
+  --ring: oklch(0.7 0.22 280);
+  --chart-1: oklch(0.7 0.22 280);
+  --chart-2: oklch(0.65 0.2 160);
+  --chart-3: oklch(0.65 0.25 50);
+  --chart-4: oklch(0.65 0.22 340);
+  --chart-5: oklch(0.6 0.18 200);
+  --sidebar: oklch(0.08 0.015 270);
+  --sidebar-foreground: oklch(0.94 0 0);
+  --sidebar-primary: oklch(0.7 0.22 280);
+  --sidebar-primary-foreground: oklch(0.94 0 0);
+  --sidebar-accent: oklch(0.18 0.015 270);
+  --sidebar-accent-foreground: oklch(0.94 0 0);
+  --sidebar-border: oklch(0.2 0.015 270);
+  --sidebar-ring: oklch(0.7 0.22 280);
 }
 
 body {
   font-family: 'Noto Sans SC', sans-serif;
   background:
-    radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(129, 140, 248, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 15% 50%, rgba(124, 92, 252, 0.10) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 15%, rgba(0, 229, 160, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 90%, rgba(240, 98, 146, 0.05) 0%, transparent 50%),
     var(--bg) fixed;
   color: var(--text);
   min-height: 100vh;
@@ -83,14 +84,15 @@ body {
 }
 
 /* Neon glow utility classes */
-.glow-accent { box-shadow: 0 0 8px var(--accent-glow), 0 0 24px var(--accent-glow); }
-.glow-green { box-shadow: 0 0 8px rgba(34, 211, 238, 0.15), 0 0 24px rgba(34, 211, 238, 0.08); }
-.glow-pink { box-shadow: 0 0 8px rgba(244, 114, 182, 0.15), 0 0 24px rgba(244, 114, 182, 0.08); }
+.glow-accent { box-shadow: 0 0 6px var(--accent-glow), 0 0 20px var(--accent-glow), 0 0 40px rgba(124, 92, 252, 0.10); }
+.glow-green { box-shadow: 0 0 6px rgba(0, 229, 160, 0.20), 0 0 20px rgba(0, 229, 160, 0.10), 0 0 40px rgba(0, 229, 160, 0.05); }
+.glow-pink { box-shadow: 0 0 6px rgba(240, 98, 146, 0.20), 0 0 20px rgba(240, 98, 146, 0.10), 0 0 40px rgba(240, 98, 146, 0.05); }
 
 .card-glass {
-  background: rgba(26, 26, 46, 0.6);
-  backdrop-filter: blur(12px);
+  background: rgba(20, 20, 34, 0.7);
+  backdrop-filter: blur(16px);
   border: 1px solid var(--border);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 /* Skeleton pulse animation */

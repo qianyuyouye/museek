@@ -38,28 +38,29 @@ export function Sidebar({ items, portalLabel, portalColor, onLogout }: SidebarPr
   }
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-[200px] flex-col" style={{ background: 'linear-gradient(180deg, #4f46e5 0%, #6366f1 40%, #7c7cf7 100%)' }}>
-      <div className="flex flex-col items-center gap-1 px-4 py-5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-white shadow-md">
+    <aside className="fixed left-0 top-0 z-40 flex h-screen w-[220px] flex-col bg-[var(--bg2)] border-r border-[var(--border)]">
+      {/* Header */}
+      <div className="flex flex-col items-center gap-1.5 px-4 py-5 border-b border-[var(--border)]">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--accent)]/15 text-[var(--accent)]">
           <Music size={18} />
         </div>
-        <span className="text-sm font-semibold text-white">AI音乐平台</span>
-        <span
-          className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
-          style={{ background: 'rgba(255,255,255,0.2)', color: '#fff' }}
-        >
+        <span className="text-sm font-semibold text-[var(--text)]">AI音乐平台</span>
+        <span className="rounded-md px-2 py-0.5 text-[10px] font-medium bg-[var(--bg4)] text-[var(--text3)]">
           {portalLabel}
         </span>
       </div>
 
-      <div className="sidebar-scroll flex-1 overflow-y-auto px-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      {/* Nav */}
+      <div className="sidebar-scroll flex-1 overflow-y-auto px-3 py-3" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <style>{`.sidebar-scroll::-webkit-scrollbar { display: none; }`}</style>
-        <nav className="flex flex-col gap-px">
+        <nav className="flex flex-col gap-1">
           {items.map((item, i) => {
             if (item.divider) {
               return (
-                <div key={`d-${i}`} className="mb-1 mt-3 px-3 text-[10px] font-medium uppercase tracking-wider text-white/50">
-                  {item.divider}
+                <div key={`d-${i}`} className="flex items-center gap-2 mt-3 mb-2 px-1">
+                  <div className="flex-1 h-px bg-[var(--border)]" />
+                  <span className="text-[10px] font-medium text-[var(--text3)] tracking-wide">{item.divider}</span>
+                  <div className="flex-1 h-px bg-[var(--border)]" />
                 </div>
               )
             }
@@ -69,14 +70,15 @@ export function Sidebar({ items, portalLabel, portalColor, onLogout }: SidebarPr
                 key={item.key}
                 href={item.href}
                 className={cn(
-                  'group flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[13px] transition-all no-underline',
+                  'group relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[13px] transition-colors no-underline',
                   isActive
-                    ? 'bg-white/20 font-medium text-white'
-                    : 'text-white/75 hover:bg-white/10 hover:text-white'
+                    ? 'bg-[var(--bg4)] text-[var(--accent)] font-medium'
+                    : 'text-[var(--text2)] hover:bg-[var(--bg4)] hover:text-[var(--text)]'
                 )}
               >
-                <span className="flex items-center">{item.icon}</span>
-                <span className="flex-1">{item.label}</span>
+                {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-[var(--accent)] rounded-r" />}
+                <span className="flex items-center shrink-0">{item.icon}</span>
+                <span className="flex-1 truncate">{item.label}</span>
                 {item.badge !== undefined && item.badge > 0 && (
                   <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--red)] px-1 text-[10px] font-bold text-white">
                     {item.badge}
@@ -88,10 +90,11 @@ export function Sidebar({ items, portalLabel, portalColor, onLogout }: SidebarPr
         </nav>
       </div>
 
-      <div className="border-t border-white/15 p-3">
+      {/* Footer */}
+      <div className="border-t border-[var(--border)] p-3">
         <button
           onClick={handleLogout}
-          className="flex w-full items-center justify-center gap-1 rounded-lg py-2 text-[12px] text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-[12px] text-[var(--text3)] transition-colors hover:bg-[var(--bg4)] hover:text-[var(--text)]"
         >
           <LogOut size={14} /> 退出登录
         </button>

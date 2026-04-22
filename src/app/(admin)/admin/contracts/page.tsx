@@ -7,7 +7,7 @@ import { DataTable, Column } from '@/components/ui/data-table'
 import { AdminModal } from '@/components/ui/modal'
 import { RichTextEditor } from '@/components/admin/rich-text-editor'
 import { useApi } from '@/lib/use-api'
-import { pageWrap, btnPrimary, btnGhost } from '@/lib/ui-tokens'
+import { pageWrap, btnPrimary, btnGhost, kvRow, kvLabel, paginationBtn, paginationBtnActive } from '@/lib/ui-tokens'
 import { SETTING_KEYS } from '@/lib/settings-keys'
 
 // ── Types ────────────────────────────────────────────────────────
@@ -171,9 +171,9 @@ export default function AdminContractsPage() {
     return (
       <div className="flex items-center justify-end gap-1 mt-4 text-sm text-[var(--text2)]">
         <span className="mr-2">第 {startItem}-{endItem} 条/总共 {totalItems} 条</span>
-        <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className={`w-7 h-7 rounded border border-[var(--border)] bg-[var(--bg3)] flex items-center justify-center text-sm ${page === 1 ? 'opacity-40 cursor-not-allowed' : ''}`}>&lt;</button>
-        {pages.map((p, i) => p === '...' ? (<span key={`dots-${i}`} className="px-1">···</span>) : (<button key={p} onClick={() => setPage(p)} className={`w-7 h-7 rounded border flex items-center justify-center text-sm cursor-pointer ${p === page ? 'border-[var(--accent)] bg-[var(--accent)] text-white font-semibold' : 'border-[var(--border)] bg-[var(--bg3)] text-[var(--text2)]'}`}>{p}</button>))}
-        <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className={`w-7 h-7 rounded border border-[var(--border)] bg-[var(--bg3)] flex items-center justify-center text-sm ${page === totalPages ? 'opacity-40 cursor-not-allowed' : ''}`}>&gt;</button>
+        <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className={`${paginationBtn} ${page === 1 ? 'opacity-40 cursor-not-allowed' : ''}`}>&lt;</button>
+        {pages.map((p, i) => p === '...' ? (<span key={`dots-${i}`} className="px-1">···</span>) : (<button key={p} onClick={() => setPage(p)} className={`${paginationBtn} ${p === page ? paginationBtnActive : ''}`}>{p}</button>))}
+        <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className={`${paginationBtn} ${page === totalPages ? 'opacity-40 cursor-not-allowed' : ''}`}>&gt;</button>
         <span className="ml-2 text-sm">{PAGE_SIZE} 条/页</span>
       </div>
     )
@@ -290,8 +290,8 @@ export default function AdminContractsPage() {
               { k: '作品数', v: String(detail.songCount ?? 0) },
               { k: '协议状态', v: detail.agencyContract ? '已签署' : '未签署' },
             ].map((row) => (
-              <div key={row.k} className="flex justify-between items-center px-3 py-2 rounded-md" style={{ background: 'var(--bg4)' }}>
-                <span className="text-[var(--text3)]">{row.k}</span>
+              <div key={row.k} className={kvRow}>
+                <span className={kvLabel}>{row.k}</span>
                 <span className="font-medium">{row.v}</span>
               </div>
             ))}

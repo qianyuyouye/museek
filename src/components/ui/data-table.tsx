@@ -30,7 +30,7 @@ export function DataTable<T>({
             {columns.map((col) => (
               <th
                 key={col.key}
-                className="px-3 py-2.5 text-left text-xs font-medium text-[var(--text2)] border-b border-[var(--border)] whitespace-nowrap"
+                className="px-4 py-2.5 text-left text-xs font-semibold text-[var(--text3)] uppercase tracking-wide border-b border-[var(--border)] whitespace-nowrap"
               >
                 {col.title}
               </th>
@@ -67,7 +67,7 @@ export function DataTable<T>({
                 {columns.map((col) => (
                   <td
                     key={col.key}
-                    className="px-3 py-3 text-sm text-[var(--text)] border-b border-[var(--border)] whitespace-nowrap"
+                    className="px-4 py-3 text-sm text-[var(--text)] border-b border-[var(--border)] whitespace-nowrap"
                   >
                     {col.render
                       ? col.render((row as Record<string, unknown>)[col.key], row)

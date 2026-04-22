@@ -9,7 +9,7 @@ import { useRef } from 'react'
 import { useApi, apiCall } from '@/lib/use-api'
 import { parseCSV } from '@/lib/csv'
 import { downloadCSV, today } from '@/lib/export'
-import { pageWrap, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'
+import { pageWrap, cardCls, btnPrimary, btnGhost, paginationBtn, paginationBtnActive } from '@/lib/ui-tokens'
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -173,7 +173,7 @@ export default function AdminIsrcPage() {
           第 {(currentPage - 1) * PAGE_SIZE + 1}~{Math.min(currentPage * PAGE_SIZE, pendingSongs.length)} 条/总共 {pendingSongs.length} 条
         </span>
         <button
-          className="w-8 h-8 flex items-center justify-center rounded border border-[var(--border)] bg-[var(--bg3)] cursor-pointer text-[var(--text3)] disabled:opacity-40"
+          className={`${paginationBtn} disabled:opacity-40 disabled:cursor-not-allowed`}
           disabled={currentPage === 1}
           onClick={() => setCurrentPage((p) => p - 1)}
         >
@@ -183,11 +183,7 @@ export default function AdminIsrcPage() {
           typeof p === 'number' ? (
             <button
               key={i}
-              className={`w-8 h-8 flex items-center justify-center rounded border text-sm cursor-pointer ${
-                p === currentPage
-                  ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
-                  : 'bg-[var(--bg3)] border-[var(--border)] text-[var(--text2)]'
-              }`}
+              className={`${paginationBtn} ${p === currentPage ? paginationBtnActive : ''}`}
               onClick={() => setCurrentPage(p)}
             >
               {p}
@@ -199,7 +195,7 @@ export default function AdminIsrcPage() {
           )
         )}
         <button
-          className="w-8 h-8 flex items-center justify-center rounded border border-[var(--border)] bg-[var(--bg3)] cursor-pointer text-[var(--text3)] disabled:opacity-40"
+          className={`${paginationBtn} disabled:opacity-40 disabled:cursor-not-allowed`}
           disabled={currentPage === totalPages}
           onClick={() => setCurrentPage((p) => p + 1)}
         >

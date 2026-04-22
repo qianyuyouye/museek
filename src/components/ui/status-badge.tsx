@@ -6,10 +6,12 @@ interface StatusBadgeProps {
   bg: string
 }
 
+import { badgeBase } from '@/lib/ui-tokens'
+
 export function StatusBadge({ label, color, bg }: StatusBadgeProps) {
   return (
     <span
-      className="inline-block rounded-[20px] px-2.5 py-[3px] text-xs font-medium"
+      className={badgeBase}
       style={{ color, background: bg }}
     >
       {label}

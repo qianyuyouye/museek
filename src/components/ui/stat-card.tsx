@@ -31,13 +31,13 @@ export function StatCard({ icon, label, val, sub, subc, color, iconBg, page }: S
         position: 'relative',
         background: 'var(--bg3)',
         border: `1px solid ${hovered ? color + '55' : 'var(--border)'}`,
-        borderRadius: 12,
+        borderRadius: 8,
         padding: '16px 13px',
         cursor: page ? 'pointer' : 'default',
         transform: hovered ? 'translateY(-2px)' : 'translateY(0)',
         boxShadow: hovered
           ? `0 8px 24px rgba(0,0,0,0.30), 0 2px 8px ${color}22`
-          : '0 1px 4px rgba(0,0,0,0.2)',
+          : '0 1px 4px rgba(0,0,0,0.3)',
         transition: 'all 0.2s ease',
         overflow: 'hidden',
       }}
@@ -51,7 +51,7 @@ export function StatCard({ icon, label, val, sub, subc, color, iconBg, page }: S
           right: 0,
           height: 3,
           background: color,
-          borderRadius: '12px 12px 0 0',
+          borderRadius: '8px 8px 0 0',
         }}
       />
 
@@ -61,7 +61,7 @@ export function StatCard({ icon, label, val, sub, subc, color, iconBg, page }: S
           style={{
             width: 42,
             height: 42,
-            borderRadius: 10,
+            borderRadius: 8,
             background: iconBg,
             display: 'flex',
             alignItems: 'center',

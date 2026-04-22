@@ -8,7 +8,7 @@ import { StatCard } from '@/components/ui/stat-card'
 import { DataTable, Column } from '@/components/ui/data-table'
 import { AdminModal } from '@/components/ui/modal'
 import { useApi, apiCall } from '@/lib/use-api'
-import { pageWrap, cardCls, btnPrimary, btnGhost, btnDanger, btnSuccess, btnSmall, inputCls, labelCls } from '@/lib/ui-tokens'
+import { pageWrap, cardCls, btnPrimary, btnGhost, btnDanger, btnSuccess, btnSmall, inputCls, labelCls, kvRow, kvLabel } from '@/lib/ui-tokens'
 import { STAT_COLORS } from '@/lib/constants'
 import { formatDateTime } from '@/lib/format'
 
@@ -172,19 +172,8 @@ export default function AdminGroupsPage() {
                 ['成员数', `${g.memberCount} 人`],
               ] as [string, string][]
             ).map(([k, v]) => (
-              <div
-                key={k}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  padding: '8px 12px',
-                  background: 'var(--bg4)',
-                  borderRadius: 6,
-                  marginBottom: 6,
-                  fontSize: 13,
-                }}
-              >
-                <span style={{ color: 'var(--text3)' }}>{k}</span>
+              <div key={k} className={kvRow}>
+                <span className={kvLabel}>{k}</span>
                 <span>{v}</span>
               </div>
             ))}

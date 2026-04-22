@@ -17,7 +17,7 @@ export function AdminModal({ open, onClose, title, children, width = 520, disabl
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[4px]"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
       onClick={disableBackdropClose ? undefined : onClose}
     >
       <div
@@ -25,7 +25,7 @@ export function AdminModal({ open, onClose, title, children, width = 520, disabl
         style={{
           width,
           maxWidth: '90vw',
-          borderRadius: 'var(--radius-lg)',
+          borderRadius: 12,
           background: 'var(--bg3)',
           padding: 24,
           boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
@@ -33,8 +33,8 @@ export function AdminModal({ open, onClose, title, children, width = 520, disabl
         }}
       >
         {/* Title bar */}
-        <div className="flex items-center justify-between mb-5">
-          <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>{title}</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>{title}</h2>
           <button
             onClick={onClose}
             className="flex items-center justify-center w-7 h-7 rounded-full text-[var(--text3)] hover:text-[var(--text)] hover:bg-[var(--bg2)] transition-colors"

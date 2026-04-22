@@ -9,7 +9,7 @@ import { SearchBar } from '@/components/ui/search-bar'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { SONG_STATUS_MAP } from '@/lib/constants'
 import { useApi, apiCall } from '@/lib/use-api'
-import { pageWrap, cardCls, btnPrimary, btnGhost, btnDanger, btnSuccess, btnSmall, inputCls, labelCls } from '@/lib/ui-tokens'
+import { pageWrap, cardCls, btnPrimary, btnGhost, btnDanger, btnSuccess, btnSmall, inputCls, labelCls, kvRow, kvLabel, infoBoxOrange, infoBoxRed, infoBoxGray } from '@/lib/ui-tokens'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -103,7 +103,7 @@ export default function AdminStudentsPage() {
 
     const roleLabel: Record<string, string> = {
       creator: '创作者',
-      reviewer: '🎧 评审',
+      reviewer: '评审',
       admin: '管理员',
     }
 
@@ -152,19 +152,8 @@ export default function AdminStudentsPage() {
             <h3 className="text-base font-semibold mb-4">基本信息</h3>
 
             {basicInfo.map(([k, v]) => (
-              <div
-                key={k}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  padding: '8px 12px',
-                  background: 'var(--bg4)',
-                  borderRadius: 6,
-                  marginBottom: 6,
-                  fontSize: 13,
-                }}
-              >
-                <span style={{ color: 'var(--text3)' }}>{k}</span>
+              <div key={k} className={kvRow}>
+                <span className={kvLabel}>{k}</span>
                 <span>{v}</span>
               </div>
             ))}
@@ -177,16 +166,7 @@ export default function AdminStudentsPage() {
 
               {s.realNameStatus === 'pending' && (
                 <div>
-                  <div
-                    style={{
-                      padding: 10,
-                      background: 'rgba(253,203,110,.08)',
-                      borderRadius: 8,
-                      marginBottom: 10,
-                      fontSize: 12,
-                      color: 'var(--orange)',
-                    }}
-                  >
+                  <div className={infoBoxOrange}>
                     待审核 — 用户已提交实名认证信息，请审核
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
@@ -268,16 +248,7 @@ export default function AdminStudentsPage() {
 
               {s.realNameStatus === 'rejected' && (
                 <div>
-                  <div
-                    style={{
-                      padding: 10,
-                      background: 'rgba(255,107,107,.08)',
-                      borderRadius: 8,
-                      marginBottom: 10,
-                      fontSize: 12,
-                      color: 'var(--red)',
-                    }}
-                  >
+                  <div className={infoBoxRed}>
                     <XCircle className="inline w-3.5 h-3.5 mr-1" />已驳回 — 用户可修改后重新提交
                   </div>
                   <button
@@ -294,16 +265,7 @@ export default function AdminStudentsPage() {
 
               {s.realNameStatus === 'unverified' && (
                 <div>
-                  <div
-                    style={{
-                      padding: 10,
-                      background: 'rgba(107,114,128,.08)',
-                      borderRadius: 8,
-                      marginBottom: 10,
-                      fontSize: 12,
-                      color: 'var(--text3)',
-                    }}
-                  >
+                  <div className={infoBoxGray}>
                     <Circle className="inline w-3.5 h-3.5 mr-1" />未提交 — 用户尚未发起实名认证
                   </div>
                   <button

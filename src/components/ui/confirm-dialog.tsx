@@ -44,7 +44,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
       {state.open && (
         <div
           style={{
-            position: 'fixed', inset: 0, background: 'rgba(15,23,42,.3)',
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)',
             backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center',
             justifyContent: 'center', zIndex: 9999,
           }}
@@ -52,7 +52,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
         >
           <div
             style={{
-              background: 'var(--bg3)', borderRadius: 14, padding: '24px 24px 20px',
+              background: 'var(--bg3)', borderRadius: 12, padding: '24px 24px 20px',
               width: 380, maxWidth: '90vw', boxShadow: '0 12px 40px rgba(0,0,0,.4)',
               animation: 'modalIn .2s ease',
             }}
@@ -84,7 +84,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                 style={{
                   padding: '8px 20px', border: 'none', borderRadius: 8,
                   background: state.options.danger
-                    ? 'linear-gradient(135deg, var(--red), #dc2626)'
+                    ? 'linear-gradient(135deg, var(--red), #ef4444)'
                     : 'linear-gradient(135deg, var(--accent), var(--accent2))',
                   color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
                   boxShadow: state.options.danger

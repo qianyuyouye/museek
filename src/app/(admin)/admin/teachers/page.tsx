@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { Users } from 'lucide-react'
 import { PageHeader } from '@/components/ui/page-header'
 import { DataTable, Column } from '@/components/ui/data-table'
 import { useApi } from '@/lib/use-api'
@@ -84,7 +85,7 @@ export default function AdminTeachersPage() {
             href="/admin/accounts"
             className="inline-flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] shadow-[0_2px_8px_rgba(99,102,241,0.25)] no-underline"
           >
-            👥 管理评审账号 →
+            <Users className="w-4 h-4" /> 管理评审账号 →
           </Link>
         }
       />

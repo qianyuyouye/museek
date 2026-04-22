@@ -9,7 +9,7 @@ import { StatusBadge } from '@/components/ui/status-badge'
 import { AdminModal } from '@/components/ui/modal'
 import { useApi, apiCall } from '@/lib/use-api'
 import { SONG_STATUS_MAP } from '@/lib/constants'
-import { pageWrap, cardCls, btnPrimary, btnGhost, btnDanger, btnSuccess, btnSmall, inputCls, labelCls } from '@/lib/ui-tokens'
+import { pageWrap, cardCls, btnPrimary, btnGhost, btnDanger, btnSuccess, btnSmall, inputCls, labelCls, textareaCls } from '@/lib/ui-tokens'
 
 // ── Tab config ───────────────────────────────────────────────────
 
@@ -541,10 +541,10 @@ function EditModal({ song, onClose, onSuccess, showToast }: {
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-[2px]" onClick={onClose}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-[var(--bg3)] rounded-xl shadow-2xl w-[560px] max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="p-5 border-b border-[var(--border)]">
-          <h2 className="text-lg font-semibold text-[var(--text)]">编辑歌曲元数据</h2>
+          <h2 className="text-base font-semibold text-[var(--text)]">编辑歌曲元数据</h2>
           <p className="mt-1 text-xs text-[var(--text3)]">[{song.copyrightCode}] {song.title}</p>
         </div>
         <div className="flex-1 overflow-y-auto p-5 space-y-3">
@@ -553,9 +553,9 @@ function EditModal({ song, onClose, onSuccess, showToast }: {
             if (key === 'lyrics' || key === 'creationDesc') {
               return (
                 <div key={key}>
-                  <label className="block text-xs font-medium text-[var(--text2)] mb-1">{label}</label>
+                  <label className={labelCls}>{label}</label>
                   <textarea
-                    className={`w-full px-3 py-2 bg-[var(--bg3)] border border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] ${key === 'lyrics' ? 'min-h-[120px]' : 'min-h-[80px]'}`}
+                    className={`${textareaCls} ${key === 'lyrics' ? 'min-h-[120px]' : 'min-h-[80px]'}`}
                     value={form[key]}
                     onChange={(e) => upd(key, e.target.value)}
                   />
@@ -564,9 +564,9 @@ function EditModal({ song, onClose, onSuccess, showToast }: {
             }
             return (
               <div key={key}>
-                <label className="block text-xs font-medium text-[var(--text2)] mb-1">{label}</label>
+                <label className={labelCls}>{label}</label>
                 <input
-                  className="w-full px-3 py-2 bg-[var(--bg3)] border border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                  className={inputCls}
                   value={form[key]}
                   onChange={(e) => upd(key, e.target.value)}
                   placeholder={key === 'bpm' ? '数字' : key === 'aiTools' ? '逗号分隔' : ''}

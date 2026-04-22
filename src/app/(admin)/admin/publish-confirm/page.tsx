@@ -7,7 +7,7 @@ import { AdminTab } from '@/components/ui/unified-tabs'
 import { DataTable, Column } from '@/components/ui/data-table'
 import { AdminModal } from '@/components/ui/modal'
 import { useApi, apiCall } from '@/lib/use-api'
-import { pageWrap, cardCls, btnPrimary, btnGhost, btnDanger, btnSuccess, btnSmall } from '@/lib/ui-tokens'
+import { pageWrap, cardCls, btnPrimary, btnGhost, btnDanger, btnSuccess, btnSmall, kvRow, kvLabel } from '@/lib/ui-tokens'
 import { formatDate } from '@/lib/format'
 
 // ── Types ────────────────────────────────────────────────────────
@@ -304,18 +304,8 @@ export default function PublishConfirmPage() {
     return (
       <div className="flex flex-col gap-2">
         {fields.map(([k, v]) => (
-          <div
-            key={k}
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: '8px 12px',
-              background: 'var(--bg4)',
-              borderRadius: 6,
-              fontSize: 13,
-            }}
-          >
-            <span style={{ color: 'var(--text3)' }}>{k}</span>
+          <div key={k} className={kvRow}>
+            <span className={kvLabel}>{k}</span>
             <span>{v}</span>
           </div>
         ))}

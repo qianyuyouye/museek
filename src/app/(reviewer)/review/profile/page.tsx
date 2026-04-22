@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle, textSectionTitle, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
-import { Pencil, Smartphone, Lock } from 'lucide-react'
+import { Pencil, Smartphone, Lock, Headphones } from 'lucide-react'
 
 const rowCls = 'flex justify-between items-center px-3 py-2.5 bg-[var(--bg4)] rounded-md text-sm'
 
@@ -135,7 +135,7 @@ export default function ReviewerProfilePage() {
 
           <div className="flex items-center gap-4 mb-4">
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[var(--accent)] to-[#8b5cf6] flex items-center justify-center text-[28px]">
-              🎧
+              <Headphones className="w-7 h-7" />
             </div>
             <div>
               <div className="text-base font-semibold text-[var(--text)]">{user.name}</div>

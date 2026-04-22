@@ -1,13 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { Settings, CheckCircle2, Hourglass, Users, FileText } from 'lucide-react'
+import { Settings, CheckCircle2, Hourglass, Users, FileText, ClipboardList } from 'lucide-react'
 import { PageHeader } from '@/components/ui/page-header'
 import { StatCard } from '@/components/ui/stat-card'
 import { DataTable, Column } from '@/components/ui/data-table'
 import { AdminModal } from '@/components/ui/modal'
 import { useApi, apiCall } from '@/lib/use-api'
-import { pageWrap, cardCls, btnPrimary, btnGhost, btnSmall, inputCls, labelCls } from '@/lib/ui-tokens'
+import { pageWrap, cardCls, btnPrimary, btnGhost, btnSmall, inputCls, labelCls, kvRow, kvLabel } from '@/lib/ui-tokens'
 import { STAT_COLORS } from '@/lib/constants'
 import { formatDate, formatDateTime } from '@/lib/format'
 
@@ -317,7 +317,7 @@ export default function AdminAssignmentsPage() {
 
         {/* Assignment info card */}
         <div className={cardCls}>
-          <h3 className="text-base font-semibold mb-4">📝 作业信息</h3>
+          <h3 className="text-base font-semibold mb-4 flex items-center gap-2"><ClipboardList className="w-4 h-4" /> 作业信息</h3>
           {(
             [
               ['作业标题', assignment.title],
@@ -328,19 +328,8 @@ export default function AdminAssignmentsPage() {
               ['创建时间', assignment.createdAt],
             ] as [string, string][]
           ).map(([k, v]) => (
-            <div
-              key={k}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                padding: '8px 12px',
-                background: 'var(--bg4)',
-                borderRadius: 6,
-                marginBottom: 6,
-                fontSize: 13,
-              }}
-            >
-              <span style={{ color: 'var(--text3)' }}>{k}</span>
+            <div key={k} className={kvRow}>
+              <span className={kvLabel}>{k}</span>
               <span>{v}</span>
             </div>
           ))}

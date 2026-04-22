@@ -7,7 +7,7 @@ import { AdminModal } from '@/components/ui/modal'
 import { RichTextEditor } from '@/components/admin/rich-text-editor'
 import { FileUploader } from '@/components/admin/file-uploader'
 import { useApi, apiCall } from '@/lib/use-api'
-import { pageWrap, btnPrimary, btnGhost, inputCls, labelCls, selectCls } from '@/lib/ui-tokens'
+import { pageWrap, btnPrimary, btnGhost, inputCls, labelCls, selectCls, paginationBtn, paginationBtnActive } from '@/lib/ui-tokens'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -312,7 +312,7 @@ export default function AdminContentPage() {
               {['封面', '标题', '栏目', '类型', '作者', '浏览量', '状态', '操作'].map((h) => (
                 <th
                   key={h}
-                  className="px-4 py-2.5 text-left text-xs font-medium text-[var(--text2)] border-b border-[var(--border)]"
+                  className="px-4 py-2.5 text-left text-xs font-semibold text-[var(--text3)] uppercase tracking-wide border-b border-[var(--border)]"
                 >
                   {h}
                 </th>
@@ -322,7 +322,7 @@ export default function AdminContentPage() {
           <tbody>
             {items.map((row) => (
               <tr key={row.id} className="border-b border-[var(--border)] transition-colors hover:bg-[var(--bg4)]">
-                <td className="px-4 py-3.5">
+                <td className="px-4 py-3">
                   {row.cover ? (
                     <img
                       src={row.cover}
@@ -338,7 +338,7 @@ export default function AdminContentPage() {
                 <td className="px-4 py-3.5 text-[var(--text2)]">{row.type === 'video' ? '视频' : '图文'}</td>
                 <td className="px-4 py-3.5 text-[var(--text2)]">{row.author || '-'}</td>
                 <td className="px-4 py-3.5 text-[var(--text2)]">{(row.views ?? 0).toLocaleString()}</td>
-                <td className="px-4 py-3.5">
+                <td className="px-4 py-3">
                   {row.status === 'published' && (
                     <span className="inline-block px-2.5 py-0.5 rounded-full text-[11.5px] font-medium text-[var(--green)] bg-[rgba(85,239,196,.1)]">已发布</span>
                   )}
@@ -349,7 +349,7 @@ export default function AdminContentPage() {
                     <span className="inline-block px-2.5 py-0.5 rounded-full text-[11.5px] font-medium text-[var(--text3)] bg-[var(--bg4)]">已归档</span>
                   )}
                 </td>
-                <td className="px-4 py-3.5">
+                <td className="px-4 py-3">
                   <div className="flex gap-1">
                     <button className="px-3 py-1 border-0 rounded-md bg-transparent text-[var(--accent)] text-xs font-medium cursor-pointer transition-colors hover:bg-[var(--bg4)]" onClick={() => openEditModal(row)}>编辑</button>
                     <button className={`px-3 py-1 border-0 rounded-md bg-transparent text-xs font-medium cursor-pointer transition-colors hover:bg-[var(--bg4)] ${row.status === 'published' ? 'text-[var(--text2)]' : 'text-[var(--green2)]'}`} onClick={() => toggleStatus(row.id)}>{row.status === 'published' ? '下架' : '发布'}</button>
@@ -367,18 +367,18 @@ export default function AdminContentPage() {
             第 {total === 0 ? 0 : (page - 1) * PER_PAGE + 1}–{Math.min(page * PER_PAGE, total)} 条/总共 {total} 条
           </span>
           <div className="flex items-center gap-[3px]">
-            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className={`w-7 h-7 border border-[var(--border)] rounded-md bg-[var(--bg3)] flex items-center justify-center text-[13px] ${page === 1 ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer text-[var(--text2)]'}`}>‹</button>
+            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className={`${paginationBtn} ${page === 1 ? 'opacity-40 cursor-not-allowed' : ''}`}>‹</button>
             {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
               const n = i + 1
               return (
-                <button key={n} onClick={() => setPage(n)} className={`w-7 h-7 rounded-md border text-[12.5px] cursor-pointer ${n === page ? 'border-[var(--accent)] bg-[var(--accent)] text-white font-semibold' : 'border-[var(--border)] bg-[var(--bg3)] text-[var(--text2)]'}`}>{n}</button>
+                <button key={n} onClick={() => setPage(n)} className={`${paginationBtn} ${n === page ? paginationBtnActive : ''}`}>{n}</button>
               )
             })}
             {totalPages > 5 && <span className="text-[var(--text3)] text-xs px-0.5">···</span>}
             {totalPages > 5 && (
-              <button onClick={() => setPage(totalPages)} className="w-7 h-7 border border-[var(--border)] rounded-md bg-[var(--bg3)] text-[var(--text2)] text-xs cursor-pointer">{totalPages}</button>
+              <button onClick={() => setPage(totalPages)} className={paginationBtn}>{totalPages}</button>
             )}
-            <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className={`w-7 h-7 border border-[var(--border)] rounded-md bg-[var(--bg3)] flex items-center justify-center text-[13px] ${page === totalPages ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer text-[var(--text2)]'}`}>›</button>
+            <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className={`${paginationBtn} ${page === totalPages ? 'opacity-40 cursor-not-allowed' : ''}`}>›</button>
             <span className="ml-2 text-[11.5px] text-[var(--text3)] bg-[var(--bg4)] px-2.5 py-[3px] rounded-md border border-[var(--border)]">8 条/页</span>
           </div>
         </div>
