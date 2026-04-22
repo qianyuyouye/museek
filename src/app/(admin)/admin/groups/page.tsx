@@ -9,6 +9,7 @@ import { DataTable, Column } from '@/components/ui/data-table'
 import { AdminModal } from '@/components/ui/modal'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, cardCls, btnPrimary, btnGhost, btnDanger, btnSuccess, btnSmall, inputCls, labelCls } from '@/lib/ui-tokens'
+import { STAT_COLORS } from '@/lib/constants'
 import { formatDateTime } from '@/lib/format'
 
 // ── Types ────────────────────────────────────────────────────────
@@ -392,7 +393,7 @@ export default function AdminGroupsPage() {
     <div className={pageWrap}>
       {/* Toast */}
       {toast && (
-        <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
+        <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-[var(--bg3)] border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
           {toast}
         </div>
       )}
@@ -413,21 +414,21 @@ export default function AdminGroupsPage() {
           icon={<Users size={18} />}
           label="总用户组"
           val={groups.length}
-          color="#6c5ce7"
-          iconBg="rgba(108,92,231,0.1)"
+          color={STAT_COLORS.purple}
+          iconBg="rgba(99,102,241,0.1)"
         />
         <StatCard
           icon={<CheckCircle2 size={18} />}
           label="活跃组"
           val={activeCount}
-          color="#16a34a"
+          color={STAT_COLORS.green}
           iconBg="rgba(22,163,74,0.1)"
         />
         <StatCard
           icon={<Pause size={18} />}
           label="暂停组"
           val={pausedCount}
-          color="#f59e0b"
+          color={STAT_COLORS.amber}
           iconBg="rgba(245,158,11,0.1)"
         />
       </div>

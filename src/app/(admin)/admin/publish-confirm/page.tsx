@@ -30,11 +30,11 @@ interface PublishTrack {
 // ── Helpers ──────────────────────────────────────────────────────
 
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: '待提交', color: 'var(--text2)', bg: '#f1f5f9' },
-  submitted: { label: '待确认上架', color: 'var(--orange)', bg: '#fef9ec' },
-  live: { label: '已上架', color: 'var(--green)', bg: '#e0f7fa' },
-  data_confirmed: { label: '数据已确认', color: 'var(--green2)', bg: '#f0fdf4' },
-  exception: { label: '异常', color: 'var(--red)', bg: '#fff0f0' },
+  pending: { label: '待提交', color: 'var(--text2)', bg: 'rgba(107,114,128,.06)' },
+  submitted: { label: '待确认上架', color: 'var(--orange)', bg: 'rgba(253,203,110,.08)' },
+  live: { label: '已上架', color: 'var(--green)', bg: 'rgba(85,239,196,.1)' },
+  data_confirmed: { label: '数据已确认', color: 'var(--green2)', bg: 'rgba(85,239,196,.08)' },
+  exception: { label: '异常', color: 'var(--red)', bg: 'rgba(255,107,107,.08)' },
 }
 
 function daysSince(dateStr: string | null): number | null {

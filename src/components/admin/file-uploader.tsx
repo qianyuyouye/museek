@@ -46,6 +46,11 @@ export function FileUploader({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileName: file.name, fileSize: file.size, type }),
       })
+      if (!tokenRes.ok) {
+        const errorText = await tokenRes.text()
+        setError(`获取上传凭证失败 (HTTP ${tokenRes.status}): ${errorText}`)
+        return
+      }
       const tokenJson = await tokenRes.json()
       if (tokenJson.code !== 200) {
         setError(tokenJson.message || '获取上传凭证失败')
@@ -61,7 +66,8 @@ export function FileUploader({
       })
 
       if (!putRes.ok) {
-        setError('文件上传失败')
+        const errorText = await putRes.text()
+        setError(`文件上传失败 (HTTP ${putRes.status}): ${errorText}`)
         return
       }
 

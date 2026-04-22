@@ -273,6 +273,7 @@ export default function CreatorUploadPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileName: file.name, fileSize: file.size, type }),
+        credentials: 'include',
       })
       const tokenJson = await tokenRes.json()
       if (tokenJson.code !== 200) {

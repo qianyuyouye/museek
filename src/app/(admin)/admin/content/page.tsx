@@ -7,7 +7,7 @@ import { AdminModal } from '@/components/ui/modal'
 import { RichTextEditor } from '@/components/admin/rich-text-editor'
 import { FileUploader } from '@/components/admin/file-uploader'
 import { useApi, apiCall } from '@/lib/use-api'
-import { pageWrap, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
+import { pageWrap, btnPrimary, btnGhost, inputCls, labelCls, selectCls } from '@/lib/ui-tokens'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -32,7 +32,6 @@ interface CmsItem {
 
 // ── Helpers ──────────────────────────────────────────────────────
 
-const selectCls = `${inputCls} appearance-none cursor-pointer`
 const CATEGORIES = ['音乐教程', '乐理知识', '创作技巧', 'AI音乐', '行业动态']
 const LEVELS = ['入门', '进阶', '高级']
 const PER_PAGE = 8
@@ -341,10 +340,10 @@ export default function AdminContentPage() {
                 <td className="px-4 py-3.5 text-[var(--text2)]">{(row.views ?? 0).toLocaleString()}</td>
                 <td className="px-4 py-3.5">
                   {row.status === 'published' && (
-                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[11.5px] font-medium text-[var(--green)] bg-[#e0f7ea]">已发布</span>
+                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[11.5px] font-medium text-[var(--green)] bg-[rgba(85,239,196,.1)]">已发布</span>
                   )}
                   {row.status === 'draft' && (
-                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[11.5px] font-medium text-[var(--orange)] bg-[#fef9ec]">草稿</span>
+                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[11.5px] font-medium text-[var(--orange)] bg-[rgba(253,203,110,.08)]">草稿</span>
                   )}
                   {row.status === 'archived' && (
                     <span className="inline-block px-2.5 py-0.5 rounded-full text-[11.5px] font-medium text-[var(--text3)] bg-[var(--bg4)]">已归档</span>
@@ -354,7 +353,7 @@ export default function AdminContentPage() {
                   <div className="flex gap-1">
                     <button className="px-3 py-1 border-0 rounded-md bg-transparent text-[var(--accent)] text-xs font-medium cursor-pointer transition-colors hover:bg-[var(--bg4)]" onClick={() => openEditModal(row)}>编辑</button>
                     <button className={`px-3 py-1 border-0 rounded-md bg-transparent text-xs font-medium cursor-pointer transition-colors hover:bg-[var(--bg4)] ${row.status === 'published' ? 'text-[var(--text2)]' : 'text-[var(--green2)]'}`} onClick={() => toggleStatus(row.id)}>{row.status === 'published' ? '下架' : '发布'}</button>
-                    <button className="px-3 py-1 border-0 rounded-md bg-transparent text-[var(--red)] text-xs font-medium cursor-pointer transition-colors hover:bg-[#fef2f2]" onClick={() => handleDelete(row.id)}>删除</button>
+                    <button className="px-3 py-1 border-0 rounded-md bg-transparent text-[var(--red)] text-xs font-medium cursor-pointer transition-colors hover:bg-[rgba(255,107,107,.06)]" onClick={() => handleDelete(row.id)}>删除</button>
                   </div>
                 </td>
               </tr>
@@ -368,18 +367,18 @@ export default function AdminContentPage() {
             第 {total === 0 ? 0 : (page - 1) * PER_PAGE + 1}–{Math.min(page * PER_PAGE, total)} 条/总共 {total} 条
           </span>
           <div className="flex items-center gap-[3px]">
-            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="w-7 h-7 border border-[var(--border)] rounded-md bg-white flex items-center justify-center text-[13px]" style={{ cursor: page === 1 ? 'default' : 'pointer', color: page === 1 ? 'var(--text3)' : 'var(--text2)' }}>‹</button>
+            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className={`w-7 h-7 border border-[var(--border)] rounded-md bg-[var(--bg3)] flex items-center justify-center text-[13px] ${page === 1 ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer text-[var(--text2)]'}`}>‹</button>
             {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
               const n = i + 1
               return (
-                <button key={n} onClick={() => setPage(n)} className="w-7 h-7 rounded-md text-[12.5px] cursor-pointer" style={{ border: '1px solid', borderColor: page === n ? 'var(--accent)' : 'var(--border)', background: page === n ? 'var(--accent)' : 'var(--bg3)', color: page === n ? '#fff' : 'var(--text2)', fontWeight: page === n ? 600 : 400 }}>{n}</button>
+                <button key={n} onClick={() => setPage(n)} className={`w-7 h-7 rounded-md border text-[12.5px] cursor-pointer ${n === page ? 'border-[var(--accent)] bg-[var(--accent)] text-white font-semibold' : 'border-[var(--border)] bg-[var(--bg3)] text-[var(--text2)]'}`}>{n}</button>
               )
             })}
             {totalPages > 5 && <span className="text-[var(--text3)] text-xs px-0.5">···</span>}
             {totalPages > 5 && (
-              <button onClick={() => setPage(totalPages)} className="w-7 h-7 border border-[var(--border)] rounded-md bg-white text-[var(--text2)] text-xs cursor-pointer">{totalPages}</button>
+              <button onClick={() => setPage(totalPages)} className="w-7 h-7 border border-[var(--border)] rounded-md bg-[var(--bg3)] text-[var(--text2)] text-xs cursor-pointer">{totalPages}</button>
             )}
-            <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="w-7 h-7 border border-[var(--border)] rounded-md bg-white flex items-center justify-center text-[13px]" style={{ cursor: page === totalPages ? 'default' : 'pointer', color: page === totalPages ? 'var(--text3)' : 'var(--text2)' }}>›</button>
+            <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className={`w-7 h-7 border border-[var(--border)] rounded-md bg-[var(--bg3)] flex items-center justify-center text-[13px] ${page === totalPages ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer text-[var(--text2)]'}`}>›</button>
             <span className="ml-2 text-[11.5px] text-[var(--text3)] bg-[var(--bg4)] px-2.5 py-[3px] rounded-md border border-[var(--border)]">8 条/页</span>
           </div>
         </div>

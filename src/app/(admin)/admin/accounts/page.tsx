@@ -9,7 +9,7 @@ import { AdminTab } from '@/components/ui/unified-tabs'
 import { DataTable, Column } from '@/components/ui/data-table'
 import { AdminModal } from '@/components/ui/modal'
 import { useApi, apiCall } from '@/lib/use-api'
-import { pageWrap, cardCls, btnPrimary, btnGhost, btnSmall, inputCls, labelCls } from '@/lib/ui-tokens'
+import { pageWrap, cardCls, btnPrimary, btnGhost, btnSmall, inputCls, labelCls, infoBoxPurple, infoBoxRed } from '@/lib/ui-tokens'
 
 // ── Button / input helpers ───────────────────────────────────────
 
@@ -465,14 +465,8 @@ export default function AdminAccountsPage() {
         {resetPwd && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div
-              style={{
-                padding: 12,
-                background: 'rgba(239,68,68,.08)',
-                borderRadius: 8,
-                fontSize: 12,
-                color: 'var(--red)',
-                lineHeight: 1.6,
-              }}
+              className="p-[10px] rounded-lg text-xs"
+              style={{ background: 'rgba(255,107,107,.08)', color: 'var(--red)', lineHeight: 1.6 }}
             >
               <AlertTriangle className="inline w-3.5 h-3.5 mr-1" />此密码仅显示一次，请立即复制并通过安全渠道发送给用户。关闭弹窗后无法再查看。
             </div>
@@ -557,16 +551,7 @@ function CreateReviewerForm({ groups, onSubmit }: { groups: UserGroup[]; onSubmi
         <label className={labelCls}>初始密码</label>
         <input className={inputCls} value={password} onChange={(e) => setPassword(e.target.value)} />
       </div>
-      <div
-        style={{
-          padding: 12,
-          background: 'rgba(108,92,231,.08)',
-          borderRadius: 8,
-          fontSize: 12,
-          color: 'var(--accent2)',
-          lineHeight: 1.6,
-        }}
-      >
+      <div className={infoBoxPurple} style={{ fontSize: 12, color: 'var(--accent2)', lineHeight: 1.6 }}>
         创建后评审用户即可使用手机号/邮箱 + 密码登录评审端。
       </div>
       <button
@@ -620,16 +605,7 @@ function CreateCreatorForm({ groups, onSubmit }: { groups: UserGroup[]; onSubmit
         <label className={labelCls}>初始密码</label>
         <input className={inputCls} value={password} onChange={(e) => setPassword(e.target.value)} />
       </div>
-      <div
-        style={{
-          padding: 12,
-          background: 'rgba(108,92,231,.08)',
-          borderRadius: 8,
-          fontSize: 12,
-          color: 'var(--accent2)',
-          lineHeight: 1.6,
-        }}
-      >
+      <div className={infoBoxPurple} style={{ fontSize: 12, color: 'var(--accent2)', lineHeight: 1.6 }}>
         创建后创作者即可使用手机号 + 密码登录创作者端，无需走短信注册。
       </div>
       <button

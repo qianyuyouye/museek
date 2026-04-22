@@ -16,6 +16,7 @@ import { AdminModal } from '@/components/ui/modal'
 import { useApi, apiCall } from '@/lib/use-api'
 import { downloadCSV, today } from '@/lib/export'
 import { pageWrap, cardCls, btnPrimary, btnGhost, btnDanger, btnSuccess, btnSmall, inputCls, labelCls } from '@/lib/ui-tokens'
+import { STAT_COLORS } from '@/lib/constants'
 import { formatDateTime } from '@/lib/format'
 
 // ── Types ───────────────────────────────────────────────────────
@@ -91,7 +92,7 @@ interface OtherImport {
 
 const SETTLE_STATUS: Record<string, { l: string; c: string }> = {
   pending: { l: '待确认', c: 'var(--orange)' },
-  confirmed: { l: '已确认', c: '#1a73e8' },
+  confirmed: { l: '已确认', c: 'var(--accent)' },
   exported: { l: '已导出', c: 'var(--text2)' },
   paid: { l: '已打款', c: 'var(--green2)' },
 }
@@ -336,11 +337,11 @@ function QishuiTab({
 
       {/* Stat cards */}
       <div className="grid grid-cols-5 gap-3">
-        <StatCard icon={<Download className="w-5 h-5" />} label="导入批次" val={imports.length} color="#6c5ce7" iconBg="rgba(108,92,231,0.1)" />
-        <StatCard icon={<Link className="w-5 h-5" />} label="映射表记录" val={mappings.length} color="#16a34a" iconBg="rgba(22,163,74,0.1)" />
-        <StatCard icon={<CheckCircle2 className="w-5 h-5" />} label="已确认" val={mappings.filter(m => m.status === 'confirmed').length} color="#0d9488" iconBg="rgba(13,148,136,0.1)" />
-        <StatCard icon={<AlertTriangle className="w-5 h-5" />} label="待确认" val={mappings.filter(m => m.status === 'pending').length} color="#f59e0b" iconBg="rgba(245,158,11,0.1)" />
-        <StatCard icon={<Wallet className="w-5 h-5" />} label="已确认收益" val={`¥${grandTotal.toFixed(2)}`} color="#ec4899" iconBg="rgba(236,72,153,0.1)" />
+        <StatCard icon={<Download className="w-5 h-5" />} label="导入批次" val={imports.length} color={STAT_COLORS.purple} iconBg="rgba(99,102,241,0.1)" />
+        <StatCard icon={<Link className="w-5 h-5" />} label="映射表记录" val={mappings.length} color={STAT_COLORS.green} iconBg="rgba(22,163,74,0.1)" />
+        <StatCard icon={<CheckCircle2 className="w-5 h-5" />} label="已确认" val={mappings.filter(m => m.status === 'confirmed').length} color={STAT_COLORS.teal} iconBg="rgba(13,148,136,0.1)" />
+        <StatCard icon={<AlertTriangle className="w-5 h-5" />} label="待确认" val={mappings.filter(m => m.status === 'pending').length} color={STAT_COLORS.amber} iconBg="rgba(245,158,11,0.1)" />
+        <StatCard icon={<Wallet className="w-5 h-5" />} label="已确认收益" val={`¥${grandTotal.toFixed(2)}`} color={STAT_COLORS.pink} iconBg="rgba(236,72,153,0.1)" />
       </div>
 
       {/* Import history */}
@@ -559,9 +560,9 @@ function MappingTab({
 
       {/* Stat cards */}
       <div className="grid grid-cols-3 gap-3">
-        <StatCard icon={<CheckCircle2 className="w-5 h-5" />} label="已确认映射" val={mappings.filter(m => m.status === 'confirmed').length} sub="导入时自动命中" color="#0d9488" iconBg="rgba(13,148,136,0.1)" />
-        <StatCard icon={<AlertTriangle className="w-5 h-5" />} label="待确认" val={mappings.filter(m => m.status === 'pending').length} sub="需人工审核" color="#f59e0b" iconBg="rgba(245,158,11,0.1)" />
-        <StatCard icon={<HelpCircle className="w-5 h-5" />} label="未绑定" val={mappings.filter(m => m.status === 'unbound').length} sub="暂无对应创作者" color="#94a3b8" iconBg="rgba(148,163,184,0.1)" />
+        <StatCard icon={<CheckCircle2 className="w-5 h-5" />} label="已确认映射" val={mappings.filter(m => m.status === 'confirmed').length} sub="导入时自动命中" color={STAT_COLORS.teal} iconBg="rgba(13,148,136,0.1)" />
+        <StatCard icon={<AlertTriangle className="w-5 h-5" />} label="待确认" val={mappings.filter(m => m.status === 'pending').length} sub="需人工审核" color={STAT_COLORS.amber} iconBg="rgba(245,158,11,0.1)" />
+        <StatCard icon={<HelpCircle className="w-5 h-5" />} label="未绑定" val={mappings.filter(m => m.status === 'unbound').length} sub="暂无对应创作者" color={STAT_COLORS.gray} iconBg="rgba(148,163,184,0.1)" />
       </div>
 
       {/* Quick filters */}
@@ -687,10 +688,10 @@ function StatsTab({
 
       {/* Stat cards */}
       <div className="grid grid-cols-4 gap-3">
-        <StatCard icon={<Wallet className="w-5 h-5" />} label="已确认总收益" val={`¥${grandTotal.toFixed(2)}`} color="#0d9488" iconBg="rgba(13,148,136,0.1)" />
-        <StatCard icon={<Smartphone className="w-5 h-5" />} label="抖音收入" val={`¥${grandDouyin.toFixed(2)}`} sub={`${grandTotal > 0 ? Math.round(grandDouyin / grandTotal * 100) : 0}%`} color="#6c5ce7" iconBg="rgba(108,92,231,0.1)" />
-        <StatCard icon={<Music className="w-5 h-5" />} label="汽水收入" val={`¥${grandQishui.toFixed(2)}`} sub={`${grandTotal > 0 ? Math.round(grandQishui / grandTotal * 100) : 0}%`} color="#ec4899" iconBg="rgba(236,72,153,0.1)" />
-        <StatCard icon={<Users className="w-5 h-5" />} label="有收益创作者" val={userStats.length} color="#f59e0b" iconBg="rgba(245,158,11,0.1)" />
+        <StatCard icon={<Wallet className="w-5 h-5" />} label="已确认总收益" val={`¥${grandTotal.toFixed(2)}`} color={STAT_COLORS.teal} iconBg="rgba(13,148,136,0.1)" />
+        <StatCard icon={<Smartphone className="w-5 h-5" />} label="抖音收入" val={`¥${grandDouyin.toFixed(2)}`} sub={`${grandTotal > 0 ? Math.round(grandDouyin / grandTotal * 100) : 0}%`} color={STAT_COLORS.purple} iconBg="rgba(99,102,241,0.1)" />
+        <StatCard icon={<Music className="w-5 h-5" />} label="汽水收入" val={`¥${grandQishui.toFixed(2)}`} sub={`${grandTotal > 0 ? Math.round(grandQishui / grandTotal * 100) : 0}%`} color={STAT_COLORS.pink} iconBg="rgba(236,72,153,0.1)" />
+        <StatCard icon={<Users className="w-5 h-5" />} label="有收益创作者" val={userStats.length} color={STAT_COLORS.amber} iconBg="rgba(245,158,11,0.1)" />
       </div>
 
       {/* Sub tabs */}
@@ -721,7 +722,7 @@ function StatsTab({
               <div key={p.period} style={{ flex: 1, textAlign: 'center' }}>
                 <div style={{ display: 'flex', gap: 2, justifyContent: 'center', alignItems: 'end', height: 100 }}>
                   <div style={{ width: 20, background: 'var(--accent)', borderRadius: '4px 4px 0 0', height: `${Math.max(p.douyin / maxPeriodTotal * 80, 4)}px` }} />
-                  <div style={{ width: 20, background: 'var(--pink, #ec4899)', borderRadius: '4px 4px 0 0', height: `${Math.max(p.qishui / maxPeriodTotal * 80, 4)}px` }} />
+                  <div style={{ width: 20, background: 'var(--pink)', borderRadius: '4px 4px 0 0', height: `${Math.max(p.qishui / maxPeriodTotal * 80, 4)}px` }} />
                 </div>
                 <div style={{ fontSize: 13, fontWeight: 700, marginTop: 6 }}>¥{p.total.toFixed(2)}</div>
                 <div style={{ fontSize: 11, color: 'var(--text3)' }}>{p.period}</div>
@@ -731,7 +732,7 @@ function StatsTab({
           {/* Legend */}
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', fontSize: 12, marginBottom: 16 }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: 'var(--accent)', display: 'inline-block' }} />抖音</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: 'var(--pink, #ec4899)', display: 'inline-block' }} />汽水</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 12, height: 12, borderRadius: 2, background: 'var(--pink)', display: 'inline-block' }} />汽水</span>
           </div>
           <DataTable columns={periodColumns} data={periodStats} rowKey={r => r.period} />
         </div>
@@ -775,11 +776,11 @@ function StatsTab({
                 void douyinEnd
                 return (
                   <>
-                    {douyinPct > 0 && <path d={arcPath(0, dEnd, r, innerR)} fill="#6366f1" />}
-                    {qishuiPct > 0 && <path d={arcPath(dEnd, qEnd, r, innerR)} fill="#ec4899" />}
+                    {douyinPct > 0 && <path d={arcPath(0, dEnd, r, innerR)} fill="var(--accent)" />}
+                    {qishuiPct > 0 && <path d={arcPath(dEnd, qEnd, r, innerR)} fill="var(--pink)" />}
                     {/* Center text */}
-                    <text x={cx} y={cy - 6} textAnchor="middle" fontSize="11" fill="#94a3b8">总收益</text>
-                    <text x={cx} y={cy + 14} textAnchor="middle" fontSize="16" fontWeight="700" fill="#1e293b">
+                    <text x={cx} y={cy - 6} textAnchor="middle" fontSize="11" fill="var(--text3)">总收益</text>
+                    <text x={cx} y={cy + 14} textAnchor="middle" fontSize="16" fontWeight="700" fill="var(--text)">
                       ¥{grandTotal.toFixed(2)}
                     </text>
                   </>
@@ -789,8 +790,8 @@ function StatsTab({
             {/* Legend */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {[
-                { name: '抖音', val: grandDouyin, color: '#6366f1' },
-                { name: '汽水', val: grandQishui, color: '#ec4899' },
+                { name: '抖音', val: grandDouyin, color: 'var(--accent)' },
+                { name: '汽水', val: grandQishui, color: 'var(--pink)' },
               ].map(item => {
                 const pct = grandTotal > 0 ? Math.round(item.val / grandTotal * 100) : 0
                 return (

@@ -8,6 +8,7 @@ import { DataTable, Column } from '@/components/ui/data-table'
 import { AdminModal } from '@/components/ui/modal'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, cardCls, btnPrimary, btnGhost, btnSmall, inputCls, labelCls } from '@/lib/ui-tokens'
+import { STAT_COLORS } from '@/lib/constants'
 import { formatDate, formatDateTime } from '@/lib/format'
 
 // ── Types ────────────────────────────────────────────────────────
@@ -226,23 +227,23 @@ export default function AdminAssignmentsPage() {
             icon={<Users className="w-5 h-5" />}
             label="总成员"
             val={totalMembers}
-            color="#6c5ce7"
-            iconBg="rgba(108,92,231,0.1)"
+            color={STAT_COLORS.purple}
+            iconBg="rgba(99,102,241,0.1)"
           />
           <StatCard
             icon="📤"
             label="已提交"
             val={submittedCount}
             sub={`${submittedPct}%`}
-            subc="#16a34a"
-            color="#16a34a"
+            subc={STAT_COLORS.green}
+            color={STAT_COLORS.green}
             iconBg="rgba(22,163,74,0.1)"
           />
           <StatCard
             icon={<Hourglass size={18} />}
             label="待评审"
             val={pendingReview}
-            color="#f59e0b"
+            color={STAT_COLORS.amber}
             iconBg="rgba(245,158,11,0.1)"
           />
         </div>
@@ -715,7 +716,7 @@ function FieldConfigPanel({
                   position: 'absolute',
                   inset: 0,
                   borderRadius: 10,
-                  background: field.required ? 'var(--accent)' : '#ccc',
+                  background: field.required ? 'var(--accent)' : 'var(--text3)',
                   transition: 'background 0.2s',
                 }}
               />
@@ -727,9 +728,9 @@ function FieldConfigPanel({
                   width: 16,
                   height: 16,
                   borderRadius: '50%',
-                  background: '#fff',
+                  background: 'var(--bg3)',
                   transition: 'left 0.2s',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                  boxShadow: 'var(--shadowBtn)',
                 }}
               />
             </label>

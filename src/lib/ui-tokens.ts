@@ -86,3 +86,52 @@ export const badgeBase = 'inline-flex items-center gap-1 px-2.5 py-[3px] text-xs
 export const skeletonBase = 'bg-[var(--bg4)] rounded animate-skeleton-pulse'
 export const skeletonText = 'h-4 bg-[var(--bg4)] rounded animate-skeleton-pulse'
 export const skeletonCard = 'h-24 bg-[var(--bg4)] rounded-xl animate-skeleton-pulse'
+
+// ─── 表单 select ──────────────────────
+/** select 下拉框（比 inputCls 多 appearance-none） */
+export const selectCls =
+  'px-3.5 py-2.5 bg-[var(--bg3)] border-[1.5px] border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] appearance-none cursor-pointer transition-colors'
+
+// ─── 状态占位 ──────────────────────────
+/** 加载中 / 无数据占位 */
+export const loadingState = 'py-10 text-center text-sm text-[var(--text3)]'
+/** 列表空状态 */
+export const emptyState = 'py-10 text-center text-sm text-[var(--text3)]'
+
+// ─── 信息提示框 ────────────────────────
+/** 紫色提示框（操作提示） */
+export const infoBoxPurple = 'p-[10px] rounded-lg text-xs bg-[rgba(108,92,231,.08)]'
+/** 红色警告框 */
+export const infoBoxRed = 'p-[10px] rounded-lg text-xs bg-[rgba(255,107,107,.08)] text-[var(--red)]'
+/** 橙色提示框（待审核等） */
+export const infoBoxOrange = 'p-[10px] rounded-lg text-xs bg-[rgba(253,203,110,.08)] text-[var(--orange)]'
+/** 灰色提示框（未操作等） */
+export const infoBoxGray = 'p-[10px] rounded-lg text-xs bg-[rgba(107,114,128,.08)] text-[var(--text3)]'
+/** 绿色提示框（成功/已认证） */
+export const infoBoxGreen = 'p-[10px] rounded-lg text-xs bg-[rgba(85,239,196,.12)] text-[var(--green2)]'
+
+// ─── Key-Value 行 ──────────────────────
+/** 详情页 Key-Value 行容器 */
+export const kvRow = 'flex justify-between items-center px-3 py-2 rounded-md bg-[var(--bg4)] text-sm'
+/** Key-Value 标签色 */
+export const kvLabel = 'text-[var(--text3)]'
+
+// ─── Tab 栏 ────────────────────────────
+/** Tab 栏容器 */
+export const tabBar = 'flex gap-8 border-b border-[var(--border)]'
+/** 激活态 Tab */
+export const tabActive = 'border-b-2 border-[var(--accent)] font-semibold text-[var(--text)]'
+/** 未激活 Tab */
+export const tabInactive = 'border-b-2 border-transparent text-[var(--text3)]'
+
+// ─── 筛选栏 / 分页 ─────────────────────
+/** 筛选栏容器 */
+export const filterRow = 'flex items-center gap-3 flex-wrap'
+/** 分页按钮 */
+export const paginationBtn = 'w-7 h-7 rounded border border-[var(--border)] bg-[var(--bg3)] flex items-center justify-center text-sm'
+/** 分页当前页 */
+export const paginationBtnActive = 'border-[var(--accent)] bg-[var(--accent)] text-white'
+
+// ─── 详情页布局 ────────────────────────
+/** 详情页双列布局 */
+export const detailGrid = 'grid grid-cols-2 gap-5'

@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/ui/page-header'
 import { SearchBar } from '@/components/ui/search-bar'
 import { DataTable, Column } from '@/components/ui/data-table'
 import { useApi } from '@/lib/use-api'
-import { pageWrap, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'
+import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls } from '@/lib/ui-tokens'
 import { formatDateTime } from '@/lib/format'
 
 interface LogItem {
@@ -18,13 +18,7 @@ interface LogItem {
   ip: string
 }
 
-const selectCls =
-  'px-3.5 py-2.5 bg-white border-[1.5px] border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] appearance-none cursor-pointer'
-
 const ACTION_TYPES = ['全部', '歌曲评审', '发行确认', '收益结算', '用户管理']
-
-const dateCls =
-  'px-3.5 py-2.5 bg-white border-[1.5px] border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer'
 
 export default function AdminLogsPage() {
   const [keyword, setKeyword] = useState('')
@@ -112,7 +106,7 @@ export default function AdminLogsPage() {
         <div className="flex items-center gap-2">
           <span className="text-sm text-[var(--text2)] whitespace-nowrap">操作类型</span>
           <select
-            className={selectCls}
+            className={inputCls}
             value={actionType}
             onChange={(e) => setActionType(e.target.value)}
           >
@@ -125,14 +119,14 @@ export default function AdminLogsPage() {
           <span className="text-sm text-[var(--text2)] whitespace-nowrap">日期范围</span>
           <input
             type="date"
-            className={dateCls}
+            className={inputCls}
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
           />
           <span className="text-[var(--text3)]">—</span>
           <input
             type="date"
-            className={dateCls}
+            className={inputCls}
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
           />

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import path from 'path'
-import { getCurrentUser, safeHandler, err } from '@/lib/api-utils'
+import { safeHandler, err } from '@/lib/api-utils'
 import { verifyLocalPutSig } from '@/lib/signature'
 import { checkMagicBytes } from '@/lib/magic-bytes'
 
@@ -14,8 +14,14 @@ export const PUT = safeHandler(async function PUT(
     return NextResponse.json({ code: 404, message: 'Not Found' }, { status: 404 })
   }
 
-  const { userId, portal } = getCurrentUser(request)
-  if (!userId) return err('未登录', 401)
+  // 此路由在 PUBLIC_PATHS 中，不走 middleware cookie 鉴权，
+  // 安全由 URL 中的 HMAC 签名保障（verifyLocalPutSig 会校验 userId/portal 匹配）。
+  const rawUid = request.nextUrl.searchParams.get('uid')
+  const rawPortal = request.nextUrl.searchParams.get('portal')
+  if (!rawUid || !rawPortal) return err('缺少签名参数', 403)
+  const userId = parseInt(rawUid, 10)
+  if (Number.isNaN(userId)) return err('非法签名', 403)
+  const portal = rawPortal as 'admin' | 'creator' | 'reviewer'
 
   const { path: segments } = await context.params
   const key = decodeURIComponent(segments.join('/'))

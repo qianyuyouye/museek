@@ -31,7 +31,7 @@ export function useApi<T>(url: string | null, deps: unknown[] = []): UseApiResul
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(url)
+      const res = await fetch(url, { credentials: 'include' })
       const json = await res.json()
       if (json.code === 200) {
         setData(json.data)
@@ -61,6 +61,7 @@ export async function apiCall<T = unknown>(
   try {
     const res = await fetch(url, {
       method,
+      credentials: 'include',
       headers: body ? { 'Content-Type': 'application/json' } : undefined,
       body: body ? JSON.stringify(body) : undefined,
     })

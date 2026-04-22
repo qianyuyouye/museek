@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { PageHeader } from '@/components/ui/page-header'
 import { useApi } from '@/lib/use-api'
 import { pageWrap } from '@/lib/ui-tokens'
+import { STAT_COLORS } from '@/lib/constants'
 import { Users, Music, ClipboardList, Rocket, Banknote } from 'lucide-react'
 
 interface DashboardData {
@@ -34,10 +35,10 @@ const FALLBACK_TREND_MONTHS = ['1月', '2月', '3月', '4月', '5月', '6月', '
 const FALLBACK_TREND_VALUES = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 const FALLBACK_RATES = [
-  { n: 1, label: '代理签约认证率', v: 0, c: '#6366f1' },
-  { n: 2, label: '签约企业认证率', v: 0, c: '#7c3aed' },
-  { n: 3, label: '内容创作活跃率', v: 0, c: '#818cf8' },
-  { n: 4, label: '实名认证完成率', v: 0, c: '#6366f1' },
+  { n: 1, label: '代理签约认证率', v: 0, c: 'var(--accent)' },
+  { n: 2, label: '签约企业认证率', v: 0, c: 'var(--accent2)' },
+  { n: 3, label: '内容创作活跃率', v: 0, c: 'var(--accent2)' },
+  { n: 4, label: '实名认证完成率', v: 0, c: 'var(--accent)' },
 ]
 
 // Smooth cubic bezier curve through points
@@ -120,12 +121,12 @@ export default function AdminDashboard() {
     const totalSongsSub = s ? `上传 ${s.songsFromUpload} · 作业 ${s.songsFromAssignment}` : ''
     const publishedSub = s ? `发行率 ${s.publishRate}%` : ''
     return [
-      { icon: 'users', label: '注册用户', val: s?.totalUsers ?? '-', sub: totalUsersSub, subc: '#16a34a', grad: 'linear-gradient(135deg, #6366f1, #818cf8)', pg: '/admin/students' },
-      { icon: 'music', label: '作品总数', val: s?.totalSongs ?? '-', sub: totalSongsSub, subc: '#16a34a', grad: 'linear-gradient(135deg, #ec4899, #f472b6)', pg: '/admin/songs' },
-      { icon: 'clipboard', label: '评审中', val: s?.pendingReview ?? '-', sub: '', subc: '#16a34a', grad: 'linear-gradient(135deg, #0694a2, #22d3ee)', pg: '/admin/songs' },
-      { icon: 'rocket', label: '已发行', val: s?.published ?? '-', sub: publishedSub, subc: '#16a34a', grad: 'linear-gradient(135deg, #3b82f6, #60a5fa)', pg: '/admin/songs' },
-      { icon: 'yen', label: '总收益', val: s ? `¥${s.totalRevenue.toLocaleString()}` : '-', sub: '', subc: '#16a34a', grad: 'linear-gradient(135deg, #f59e0b, #fbbf24)', pg: '/admin/revenue' },
-      { icon: 'group', label: '用户组', val: s?.groupCount ?? '-', sub: '', subc: '#16a34a', grad: 'linear-gradient(135deg, #14b8a6, #5eead4)', pg: '/admin/groups' },
+      { icon: 'users', label: '注册用户', val: s?.totalUsers ?? '-', sub: totalUsersSub, subc: STAT_COLORS.green, grad: 'linear-gradient(135deg, var(--accent), var(--accent2))', pg: '/admin/students' },
+      { icon: 'music', label: '作品总数', val: s?.totalSongs ?? '-', sub: totalSongsSub, subc: STAT_COLORS.green, grad: 'linear-gradient(135deg, var(--pink), #f472b6)', pg: '/admin/songs' },
+      { icon: 'clipboard', label: '评审中', val: s?.pendingReview ?? '-', sub: '', subc: STAT_COLORS.green, grad: 'linear-gradient(135deg, #0694a2, var(--green))', pg: '/admin/songs' },
+      { icon: 'rocket', label: '已发行', val: s?.published ?? '-', sub: publishedSub, subc: STAT_COLORS.green, grad: 'linear-gradient(135deg, #3b82f6, #60a5fa)', pg: '/admin/songs' },
+      { icon: 'yen', label: '总收益', val: s ? `¥${s.totalRevenue.toLocaleString()}` : '-', sub: '', subc: STAT_COLORS.green, grad: 'linear-gradient(135deg, var(--orange), #fbbf24)', pg: '/admin/revenue' },
+      { icon: 'group', label: '用户组', val: s?.groupCount ?? '-', sub: '', subc: STAT_COLORS.green, grad: 'linear-gradient(135deg, #14b8a6, #5eead4)', pg: '/admin/groups' },
     ]
   }, [data])
 
@@ -152,7 +153,7 @@ export default function AdminDashboard() {
         className="rounded-xl overflow-hidden relative"
         style={{
           minHeight: 100,
-          background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 40%, #4338ca 70%, #6366f1 100%)',
+          background: 'linear-gradient(135deg, var(--accent2) 0%, #4f46e5 40%, #4338ca 70%, var(--accent2) 100%)',
           boxShadow: '0 8px 32px rgba(99,102,241,.28)',
         }}
       >
@@ -244,7 +245,7 @@ export default function AdminDashboard() {
                   boxShadow: '0 4px 12px rgba(99,102,241,.2)',
                 }}
               >
-                <IconComp size={22} color="#fff" />
+                <IconComp size={22} color="white" />
               </div>
 
               {/* Text content */}
@@ -292,8 +293,8 @@ export default function AdminDashboard() {
           >
             <defs>
               <linearGradient id="dashAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#6366f1" stopOpacity=".22" />
-                <stop offset="100%" stopColor="#6366f1" stopOpacity=".02" />
+                <stop offset="0%" stopColor="var(--accent)" stopOpacity=".22" />
+                <stop offset="100%" stopColor="var(--accent)" stopOpacity=".02" />
               </linearGradient>
             </defs>
 
@@ -327,7 +328,7 @@ export default function AdminDashboard() {
             <path
               d={linePath}
               fill="none"
-              stroke="#6366f1"
+              stroke="var(--accent)"
               strokeWidth="2.5"
               strokeLinejoin="round"
               strokeLinecap="round"
@@ -346,8 +347,8 @@ export default function AdminDashboard() {
                   cx={p.x}
                   cy={p.y}
                   r={hov === i ? 5 : 2.5}
-                  fill={hov === i ? '#818cf8' : 'var(--text)'}
-                  stroke="#6366f1"
+                  fill={hov === i ? 'var(--accent)' : 'var(--text)'}
+                  stroke="var(--accent)"
                   strokeWidth="2.5"
                 />
               </g>
@@ -367,7 +368,7 @@ export default function AdminDashboard() {
                   strokeWidth="1"
                   filter="drop-shadow(0 2px 6px rgba(0,0,0,.08))"
                 />
-                <text x={tx} y={hovPt.y - 32} textAnchor="middle" fontSize="10" fill="#94a3b8">
+                <text x={tx} y={hovPt.y - 32} textAnchor="middle" fontSize="10" fill="var(--text3)">
                   {trendMonths[hov]}
                 </text>
                 <text
@@ -376,7 +377,7 @@ export default function AdminDashboard() {
                   textAnchor="middle"
                   fontSize="13"
                   fontWeight="700"
-                  fill="#6366f1"
+                  fill="var(--accent)"
                 >
                   {'¥' + trendValues[hov].toLocaleString()}
                 </text>

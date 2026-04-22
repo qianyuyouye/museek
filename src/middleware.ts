@@ -30,6 +30,8 @@ const PUBLIC_PATHS = [
   '/api/content',
   '/api/songs/published',
   '/api/files',
+  // 本地存储签名上传（URL 自身带 HMAC 签名鉴权，无需再走 Cookie 鉴权）
+  '/api/upload/local/',
 ]
 
 function getLoginPath(pathname: string): string {

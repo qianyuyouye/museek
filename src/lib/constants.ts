@@ -77,3 +77,14 @@ export const SONG_STATUS_MAP: Record<string, { label: string; color: string; bg:
   ready_to_publish: { label: '待发行', color: '#0694a2', bg: '#e0f7fa' },
   published: { label: '已发行', color: '#16a34a', bg: '#f0fdf4' },
 }
+
+// ── StatCard Semantic Colors ────────────────────────────────────
+/** StatCard 颜色：全部走 CSS 变量，禁止页面硬编码 hex */
+export const STAT_COLORS = {
+  purple: 'var(--accent2)',
+  green: 'var(--green2)',
+  amber: 'var(--orange)',
+  teal: 'var(--green)',
+  pink: 'var(--pink)',
+  gray: 'var(--text3)',
+} as const

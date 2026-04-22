@@ -173,7 +173,7 @@ export default function AdminIsrcPage() {
           第 {(currentPage - 1) * PAGE_SIZE + 1}~{Math.min(currentPage * PAGE_SIZE, pendingSongs.length)} 条/总共 {pendingSongs.length} 条
         </span>
         <button
-          className="w-8 h-8 flex items-center justify-center rounded border border-[var(--border)] bg-white cursor-pointer text-[var(--text3)] disabled:opacity-40"
+          className="w-8 h-8 flex items-center justify-center rounded border border-[var(--border)] bg-[var(--bg3)] cursor-pointer text-[var(--text3)] disabled:opacity-40"
           disabled={currentPage === 1}
           onClick={() => setCurrentPage((p) => p - 1)}
         >
@@ -186,7 +186,7 @@ export default function AdminIsrcPage() {
               className={`w-8 h-8 flex items-center justify-center rounded border text-sm cursor-pointer ${
                 p === currentPage
                   ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
-                  : 'bg-white border-[var(--border)] text-[var(--text2)]'
+                  : 'bg-[var(--bg3)] border-[var(--border)] text-[var(--text2)]'
               }`}
               onClick={() => setCurrentPage(p)}
             >
@@ -199,7 +199,7 @@ export default function AdminIsrcPage() {
           )
         )}
         <button
-          className="w-8 h-8 flex items-center justify-center rounded border border-[var(--border)] bg-white cursor-pointer text-[var(--text3)] disabled:opacity-40"
+          className="w-8 h-8 flex items-center justify-center rounded border border-[var(--border)] bg-[var(--bg3)] cursor-pointer text-[var(--text3)] disabled:opacity-40"
           disabled={currentPage === totalPages}
           onClick={() => setCurrentPage((p) => p + 1)}
         >
@@ -344,7 +344,7 @@ export default function AdminIsrcPage() {
             onClick={() => !importing && backfillInputRef.current?.click()}
             className="text-center rounded-xl py-10 px-5 transition-all"
             style={{
-              border: `2px dashed ${dragOver ? 'var(--accent)' : '#e0e4ed'}`,
+              border: `2px dashed ${dragOver ? 'var(--accent)' : 'var(--border)'}`,
               background: dragOver ? 'rgba(99,102,241,0.04)' : 'var(--bg4)',
               cursor: importing ? 'wait' : 'pointer',
               opacity: importing ? 0.6 : 1,

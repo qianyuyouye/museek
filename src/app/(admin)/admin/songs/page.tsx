@@ -555,7 +555,7 @@ function EditModal({ song, onClose, onSuccess, showToast }: {
                 <div key={key}>
                   <label className="block text-xs font-medium text-[var(--text2)] mb-1">{label}</label>
                   <textarea
-                    className={`w-full px-3 py-2 bg-white border border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] ${key === 'lyrics' ? 'min-h-[120px]' : 'min-h-[80px]'}`}
+                    className={`w-full px-3 py-2 bg-[var(--bg3)] border border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] ${key === 'lyrics' ? 'min-h-[120px]' : 'min-h-[80px]'}`}
                     value={form[key]}
                     onChange={(e) => upd(key, e.target.value)}
                   />
@@ -566,7 +566,7 @@ function EditModal({ song, onClose, onSuccess, showToast }: {
               <div key={key}>
                 <label className="block text-xs font-medium text-[var(--text2)] mb-1">{label}</label>
                 <input
-                  className="w-full px-3 py-2 bg-white border border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                  className="w-full px-3 py-2 bg-[var(--bg3)] border border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
                   value={form[key]}
                   onChange={(e) => upd(key, e.target.value)}
                   placeholder={key === 'bpm' ? '数字' : key === 'aiTools' ? '逗号分隔' : ''}

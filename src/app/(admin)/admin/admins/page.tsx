@@ -43,7 +43,7 @@ function ToggleSwitch({ on, onClick }: { on: boolean; onClick: () => void }) {
         width: 44,
         height: 24,
         borderRadius: 12,
-        background: on ? 'var(--accent2)' : '#ccc',
+        background: on ? 'var(--accent2)' : 'var(--text3)',
         cursor: 'pointer',
         position: 'relative',
         transition: 'background .2s',
@@ -55,13 +55,13 @@ function ToggleSwitch({ on, onClick }: { on: boolean; onClick: () => void }) {
         style={{
           width: 18,
           height: 18,
-          background: '#fff',
+          background: 'var(--bg3)',
           borderRadius: '50%',
           position: 'absolute',
           top: 3,
           left: on ? 23 : 3,
           transition: 'left .2s',
-          boxShadow: '0 1px 3px rgba(0,0,0,.2)',
+          boxShadow: 'var(--shadowBtn)',
         }}
       />
     </div>
@@ -566,7 +566,7 @@ export default function AdminAdminsPage() {
     <div className={pageWrap}>
       {/* Toast */}
       {toast && (
-        <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
+        <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-[var(--bg3)] border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
           {toast}
         </div>
       )}

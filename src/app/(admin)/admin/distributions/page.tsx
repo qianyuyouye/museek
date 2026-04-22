@@ -5,7 +5,7 @@ import { CheckCircle2, Hourglass, Clipboard } from 'lucide-react'
 import { PageHeader } from '@/components/ui/page-header'
 import { AdminModal } from '@/components/ui/modal'
 import { useApi, apiCall } from '@/lib/use-api'
-import { pageWrap, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
+import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
 
 interface DistributionItem {
   songId: number
@@ -23,14 +23,12 @@ const STATUS_CONFIG: Record<
   string,
   { label: string; color: string; bg: string; icon: React.ReactNode }
 > = {
-  live: { label: '已上架', color: 'var(--green2)', bg: '#f0fdf4', icon: <CheckCircle2 className="w-3.5 h-3.5 inline" /> },
-  submitted: { label: '已提交', color: 'var(--orange)', bg: '#fef9ec', icon: <Hourglass className="w-3.5 h-3.5 inline" /> },
-  pending: { label: '待提交', color: '#3b82f6', bg: '#eff6ff', icon: <Clipboard className="w-3.5 h-3.5 inline" /> },
+  live: { label: '已上架', color: 'var(--green2)', bg: 'rgba(85,239,196,.1)', icon: <CheckCircle2 className="w-3.5 h-3.5 inline" /> },
+  submitted: { label: '已提交', color: 'var(--orange)', bg: 'rgba(253,203,110,.08)', icon: <Hourglass className="w-3.5 h-3.5 inline" /> },
+  pending: { label: '待提交', color: 'var(--accent)', bg: 'rgba(99,102,241,.08)', icon: <Clipboard className="w-3.5 h-3.5 inline" /> },
   none: { label: '未安排', color: 'var(--text3)', bg: 'transparent', icon: '—' },
 }
 
-const cardCls =
-  'bg-white border border-[var(--border)] rounded-xl shadow-[0_1px_4px_rgba(99,102,241,0.06)]'
 
 interface EditingCell {
   songId: number

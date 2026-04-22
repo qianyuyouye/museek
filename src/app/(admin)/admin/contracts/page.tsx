@@ -171,9 +171,9 @@ export default function AdminContractsPage() {
     return (
       <div className="flex items-center justify-end gap-1 mt-4 text-sm text-[var(--text2)]">
         <span className="mr-2">第 {startItem}-{endItem} 条/总共 {totalItems} 条</span>
-        <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="w-7 h-7 rounded border border-[var(--border)] bg-white flex items-center justify-center text-sm" style={{ cursor: page === 1 ? 'not-allowed' : 'pointer', color: page === 1 ? '#ccc' : 'var(--text2)' }}>&lt;</button>
-        {pages.map((p, i) => p === '...' ? (<span key={`dots-${i}`} className="px-1">···</span>) : (<button key={p} onClick={() => setPage(p)} className="w-7 h-7 rounded flex items-center justify-center text-sm cursor-pointer" style={{ border: p === page ? '1px solid var(--accent)' : '1px solid var(--border)', background: p === page ? 'var(--accent)' : 'white', color: p === page ? 'white' : 'var(--text2)', fontWeight: p === page ? 600 : 400 }}>{p}</button>))}
-        <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="w-7 h-7 rounded border border-[var(--border)] bg-white flex items-center justify-center text-sm" style={{ cursor: page === totalPages ? 'not-allowed' : 'pointer', color: page === totalPages ? '#ccc' : 'var(--text2)' }}>&gt;</button>
+        <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className={`w-7 h-7 rounded border border-[var(--border)] bg-[var(--bg3)] flex items-center justify-center text-sm ${page === 1 ? 'opacity-40 cursor-not-allowed' : ''}`}>&lt;</button>
+        {pages.map((p, i) => p === '...' ? (<span key={`dots-${i}`} className="px-1">···</span>) : (<button key={p} onClick={() => setPage(p)} className={`w-7 h-7 rounded border flex items-center justify-center text-sm cursor-pointer ${p === page ? 'border-[var(--accent)] bg-[var(--accent)] text-white font-semibold' : 'border-[var(--border)] bg-[var(--bg3)] text-[var(--text2)]'}`}>{p}</button>))}
+        <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className={`w-7 h-7 rounded border border-[var(--border)] bg-[var(--bg3)] flex items-center justify-center text-sm ${page === totalPages ? 'opacity-40 cursor-not-allowed' : ''}`}>&gt;</button>
         <span className="ml-2 text-sm">{PAGE_SIZE} 条/页</span>
       </div>
     )
@@ -227,11 +227,11 @@ export default function AdminContractsPage() {
             style={{
               borderBottom: activeTab === tab.key ? '2px solid var(--accent)' : '2px solid transparent',
               fontWeight: activeTab === tab.key ? 600 : 400,
-              color: activeTab === tab.key ? 'var(--text)' : '#8c95a6',
+              color: activeTab === tab.key ? 'var(--text)' : 'var(--text3)',
             }}
           >
             {tab.label}
-            <span className="text-sm" style={{ color: activeTab === tab.key ? 'var(--accent)' : '#8c95a6' }}>
+            <span className="text-sm" style={{ color: activeTab === tab.key ? 'var(--accent)' : 'var(--text3)' }}>
               {tabCounts[tab.key]}
             </span>
           </button>
@@ -240,7 +240,7 @@ export default function AdminContractsPage() {
 
       {/* Editor Tabs */}
       {isEditorTab && (
-        <div className="bg-white rounded-b-xl border border-[var(--border)] border-t-0 p-5">
+        <div className="bg-[var(--bg3)] rounded-b-xl border border-[var(--border)] border-t-0 p-5">
           {/* Version info */}
           <div className="flex items-center gap-4 mb-4 text-sm">
             <span className="text-[var(--text3)]">当前版本：</span>
@@ -266,7 +266,7 @@ export default function AdminContractsPage() {
 
       {/* Records Tab */}
       {activeTab === 'records' && (
-        <div className="bg-white rounded-b-xl border border-[var(--border)] border-t-0">
+        <div className="bg-[var(--bg3)] rounded-b-xl border border-[var(--border)] border-t-0">
           <DataTable
             columns={columns}
             data={agencyStudents.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}

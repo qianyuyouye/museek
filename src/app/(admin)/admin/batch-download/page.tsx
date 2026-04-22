@@ -5,7 +5,7 @@ import { Rocket, CheckCircle2, X, XCircle, AlertTriangle, Star, BarChart3, Packa
 import { PageHeader } from '@/components/ui/page-header'
 import { useApi, apiCall } from '@/lib/use-api'
 import { SONG_STATUS_MAP } from '@/lib/constants'
-import { pageWrap, cardCls, btnPrimary, btnGhost, btnSmall } from '@/lib/ui-tokens'
+import { pageWrap, cardCls, btnPrimary, btnGhost, btnSmall, inputCls } from '@/lib/ui-tokens'
 
 interface SongItem {
   id: number
@@ -55,10 +55,6 @@ function hasAnyIssue(v: ValidationIssue) {
 
 // ── Button / style helpers ──────────────────────────────────────
 
-const selectCls =
-  'px-3 py-2 bg-white border-[1.5px] border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer'
-const inputCls =
-  'px-3 py-2 bg-white border-[1.5px] border-[var(--border)] rounded-lg text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]'
 
 // ── Status filter mapping ───────────────────────────────────────
 const STATUS_FILTERS = [
@@ -239,7 +235,7 @@ export default function BatchDownloadPage() {
     <div className={pageWrap}>
       {/* Toast */}
       {toast && (
-        <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-white border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
+        <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-[var(--bg3)] border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
           {toast}
         </div>
       )}
@@ -263,7 +259,7 @@ export default function BatchDownloadPage() {
                 className={`px-3 py-1.5 text-xs rounded-lg border transition-all ${
                   active
                     ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
-                    : 'bg-white text-[var(--text2)] border-[var(--border)] hover:bg-[var(--bg2)]'
+                    : 'bg-[var(--bg3)] text-[var(--text2)] border-[var(--border)] hover:bg-[var(--bg2)]'
                 }`}
               >
                 {f.label}
@@ -274,7 +270,7 @@ export default function BatchDownloadPage() {
         <div className="flex flex-wrap items-center gap-3">
           {/* 风格 */}
           <select
-            className={selectCls}
+            className={inputCls}
             value={genreFilter}
             onChange={(e) => setGenreFilter(e.target.value)}
           >
@@ -286,7 +282,7 @@ export default function BatchDownloadPage() {
 
           {/* AI 工具 */}
           <select
-            className={selectCls}
+            className={inputCls}
             value={aiToolFilter}
             onChange={(e) => setAiToolFilter(e.target.value)}
           >
@@ -298,7 +294,7 @@ export default function BatchDownloadPage() {
 
           {/* 评分区间 */}
           <select
-            className={selectCls}
+            className={inputCls}
             value={scoreFilter}
             onChange={(e) => setScoreFilter(e.target.value)}
           >
@@ -500,7 +496,7 @@ function ValidationPreviewModal({
               <h3 className="text-xs font-semibold text-[var(--red)] mb-2">不合规列表</h3>
               <div className="space-y-2">
                 {failed.map((v) => (
-                  <div key={v.song.id} className="p-2.5 rounded-lg bg-[#fef2f2] border border-[#fecaca]">
+                  <div key={v.song.id} className="p-2.5 rounded-lg bg-[rgba(255,107,107,.06)] border border-[rgba(255,107,107,.2)]">
                     <div className="text-sm font-medium text-[var(--text)]">
                       [{v.song.copyrightCode}] {v.song.title}
                     </div>
@@ -560,7 +556,7 @@ function SongRow({
   onDownload: () => void
 }) {
   const creator = song.creatorName ?? `用户${song.userId}`
-  const statusInfo = SONG_STATUS_MAP[song.status] ?? { label: song.status, color: 'var(--text2)', bg: '#f1f5f9' }
+  const statusInfo = SONG_STATUS_MAP[song.status] ?? { label: song.status, color: 'var(--text2)', bg: 'rgba(107,114,128,.06)' }
 
   const scoreEl = (() => {
     if (song.score === null) return <span className="text-[var(--text3)]">-</span>
