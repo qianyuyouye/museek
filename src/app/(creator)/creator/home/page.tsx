@@ -128,19 +128,20 @@ export default function CreatorHome() {
         ) : (
           <div className="grid grid-cols-3 gap-4">
             {hotCourses.map((course) => {
-              const isImage = course.cover?.startsWith('/api/files/')
-              const IconComp = !isImage ? (COVER_ICONS[course.cover ?? ''] || Music) : null
+              const cover = course.cover
+              const isImage = cover?.startsWith('/api/files/')
+              const IconComp = !isImage ? (COVER_ICONS[cover ?? ''] || Music) : null
               return (
                 <Link key={course.id} href="/creator/courses" className="no-underline">
                   <div className="rounded-lg bg-[var(--bg3)] border border-[var(--border)] overflow-hidden cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5">
                     <div className="h-28 overflow-hidden"
-                      style={!isImage ? { background: COVER_GRADIENTS[course.cover ?? ''] || DEFAULT_GRADIENT } : undefined}
+                      style={!isImage ? { background: COVER_GRADIENTS[cover ?? ''] || DEFAULT_GRADIENT } : undefined}
                     >
-                      {isImage ? (
-                        <img src={course.cover} alt="" className="w-full h-full object-cover" />
+                      {isImage && cover ? (
+                        <img src={cover} alt="" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <IconComp size={40} className="text-white/40 drop-shadow-md" />
+                          {IconComp && <IconComp size={40} className="text-white/40 drop-shadow-md" />}
                         </div>
                       )}
                     </div>
