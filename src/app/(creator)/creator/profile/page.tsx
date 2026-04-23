@@ -158,6 +158,8 @@ export default function CreatorProfile() {
   // Edit form
   const [editName, setEditName] = useState('')
   const [editEmail, setEditEmail] = useState('')
+  const [emailCode, setEmailCode] = useState('')
+  const [emailCodeCooldown, setEmailCodeCooldown] = useState(0)
 
   // Password form
   const [curPwd, setCurPwd] = useState('')
@@ -199,6 +201,22 @@ export default function CreatorProfile() {
     const t = setTimeout(() => setNewCodeCooldown((x) => x - 1), 1000)
     return () => clearTimeout(t)
   }, [newCodeCooldown])
+  useEffect(() => {
+    if (emailCodeCooldown <= 0) return
+    const t = setTimeout(() => setEmailCodeCooldown((x) => x - 1), 1000)
+    return () => clearTimeout(t)
+  }, [emailCodeCooldown])
+
+  async function sendEmailCode() {
+    if (!user?.phone) return
+    const res = await apiCall('/api/auth/sms/send', 'POST', { phone: user.phone, purpose: 'change_phone' })
+    if (res.ok) {
+      showToast('验证码已发送至当前手机')
+      setEmailCodeCooldown(60)
+    } else {
+      showToast(res.message || '发送失败')
+    }
+  }
 
   async function sendOldCode() {
     if (!user?.phone) return
@@ -459,7 +477,7 @@ export default function CreatorProfile() {
       {/* ═══ Modals ═══ */}
 
       {/* Edit Info Modal */}
-      <Modal title="编辑个人信息" open={editModal} onClose={() => setEditModal(false)}>
+      <Modal title="编辑个人信息" open={editModal} onClose={() => { setEditModal(false); setEmailCode('') }}>
         <div className="flex flex-col gap-4">
           <div>
             <label className={labelCls}>昵称</label>
@@ -470,31 +488,41 @@ export default function CreatorProfile() {
             />
           </div>
           <div>
-            <label className={labelCls}>邮箱</label>
+            <label className={labelCls}>
+              邮箱 <span className="text-[var(--text3)]">（修改需验证码）</span>
+            </label>
             <input
               className={inputCls}
               value={editEmail}
               onChange={(e) => setEditEmail(e.target.value)}
+              placeholder="请输入新邮箱"
             />
           </div>
           <div>
-            <label className={labelCls}>
-              手机号{' '}
-              <span className="text-[var(--text3)]">（修改需验证码）</span>
-            </label>
-            <input
-              className={`${inputCls} !bg-[var(--bg4)] cursor-not-allowed`}
-              value={user.phone}
-              disabled
-            />
+            <label className={labelCls}>手机验证码</label>
+            <div className="flex gap-2">
+              <input
+                className={inputCls}
+                value={emailCode}
+                onChange={(e) => setEmailCode(e.target.value)}
+                placeholder="6位数字"
+                maxLength={6}
+              />
+              <button className={`${btnGhost} whitespace-nowrap`} disabled={emailCodeCooldown > 0} onClick={sendEmailCode}>
+                {emailCodeCooldown > 0 ? `${emailCodeCooldown}s` : '发送验证码'}
+              </button>
+            </div>
           </div>
           <button
             className={btnPrimary}
             onClick={async () => {
-              const res = await apiCall('/api/profile', 'PUT', { name: editName, email: editEmail })
+              if (!editEmail.trim()) { showToast('请输入邮箱'); return }
+              if (!emailCode.trim()) { showToast('请输入验证码'); return }
+              const res = await apiCall('/api/profile/email', 'PUT', { email: editEmail.trim(), code: emailCode.trim() })
               setEditModal(false)
+              setEmailCode('')
               if (res.ok) {
-                showToast('个人信息已更新')
+                showToast('邮箱已更新')
                 refetch()
               } else {
                 showToast(res.message || '更新失败')
