@@ -82,6 +82,17 @@ export function LoginForm({ portal }: { portal: string }) {
   const [agreePrivacy, setAgreePrivacy] = useState(false)
   const [agreeMusic, setAgreeMusic] = useState(false)
 
+  // 从 /join/:code 链接跳转过来的邀请码自动填充
+  useEffect(() => {
+    if (portal === 'creator') {
+      const stored = localStorage.getItem('inviteCode')
+      if (stored) {
+        setInviteCode(stored)
+        setMode('register')
+      }
+    }
+  }, [portal])
+
   const isCreator = portal === 'creator'
   const isRegister = isCreator && mode === 'register'
 
