@@ -21,7 +21,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     return NextResponse.json({ code: 429, message: '请求过于频繁，请稍后再试' }, { status: 429 })
   }
 
-  const { phone, code, password, inviteCode } = await request.json()
+  const { phone, code, password, inviteCode, agreeMusic } = await request.json()
 
   if (!phone || !code) {
     return NextResponse.json({ code: 400, message: '手机号和验证码不能为空' }, { status: 400 })
@@ -71,6 +71,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
         passwordHash: await hashPassword(password),
         type: 'creator',
         realNameStatus: 'unverified',
+        ...(agreeMusic ? { agencyContract: true, agencySignedAt: new Date() } : {}),
       },
     })
 

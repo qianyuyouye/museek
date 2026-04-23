@@ -222,6 +222,7 @@ export function LoginForm({ portal }: { portal: string }) {
           code: smsCode.trim(),
           password: password.trim(),
           inviteCode: inviteCode.trim() || undefined,
+          agreeMusic: agreeMusic || undefined,
         }),
       })
       const data = await res.json()
