@@ -27,6 +27,7 @@ const TABS = [
   { key: 'sms', label: '短信配置' },
   { key: 'notifications', label: '通知模板' },
   { key: 'invite', label: '邀请配置' },
+  { key: 'agreements', label: '协议管理' },
 ]
 
 // ── Settings types ──────────────────────────────────────────────
@@ -49,6 +50,9 @@ interface SettingsData {
   smsConfig: any | null
   notificationTemplates: Record<string, any> | null
   inviteLinkDomain: string | null
+  serviceAgreement: { content: string; version: string }
+  privacyPolicy: { content: string; version: string }
+  agencyTerms: { termYears: number; scope: string; exclusive: boolean }
 }
 
 function parseSettingsData(raw: SettingsApiItem[] | null): SettingsData | null {
@@ -95,6 +99,9 @@ function parseSettingsData(raw: SettingsApiItem[] | null): SettingsData | null {
   const smsConfig = (map.get('sms_config') as any) ?? null
   const notificationTemplates = (map.get('notification_templates') as Record<string, any>) ?? null
   const inviteLinkDomain = (map.get('invite_link_domain') as string | undefined) ?? null
+  const serviceAgreement = (map.get('service_agreement') as { content: string; version: string }) ?? { content: '', version: '1.0' }
+  const privacyPolicy = (map.get('privacy_policy') as { content: string; version: string }) ?? { content: '', version: '1.0' }
+  const agencyTerms = (map.get('agency_terms') as { termYears: number; scope: string; exclusive: boolean }) ?? { termYears: 3, scope: '全平台', exclusive: true }
 
   return {
     weights,
@@ -109,6 +116,9 @@ function parseSettingsData(raw: SettingsApiItem[] | null): SettingsData | null {
     smsConfig,
     notificationTemplates,
     inviteLinkDomain,
+    serviceAgreement,
+    privacyPolicy,
+    agencyTerms,
   }
 }
 
@@ -222,6 +232,15 @@ export default function AdminSettingsPage() {
           <SettingsInviteDomainTab
             initial={data?.inviteLinkDomain ?? null}
             onSave={(domain) => handleSave({ inviteLinkDomain: domain })}
+            showToast={(msg) => showToast(msg)}
+          />
+        )}
+        {tab === 'agreements' && (
+          <SettingsAgreementsTab
+            initialService={data?.serviceAgreement ?? null}
+            initialPrivacy={data?.privacyPolicy ?? null}
+            initialAgency={data?.agencyTerms ?? null}
+            onSave={handleSave}
             showToast={(msg) => showToast(msg)}
           />
         )}
@@ -1109,6 +1128,136 @@ function SettingsInviteDomainTab({
           }}
         >
           保存配置
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── 协议管理 ──────────────────────────────────────────────────
+
+function SettingsAgreementsTab({
+  initialService,
+  initialPrivacy,
+  initialAgency,
+  onSave,
+  showToast,
+}: {
+  initialService: { content: string; version: string } | null
+  initialPrivacy: { content: string; version: string } | null
+  initialAgency: { termYears: number; scope: string; exclusive: boolean } | null
+  onSave: (data: Partial<SettingsData>) => void
+  showToast: (msg: string) => void
+}) {
+  const [serviceContent, setServiceContent] = useState(initialService?.content ?? '')
+  const [privacyContent, setPrivacyContent] = useState(initialPrivacy?.content ?? '')
+  const [agencyYears, setAgencyYears] = useState(initialAgency?.termYears ?? 3)
+  const [agencyScope, setAgencyScope] = useState(initialAgency?.scope ?? '全平台')
+  const [agencyExclusive, setAgencyExclusive] = useState(initialAgency?.exclusive ?? true)
+
+  useEffect(() => {
+    if (initialService) setServiceContent(initialService.content)
+    if (initialPrivacy) setPrivacyContent(initialPrivacy.content)
+    if (initialAgency) {
+      setAgencyYears(initialAgency.termYears)
+      setAgencyScope(initialAgency.scope)
+      setAgencyExclusive(initialAgency.exclusive)
+    }
+  }, [initialService, initialPrivacy, initialAgency])
+
+  return (
+    <div className="flex flex-col gap-8">
+      {/* 用户服务协议 */}
+      <div>
+        <h3 className="text-[15px] font-semibold mb-3">《平台用户服务协议》</h3>
+        <p className="text-xs text-[var(--text3)] mb-2">创作者注册时需同意的协议内容，支持 Markdown 格式。</p>
+        <textarea
+          className={`${inputCls} min-h-[120px] font-mono text-xs`}
+          placeholder="输入协议内容..."
+          value={serviceContent}
+          onChange={(e) => setServiceContent(e.target.value)}
+        />
+        <button
+          className={btnPrimary}
+          style={{ marginTop: 12 }}
+          onClick={() => {
+            if (!serviceContent.trim()) {
+              showToast('协议内容不能为空')
+              return
+            }
+            onSave({ serviceAgreement: { content: serviceContent, version: new Date().toISOString().slice(0, 10) } })
+          }}
+        >
+          保存用户服务协议
+        </button>
+      </div>
+
+      {/* 隐私政策 */}
+      <div>
+        <h3 className="text-[15px] font-semibold mb-3">《隐私政策》</h3>
+        <p className="text-xs text-[var(--text3)] mb-2">创作者注册时需同意的隐私政策内容，支持 Markdown 格式。</p>
+        <textarea
+          className={`${inputCls} min-h-[120px] font-mono text-xs`}
+          placeholder="输入隐私政策内容..."
+          value={privacyContent}
+          onChange={(e) => setPrivacyContent(e.target.value)}
+        />
+        <button
+          className={btnPrimary}
+          style={{ marginTop: 12 }}
+          onClick={() => {
+            if (!privacyContent.trim()) {
+              showToast('隐私政策内容不能为空')
+              return
+            }
+            onSave({ privacyPolicy: { content: privacyContent, version: new Date().toISOString().slice(0, 10) } })
+          }}
+        >
+          保存隐私政策
+        </button>
+      </div>
+
+      {/* 音乐代理发行协议 */}
+      <div>
+        <h3 className="text-[15px] font-semibold mb-3">《音乐代理发行协议》</h3>
+        <p className="text-xs text-[var(--text3)] mb-2">创作者注册时可选项，设置默认代理条款。</p>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls}>代理年限（年）</label>
+            <input
+              className={inputCls}
+              type="number"
+              min="1"
+              max="10"
+              value={agencyYears}
+              onChange={(e) => setAgencyYears(Number(e.target.value))}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>发行范围</label>
+            <input
+              className={inputCls}
+              value={agencyScope}
+              onChange={(e) => setAgencyScope(e.target.value)}
+            />
+          </div>
+        </div>
+        <label className="flex items-center gap-2 text-sm mt-3">
+          <input
+            type="checkbox"
+            checked={agencyExclusive}
+            onChange={(e) => setAgencyExclusive(e.target.checked)}
+          />
+          独家代理
+        </label>
+        <button
+          className={btnPrimary}
+          style={{ marginTop: 12 }}
+          onClick={() => {
+            onSave({ agencyTerms: { termYears: agencyYears, scope: agencyScope, exclusive: agencyExclusive } })
+          }}
+        >
+          保存代理协议
         </button>
       </div>
     </div>

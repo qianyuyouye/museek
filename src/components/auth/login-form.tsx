@@ -73,6 +73,38 @@ export function LoginForm({ portal }: { portal: string }) {
   const [forgotSent, setForgotSent] = useState(false)
   const [forgotMsg, setForgotMsg] = useState('')
 
+  // 协议弹窗
+  const [showAgreement, setShowAgreement] = useState(false)
+  const [agreementTitle, setAgreementTitle] = useState('')
+  const [agreementContent, setAgreementContent] = useState('')
+  const [agreementsLoaded, setAgreementsLoaded] = useState(false)
+
+  const handleOpenAgreement = async (type: 'service' | 'privacy' | 'agency') => {
+    if (!agreementsLoaded) {
+      try {
+        const res = await fetch('/api/content/agreements')
+        const json = await res.json()
+        if (json.code === 200 && json.data) {
+          setAgreementsLoaded(true)
+          const map: Record<string, { title: string; content: string }> = {
+            service: { title: '平台用户服务协议', content: json.data.serviceAgreement?.content ?? '暂无内容' },
+            privacy: { title: '隐私政策', content: json.data.privacyPolicy?.content ?? '暂无内容' },
+            agency: { title: '音乐代理发行协议', content: '代理年限：' + (json.data.agencyTerms?.termYears ?? 3) + '年\n发行范围：' + (json.data.agencyTerms?.scope ?? '全平台') + '\n独家代理：' + (json.data.agencyTerms?.exclusive ? '是' : '否') },
+          }
+          const info = map[type]
+          setAgreementTitle(info.title)
+          setAgreementContent(info.content)
+          setShowAgreement(true)
+          return
+        }
+      } catch { /* fallback */ }
+    }
+    const titles: Record<string, string> = { service: '平台用户服务协议', privacy: '隐私政策', agency: '音乐代理发行协议' }
+    setAgreementTitle(titles[type])
+    setAgreementContent('加载中...')
+    setShowAgreement(true)
+  }
+
   // Register-only state (creator)
   const [inviteCode, setInviteCode] = useState('')
   const [smsCode, setSmsCode] = useState('')
@@ -363,15 +395,23 @@ export function LoginForm({ portal }: { portal: string }) {
                 <div className="flex flex-col gap-2 mt-1">
                   <label className="flex items-center gap-2 text-xs text-[var(--text2)] cursor-pointer">
                     <input type="checkbox" checked={agreeService} onChange={e => setAgreeService(e.target.checked)} style={{ accentColor: cfg.accent }} />
-                    <span>《平台用户服务协议》<span className="text-[var(--red)]">*</span></span>
+                    <span>
+                      <a style={{ color: cfg.accent, cursor: 'pointer' }} onClick={() => handleOpenAgreement('service')}>《平台用户服务协议》</a>
+                      <span className="text-[var(--red)]">*</span>
+                    </span>
                   </label>
                   <label className="flex items-center gap-2 text-xs text-[var(--text2)] cursor-pointer">
                     <input type="checkbox" checked={agreePrivacy} onChange={e => setAgreePrivacy(e.target.checked)} style={{ accentColor: cfg.accent }} />
-                    <span>《隐私政策》<span className="text-[var(--red)]">*</span></span>
+                    <span>
+                      <a style={{ color: cfg.accent, cursor: 'pointer' }} onClick={() => handleOpenAgreement('privacy')}>《隐私政策》</a>
+                      <span className="text-[var(--red)]">*</span>
+                    </span>
                   </label>
                   <label className="flex items-center gap-2 text-xs text-[var(--text2)] cursor-pointer">
                     <input type="checkbox" checked={agreeMusic} onChange={e => setAgreeMusic(e.target.checked)} style={{ accentColor: cfg.accent }} />
-                    <span>《音乐代理发行协议》</span>
+                    <span>
+                      <a style={{ color: cfg.accent, cursor: 'pointer' }} onClick={() => handleOpenAgreement('agency')}>《音乐代理发行协议》</a>
+                    </span>
                   </label>
                 </div>
               </>
@@ -507,6 +547,39 @@ export function LoginForm({ portal }: { portal: string }) {
           </div>
         </div>
       )}
+
+    {/* Agreement Viewer Modal */}
+    {showAgreement && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+        onClick={() => setShowAgreement(false)}
+      >
+        <div
+          className="bg-[var(--bg3)] rounded-xl border border-[var(--border)] w-[600px] max-w-[95vw] max-h-[80vh] flex flex-col shadow-[0_12px_40px_rgba(0,0,0,.4)]"
+          style={{ animation: 'modalIn .3s ease' }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)]">
+            <h3 className="text-base font-semibold text-[var(--text)]">{agreementTitle}</h3>
+            <button onClick={() => setShowAgreement(false)} className="text-[var(--text3)] hover:text-[var(--text)] transition-colors">
+              <X size={18} />
+            </button>
+          </div>
+          <div className="overflow-y-auto px-6 py-4 text-sm text-[var(--text2)] whitespace-pre-wrap leading-relaxed">
+            {agreementContent}
+          </div>
+          <div className="px-6 py-3 border-t border-[var(--border)] flex justify-end">
+            <button
+              className="px-6 py-2 rounded-md text-sm font-medium text-white"
+              style={{ background: `linear-gradient(135deg, ${cfg.accent}, ${cfg.accent2})` }}
+              onClick={() => setShowAgreement(false)}
+            >
+              关闭
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     </>
   )
 }
