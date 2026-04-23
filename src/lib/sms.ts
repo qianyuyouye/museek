@@ -24,8 +24,8 @@ async function loadConfig(): Promise<SmsConfig> {
     signName: fromDb.signName || process.env.ALIYUN_SMS_SIGN_NAME || '',
     templateCode: {
       register: tc.register || process.env.ALIYUN_SMS_TEMPLATE_CODE || '',
-      resetPassword: tc.resetPassword || process.env.ALIYUN_SMS_TEMPLATE_CODE || '',
-      changePhone: tc.changePhone || process.env.ALIYUN_SMS_TEMPLATE_CODE || '',
+      resetPassword: tc.resetPassword || tc.register || process.env.ALIYUN_SMS_TEMPLATE_CODE || '',
+      changePhone: tc.changePhone || tc.register || process.env.ALIYUN_SMS_TEMPLATE_CODE || '',
     },
     perPhoneDailyLimit: fromDb.perPhoneDailyLimit ?? 10,
     verifyMaxAttempts: fromDb.verifyMaxAttempts ?? 5,

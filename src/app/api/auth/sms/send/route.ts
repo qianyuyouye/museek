@@ -33,7 +33,13 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     }
   }
 
-  const result = await sendSmsCode(phone)
+  const purposeMap: Record<string, 'register' | 'resetPassword' | 'changePhone'> = {
+    register: 'register',
+    reset_password: 'resetPassword',
+    change_phone: 'changePhone',
+  }
+  const mappedPurpose = (purpose && purposeMap[purpose]) || 'register'
+  const result = await sendSmsCode(phone, mappedPurpose)
   return NextResponse.json({
     code: result.success ? 200 : 400,
     message: result.message,
