@@ -77,32 +77,50 @@ export function LoginForm({ portal }: { portal: string }) {
   const [showAgreement, setShowAgreement] = useState(false)
   const [agreementTitle, setAgreementTitle] = useState('')
   const [agreementContent, setAgreementContent] = useState('')
-  const [agreementsLoaded, setAgreementsLoaded] = useState(false)
+  const [agreementType, setAgreementType] = useState<'service' | 'privacy' | 'agency' | null>(null)
+  const [agreementsCache, setAgreementsCache] = useState<Record<string, string>>({})
+  const [agreementsLoading, setAgreementsLoading] = useState(false)
 
   const handleOpenAgreement = async (type: 'service' | 'privacy' | 'agency') => {
-    if (!agreementsLoaded) {
-      try {
-        const res = await fetch('/api/content/agreements')
-        const json = await res.json()
-        if (json.code === 200 && json.data) {
-          setAgreementsLoaded(true)
-          const map: Record<string, { title: string; content: string }> = {
-            service: { title: '平台用户服务协议', content: json.data.serviceAgreement?.content ?? '暂无内容' },
-            privacy: { title: '隐私政策', content: json.data.privacyPolicy?.content ?? '暂无内容' },
-            agency: { title: '音乐代理发行协议', content: '代理年限：' + (json.data.agencyTerms?.termYears ?? 3) + '年\n发行范围：' + (json.data.agencyTerms?.scope ?? '全平台') + '\n独家代理：' + (json.data.agencyTerms?.exclusive ? '是' : '否') },
-          }
-          const info = map[type]
-          setAgreementTitle(info.title)
-          setAgreementContent(info.content)
-          setShowAgreement(true)
-          return
-        }
-      } catch { /* fallback */ }
-    }
-    const titles: Record<string, string> = { service: '平台用户服务协议', privacy: '隐私政策', agency: '音乐代理发行协议' }
-    setAgreementTitle(titles[type])
-    setAgreementContent('加载中...')
+    setAgreementType(type)
     setShowAgreement(true)
+
+    // 已有缓存，直接显示
+    const cached = agreementsCache[type]
+    if (cached) {
+      const titles: Record<string, string> = { service: '平台用户服务协议', privacy: '隐私政策', agency: '音乐代理发行协议' }
+      setAgreementTitle(titles[type])
+      setAgreementContent(cached)
+      return
+    }
+
+    // 未缓存，加载
+    setAgreementsLoading(true)
+    try {
+      const res = await fetch('/api/content/agreements')
+      const json = await res.json()
+      if (json.code === 200 && json.data) {
+        const d = json.data
+        // 解析三份协议并缓存
+        const cache: Record<string, string> = {}
+        cache.service = d.serviceAgreement?.content || '暂无内容'
+        cache.privacy = d.privacyPolicy?.content || '暂无内容'
+        // 音乐代理协议：从结构化数据生成可读文本
+        const agency = d.agencyTerms || {}
+        cache.agency = `代理年限：${agency.termYears || 3} 年\n发行范围：${agency.scope || '全平台'}\n独家代理：${agency.exclusive ? '是' : '否'}`
+
+        setAgreementsCache(cache)
+        const titles: Record<string, string> = { service: '平台用户服务协议', privacy: '隐私政策', agency: '音乐代理发行协议' }
+        setAgreementTitle(titles[type])
+        setAgreementContent(cache[type])
+      } else {
+        setAgreementContent('加载失败，请稍后重试')
+      }
+    } catch {
+      setAgreementContent('网络错误，请检查网络连接')
+    } finally {
+      setAgreementsLoading(false)
+    }
   }
 
   // Register-only state (creator)
@@ -565,8 +583,12 @@ export function LoginForm({ portal }: { portal: string }) {
               <X size={18} />
             </button>
           </div>
-          <div className="overflow-y-auto px-6 py-4 text-sm text-[var(--text2)] whitespace-pre-wrap leading-relaxed">
-            {agreementContent}
+          <div className="overflow-y-auto px-6 py-4 text-sm text-[var(--text2)] leading-relaxed prose prose-invert max-w-none">
+            {agreementsLoading ? (
+              <p className="text-[var(--text3)]">加载中...</p>
+            ) : (
+              <div dangerouslySetInnerHTML={{ __html: agreementContent.replace(/\n/g, '<br/>') }} />
+            )}
           </div>
           <div className="px-6 py-3 border-t border-[var(--border)] flex justify-end">
             <button
