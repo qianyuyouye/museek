@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 
 export default function JoinPage() {
@@ -14,7 +14,6 @@ export default function JoinPage() {
 
     const code = params?.inviteCode as string | undefined
     if (code) {
-      // 将邀请码存入 localStorage，注册页会自动读取
       localStorage.setItem('inviteCode', code)
       router.replace('/creator/register')
     } else {

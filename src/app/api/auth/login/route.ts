@@ -68,7 +68,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
         lastLoginAt: new Date(),
         lastLoginIp: clientIp,
       },
-    })
+    }).catch(() => {})
 
     await prisma.loginLog.create({
       data: {
@@ -77,7 +77,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
         ip: clientIp,
         userAgent: request.headers.get('user-agent') || null,
       },
-    })
+    }).catch(() => {})
 
     const payload: AdminJwtPayload = {
       sub: admin.id,
