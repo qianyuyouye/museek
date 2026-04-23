@@ -6,8 +6,8 @@ export const metadata: Metadata = {
   title: 'Museek · AI音乐平台',
   description: 'AI音乐教学与版权代理平台',
   icons: {
-    icon: '/favicon.png',
-    apple: '/favicon.png',
+    icon: '/favicon-icon.svg',
+    apple: '/favicon-icon.svg',
   },
 }
 
