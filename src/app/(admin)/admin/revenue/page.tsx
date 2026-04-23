@@ -543,7 +543,7 @@ function MappingTab({
   ]
 
   return (
-    <div>
+    <div className="flex flex-col gap-4">
       {/* Info banner */}
       <div className={cardCls} style={{ background: 'linear-gradient(135deg,rgba(108,92,231,.06),rgba(0,206,201,.04))' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -680,7 +680,7 @@ function StatsTab({
   ]
 
   return (
-    <div>
+    <div className="flex flex-col gap-4">
       {/* Hint */}
       <div style={{ padding: 12, background: 'rgba(253,203,110,.06)', borderRadius: 8, fontSize: 12, color: 'var(--orange)' }}>
         统计仅包含映射关系<strong>已确认</strong>的歌曲收益数据，「待确认」和「未绑定」的收益不计入统计，确保数据准确。
@@ -911,7 +911,7 @@ function OtherPlatformTab({ showToast }: { showToast: (msg: string) => void }) {
   ]
 
   return (
-    <div>
+    <div className="flex flex-col gap-4">
       {/* Upload section */}
       <div className={cardCls}>
         <p className="text-xs text-[var(--text3)] mb-3">
