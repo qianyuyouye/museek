@@ -193,11 +193,11 @@ export function LoginForm({ portal }: { portal: string }) {
 
   return (
     <>
-    <div className="min-h-screen bg-[var(--bg)] flex items-center justify-center">
+    <div className="min-h-screen bg-[var(--bg)] flex items-center justify-center px-4 py-8">
       {/* Inner container */}
-      <div className="hidden lg:flex w-full max-w-7xl items-center justify-center gap-12 xl:gap-16 px-12">
+      <div className="flex flex-col lg:flex-row w-full max-w-7xl items-center justify-center gap-8 lg:gap-12 xl:gap-16">
         {/* Left: Hero */}
-        <div className="flex-1 max-w-xl relative">
+        <div className="hidden lg:block flex-1 max-w-xl relative">
           {/* Decorative gradient orbs */}
           <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full opacity-20 blur-3xl" style={{ background: cfg.accent }} />
           <div className="absolute -bottom-20 -right-20 w-48 h-48 rounded-full opacity-10 blur-3xl" style={{ background: cfg.accent2 }} />
@@ -238,7 +238,7 @@ export function LoginForm({ portal }: { portal: string }) {
         </div>
 
         {/* Right: Login Card */}
-        <div className="w-[400px] shrink-0 bg-[var(--bg3)] border border-[var(--border)] rounded-xl p-6 shadow-[0_8px_32px_rgba(0,0,0,.4)]">
+        <div className="w-full max-w-[400px] bg-[var(--bg3)] border border-[var(--border)] rounded-xl p-6 shadow-[0_8px_32px_rgba(0,0,0,.4)]">
           {/* Logo */}
           <div className="text-center mb-5">
             <img src="/logo.svg" alt="Museek" className="mx-auto w-[180px] h-auto object-contain mb-3" />
