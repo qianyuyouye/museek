@@ -13,15 +13,6 @@ const btnPrimary = `${btnPrimaryBase} w-full flex items-center justify-center`
 const rowCls =
   'flex justify-between items-center px-3 py-2.5 bg-[var(--bg4)] rounded-md text-[13px]'
 
-// ── 固定文案数据（协议条款内容，非 API 数据） ──────────────────
-
-const CONTRACT_TERMS: [string, string][] = [
-  ['代理期限', '3年'],
-  ['代理范围', '全平台'],
-  ['是否独家', '是'],
-  ['自动续约', '是'],
-]
-
 // ── Types ───────────────────────────────────────────────────────
 
 interface LoginLogItem {
@@ -144,6 +135,10 @@ export default function CreatorProfile() {
   const loginLogs = loginLogsData?.list ?? []
   const { data: agreements } = useApi<AgreementItem[]>('/api/profile/agreements')
 
+  // Agency agreement content from admin CMS
+  const [agencyContent, setAgencyContent] = useState('')
+  const [agencyVersion, setAgencyVersion] = useState('1.0')
+
   // Modal states
   const [editModal, setEditModal] = useState(false)
   const [pwdModal, setPwdModal] = useState(false)
@@ -192,6 +187,20 @@ export default function CreatorProfile() {
       setEditEmail(user.email)
     }
   }, [user])
+
+  // Fetch agency agreement content when sign modal opens
+  useEffect(() => {
+    if (!signAgencyModal || agencyContent) return
+    fetch('/api/content/agreements')
+      .then(r => r.json())
+      .then(json => {
+        if (json.code === 200 && json.data?.agencyTerms) {
+          setAgencyContent(json.data.agencyTerms.content || '暂无内容')
+          setAgencyVersion(json.data.agencyTerms.version || '1.0')
+        }
+      })
+      .catch(() => {})
+  }, [signAgencyModal, contractModal])
 
   // Cooldown timers for phone change
   useEffect(() => {
@@ -717,13 +726,13 @@ export default function CreatorProfile() {
                 : '未签署'}
             </span>
           </div>
-          {/* 固定条款内容 */}
-          {CONTRACT_TERMS.map(([k, v]) => (
-            <div key={k} className={rowCls}>
-              <span className="text-[var(--text3)]">{k}</span>
-              <span>{v}</span>
-            </div>
-          ))}
+          {/* 协议正文从管理端获取 */}
+          <div className="p-3 bg-[var(--bg4)] rounded-lg max-h-[300px] overflow-auto text-[13px] text-[var(--text2)] leading-[1.8]">
+            <p className="font-semibold text-[var(--text)] mb-2">
+              《音乐代理发行协议》v{agencyVersion}
+            </p>
+            <div dangerouslySetInnerHTML={{ __html: agencyContent || '加载中...' }} />
+          </div>
         </div>
       </Modal>
 
@@ -738,25 +747,10 @@ export default function CreatorProfile() {
         width={600}
       >
         <div className="p-4 bg-[var(--bg4)] rounded-lg max-h-[300px] overflow-auto text-[13px] text-[var(--text2)] leading-[1.8] mb-4">
-          <p className="font-semibold text-[var(--text)]">
-            《音乐代理发行协议》v1.0
+          <p className="font-semibold text-[var(--text)] mb-3">
+            《音乐代理发行协议》v{agencyVersion}
           </p>
-          <p>
-            第一条
-            代理范围：甲方（创作者）授权乙方（平台）在全球范围内的流媒体平台代理发行音乐作品。
-          </p>
-          <p>
-            第二条 分成比例：默认分成 -- 创作者70% /
-            平台30%。高分激励（{'>='}90分）-- 创作者80% / 平台20%。
-          </p>
-          <p>
-            第三条
-            代理期限：自签署之日起3年，到期后自动续约，任何一方可提前30日书面通知终止。
-          </p>
-          <p>
-            第四条
-            独家条款：在代理期限内，甲方授权的作品由乙方独家代理发行。
-          </p>
+          <div dangerouslySetInnerHTML={{ __html: agencyContent || '加载中...' }} />
         </div>
         <label className="flex items-start gap-2 text-[13px] text-[var(--text2)] cursor-pointer mb-4">
           <input
