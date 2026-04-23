@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendSmsCode } from '@/lib/sms'
-import { safeHandler, getClientIp } from '@/lib/api-utils'
+import { safeHandler, getClientIp, getCurrentUser } from '@/lib/api-utils'
 import { prisma } from '@/lib/prisma'
 import { ipRateLimit } from '@/lib/rate-limit'
 
@@ -11,9 +11,19 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     return NextResponse.json({ code: 429, message: '请求过于频繁，请稍后再试' }, { status: 429 })
   }
 
-  const { phone, purpose } = await request.json() as {
-    phone: string
+  const { phone: bodyPhone, purpose } = await request.json() as {
+    phone?: string
     purpose?: 'register' | 'reset_password' | 'change_phone'
+  }
+
+  // 未传 phone 时尝试从登录用户获取（如个人中心更换邮箱/手机场景）
+  let phone = bodyPhone
+  if (!phone) {
+    const { userId } = getCurrentUser(request)
+    if (userId) {
+      const user = await prisma.user.findUnique({ where: { id: userId }, select: { phone: true } })
+      if (user) phone = user.phone
+    }
   }
 
   if (!phone || !/^1[3-9]\d{9}$/.test(phone)) {

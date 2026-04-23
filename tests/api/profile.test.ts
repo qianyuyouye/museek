@@ -2,8 +2,8 @@ import { describe, it, expect, beforeAll } from 'vitest'
 import { http, adminLogin, creatorLogin, reviewerLogin, expectOk, BASE_URL } from './_helpers'
 
 /**
- * 个人中心 15 条
- * 覆盖：/api/profile (GET/PUT), /api/profile/password,
+ * 个人中心 18 条
+ * 覆盖：/api/profile (GET/PUT), /api/profile/email, /api/profile/password,
  *      /api/profile/real-name, /api/profile/agency, /api/profile/login-logs
  */
 
@@ -68,13 +68,57 @@ describe('个人中心 · PUT /profile', () => {
     expect(r.status).toBe(400)
   })
 
-  it('TC-PRO-012 creator 更新 email', async () => {
+  it('TC-PRO-012 creator 仅传 email → 400（邮箱需通过 /api/profile/email 验证码更新）', async () => {
     const r = await http('/api/profile', {
       method: 'PUT',
       cookie: creatorCookie,
       body: { email: `c_${Date.now()}@test.com` },
     })
-    expectOk(r, 'update email')
+    expect(r.status).toBe(400)
+    expect(r.json.message).toBe('无更新字段')
+  })
+})
+
+describe('修改邮箱 /profile/email', () => {
+  it('TC-PRO-013 未发送验证码直接提交 → 400', async () => {
+    const r = await http('/api/profile/email', {
+      method: 'PUT',
+      cookie: creatorCookie,
+      body: { email: `c_${Date.now()}@test.com`, code: '000000' },
+    })
+    expect(r.status).toBe(400)
+    expect(r.json.message).toContain('验证码')
+  })
+
+  it('TC-PRO-014 邮箱格式非法 → 400', async () => {
+    const r = await http('/api/profile/email', {
+      method: 'PUT',
+      cookie: creatorCookie,
+      body: { email: 'not-an-email', code: '123456' },
+    })
+    expect(r.status).toBe(400)
+    expect(r.json.message).toContain('邮箱格式')
+  })
+
+  it('TC-PRO-015 发送验证码后正确提交 → 200', async () => {
+    // 1. 发送验证码（不传 phone，接口自动从登录用户获取）
+    const sendR = await http('/api/auth/sms/send', {
+      method: 'POST',
+      cookie: creatorCookie,
+      body: { purpose: 'change_phone' },
+    })
+    // dev 模式（SMS 未配置）下返回 success=true + 固定码 123456
+    if (sendR.status === 200 && sendR.json.success) {
+      const r = await http('/api/profile/email', {
+        method: 'PUT',
+        cookie: creatorCookie,
+        body: { email: `c_${Date.now()}@test.com`, code: '123456' },
+      })
+      expectOk(r, 'update email with verification')
+    } else {
+      // SMS 未配置且非 dev 模式，跳过此测试
+      console.warn('跳过 TC-PRO-015：SMS 服务未配置')
+    }
   })
 })
 

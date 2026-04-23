@@ -68,7 +68,7 @@ export const PUT = safeHandler(async function PUT(request: NextRequest) {
   if (!userId) return err('未登录', 401)
 
   const body = await request.json()
-  const { name, email } = body as { name?: string; email?: string }
+  const { name } = body as { name?: string }
 
   if (portal === 'admin') {
     const data: Record<string, unknown> = {}
@@ -82,7 +82,6 @@ export const PUT = safeHandler(async function PUT(request: NextRequest) {
   // creator / reviewer
   const data: Record<string, unknown> = {}
   if (name !== undefined) data.name = name
-  if (email !== undefined) data.email = email
   if (Object.keys(data).length === 0) return err('无更新字段')
 
   await prisma.user.update({ where: { id: userId }, data })
