@@ -6,7 +6,7 @@ export const GET = safeHandler(async function GET(_request: NextRequest) {
   const [serviceAgreement, privacyPolicy, agencyTerms] = await Promise.all([
     getSetting(SETTING_KEYS.SERVICE_AGREEMENT, { content: '', version: '1.0' }),
     getSetting(SETTING_KEYS.PRIVACY_POLICY, { content: '', version: '1.0' }),
-    getSetting(SETTING_KEYS.AGENCY_TERMS, { termYears: 3, scope: '全平台', exclusive: true }),
+    getSetting(SETTING_KEYS.AGENCY_TERMS, { content: '', version: '1.0' }),
   ])
 
   return ok({

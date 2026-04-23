@@ -105,9 +105,7 @@ export function LoginForm({ portal }: { portal: string }) {
         const cache: Record<string, string> = {}
         cache.service = d.serviceAgreement?.content || '暂无内容'
         cache.privacy = d.privacyPolicy?.content || '暂无内容'
-        // 音乐代理协议：从结构化数据生成可读文本
-        const agency = d.agencyTerms || {}
-        cache.agency = `代理年限：${agency.termYears || 3} 年\n发行范围：${agency.scope || '全平台'}\n独家代理：${agency.exclusive ? '是' : '否'}`
+        cache.agency = d.agencyTerms?.content || '暂无内容'
 
         setAgreementsCache(cache)
         const titles: Record<string, string> = { service: '平台用户服务协议', privacy: '隐私政策', agency: '音乐代理发行协议' }
