@@ -125,6 +125,8 @@ function Toast({
 
 interface AgreementItem {
   name: string
+  content: string
+  version: string
   signedAt: string
   signed: boolean
 }
@@ -135,17 +137,14 @@ export default function CreatorProfile() {
   const loginLogs = loginLogsData?.list ?? []
   const { data: agreements } = useApi<AgreementItem[]>('/api/profile/agreements')
 
-  // Agency agreement content from admin CMS
-  const [agencyContent, setAgencyContent] = useState('')
-  const [agencyVersion, setAgencyVersion] = useState('1.0')
-
   // Modal states
   const [editModal, setEditModal] = useState(false)
   const [pwdModal, setPwdModal] = useState(false)
   const [verifyModal, setVerifyModal] = useState(false)
-  const [contractModal, setContractModal] = useState(false)
   const [signAgencyModal, setSignAgencyModal] = useState(false)
   const [phoneModal, setPhoneModal] = useState(false)
+  // View agreement content modal
+  const [viewAgreement, setViewAgreement] = useState<{ name: string; content: string; version: string } | null>(null)
 
   // Avatar hover + upload
   const [avatarHover, setAvatarHover] = useState(false)
@@ -188,19 +187,6 @@ export default function CreatorProfile() {
     }
   }, [user])
 
-  // Fetch agency agreement content when sign modal opens
-  useEffect(() => {
-    if (!signAgencyModal || agencyContent) return
-    fetch('/api/content/agreements')
-      .then(r => r.json())
-      .then(json => {
-        if (json.code === 200 && json.data?.agencyTerms) {
-          setAgencyContent(json.data.agencyTerms.content || '暂无内容')
-          setAgencyVersion(json.data.agencyTerms.version || '1.0')
-        }
-      })
-      .catch(() => {})
-  }, [signAgencyModal, contractModal])
 
   // Cooldown timers for phone change
   useEffect(() => {
@@ -400,13 +386,12 @@ export default function CreatorProfile() {
           <div className={cardCls}>
             <h3 className="text-[15px] font-semibold mb-3">协议管理</h3>
             <div className="text-[13px] mb-3">
-              {/* 平台固定协议（从 API 读取） */}
               {(agreements || []).map((a, i) => (
                 <div
                   key={i}
-                  className="flex justify-between items-center py-2 border-b border-[var(--border)]"
+                  className="flex justify-between items-center py-2 border-b border-[var(--border)] last:border-b-0"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <span
                       className="inline-block text-[11px] px-2 py-0.5 rounded mr-2"
                       style={{ background: a.signed ? 'rgba(85,239,196,0.12)' : 'rgba(107,114,128,0.12)', color: a.signed ? 'var(--green2)' : 'var(--text3)' }}
@@ -414,47 +399,25 @@ export default function CreatorProfile() {
                       {a.signed ? '已签署' : '未签署'}
                     </span>
                     <span className="font-medium">{a.name}</span>
+                    {a.signedAt && (
+                      <span className="text-[var(--text3)] text-xs ml-2">签署于 {a.signedAt}</span>
+                    )}
                   </div>
-                  <span className="text-[var(--text3)] text-xs">
-                    {a.signedAt ? `签署于 ${a.signedAt}` : '—'}
-                  </span>
+                  <button
+                    className={btnGhost}
+                    onClick={() => setViewAgreement({ name: a.name, content: a.content, version: a.version })}
+                  >
+                    查看详情
+                  </button>
                 </div>
               ))}
-              {/* 代理发行协议（签署时间从 API 获取） */}
-              <div className="flex justify-between items-center py-2">
-                <div>
-                  <span
-                    className="inline-block text-[11px] px-2 py-0.5 rounded mr-2"
-                    style={{
-                      background: user.agencyContract ? 'rgba(85,239,196,0.12)' : 'rgba(107,114,128,0.12)',
-                      color: user.agencyContract ? 'var(--green2)' : 'var(--text3)',
-                    }}
-                  >
-                    {user.agencyContract ? '已签署' : '未签署'}
-                  </span>
-                  <span className="font-medium">《音乐代理发行协议》</span>
-                </div>
-                <span className="text-[var(--text3)] text-xs">
-                  {user.agencySignedAt
-                    ? `创建于 ${new Date(user.agencySignedAt).toLocaleDateString('zh-CN')}`
-                    : '—'}
-                </span>
-              </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                className={btnGhost}
-                onClick={() => setContractModal(true)}
-              >
-                查看详情
-              </button>
-              <button
-                className="bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] text-white px-3 py-1 rounded-lg text-xs font-medium cursor-pointer border-0"
-                onClick={() => setSignAgencyModal(true)}
-              >
-                补签更新
-              </button>
-            </div>
+            <button
+              className="bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] text-white px-3 py-1 rounded-lg text-xs font-medium cursor-pointer border-0"
+              onClick={() => setSignAgencyModal(true)}
+            >
+              补签协议
+            </button>
           </div>
 
           {/* Login Logs */}
@@ -709,36 +672,28 @@ export default function CreatorProfile() {
         )}
       </Modal>
 
-      {/* Contract Details Modal */}
+      {/* View Agreement Content Modal */}
       <Modal
-        title="音乐代理发行协议详情"
-        open={contractModal}
-        onClose={() => setContractModal(false)}
+        title={viewAgreement?.name || '协议详情'}
+        open={!!viewAgreement}
+        onClose={() => setViewAgreement(null)}
         width={600}
       >
-        <div className="flex flex-col gap-2.5 text-[13px]">
-          {/* 签署时间从 API 获取 */}
-          <div className={rowCls}>
-            <span className="text-[var(--text3)]">签署时间</span>
-            <span>
-              {user.agencySignedAt
-                ? new Date(user.agencySignedAt).toLocaleString('zh-CN')
-                : '未签署'}
-            </span>
-          </div>
-          {/* 协议正文从管理端获取 */}
-          <div className="p-3 bg-[var(--bg4)] rounded-lg max-h-[300px] overflow-auto text-[13px] text-[var(--text2)] leading-[1.8]">
-            <p className="font-semibold text-[var(--text)] mb-2">
-              《音乐代理发行协议》v{agencyVersion}
-            </p>
-            <div dangerouslySetInnerHTML={{ __html: agencyContent || '加载中...' }} />
-          </div>
+        <div className="text-[13px]">
+          {viewAgreement && (
+            <div className="p-4 bg-[var(--bg4)] rounded-lg max-h-[400px] overflow-auto text-[var(--text2)] leading-[1.8]">
+              <p className="font-semibold text-[var(--text)] mb-3">
+                {viewAgreement.name} v{viewAgreement.version}
+              </p>
+              <div dangerouslySetInnerHTML={{ __html: viewAgreement.content || '暂无内容' }} />
+            </div>
+          )}
         </div>
       </Modal>
 
       {/* Sign Agency Modal */}
       <Modal
-        title="补签 / 更新代理发行协议"
+        title="补签代理发行协议"
         open={signAgencyModal}
         onClose={() => {
           setSignAgencyModal(false)
@@ -748,9 +703,9 @@ export default function CreatorProfile() {
       >
         <div className="p-4 bg-[var(--bg4)] rounded-lg max-h-[300px] overflow-auto text-[13px] text-[var(--text2)] leading-[1.8] mb-4">
           <p className="font-semibold text-[var(--text)] mb-3">
-            《音乐代理发行协议》v{agencyVersion}
+            《音乐代理发行协议》v{(agreements || [])[2]?.version || '1.0'}
           </p>
-          <div dangerouslySetInnerHTML={{ __html: agencyContent || '加载中...' }} />
+          <div dangerouslySetInnerHTML={{ __html: (agreements || [])[2]?.content || '加载中...' }} />
         </div>
         <label className="flex items-start gap-2 text-[13px] text-[var(--text2)] cursor-pointer mb-4">
           <input
