@@ -35,7 +35,7 @@ export function Waveform({
 
     const run = async () => {
       try {
-        const res = await fetch(src)
+        const res = await fetch(src, { credentials: 'include' })
         if (!res.ok) return
         const buf = await res.arrayBuffer()
         if (cancelledRef.current) return

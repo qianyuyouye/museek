@@ -821,7 +821,7 @@ export default function CreatorUploadPage() {
                 试听预览
               </div>
               {form.audioUrl ? (
-                <audio src={form.audioUrl} controls className="w-full h-9" />
+                <audio src={`/api/files/${form.audioUrl}`} controls className="w-full h-9" />
               ) : (
                 <WaveformPlayer />
               )}
