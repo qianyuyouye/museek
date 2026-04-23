@@ -219,23 +219,29 @@ export default function AdminContractsPage() {
 
       {/* Tabs */}
       <div className="flex gap-8 border-b border-[var(--border)]">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => { setActiveTab(tab.key as TabKey); setPage(1) }}
-            className="bg-transparent border-0 py-2.5 text-sm cursor-pointer flex items-center gap-1.5 transition-all"
-            style={{
-              borderBottom: activeTab === tab.key ? '2px solid var(--accent)' : '2px solid transparent',
-              fontWeight: activeTab === tab.key ? 600 : 400,
-              color: activeTab === tab.key ? 'var(--text)' : 'var(--text3)',
-            }}
-          >
-            {tab.label}
-            <span className="text-sm" style={{ color: activeTab === tab.key ? 'var(--accent)' : 'var(--text3)' }}>
-              {tabCounts[tab.key]}
-            </span>
-          </button>
-        ))}
+        {TABS.map((tab) => {
+          const isRecordsTab = tab.key === 'records'
+          const tabCount = isRecordsTab ? agencyStudents.length : null
+          return (
+            <button
+              key={tab.key}
+              onClick={() => { setActiveTab(tab.key as TabKey); setPage(1) }}
+              className="bg-transparent border-0 py-2.5 text-sm cursor-pointer flex items-center gap-1.5 transition-all"
+              style={{
+                borderBottom: activeTab === tab.key ? '2px solid var(--accent)' : '2px solid transparent',
+                fontWeight: activeTab === tab.key ? 600 : 400,
+                color: activeTab === tab.key ? 'var(--text)' : 'var(--text3)',
+              }}
+            >
+              {tab.label}
+              {tabCount !== null && (
+                <span className="text-sm" style={{ color: activeTab === tab.key ? 'var(--accent)' : 'var(--text3)' }}>
+                  {tabCount}
+                </span>
+              )}
+            </button>
+          )
+        })}
       </div>
 
       {/* Editor Tabs */}
