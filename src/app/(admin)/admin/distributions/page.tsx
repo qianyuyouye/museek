@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { CheckCircle2, Hourglass, Clipboard } from 'lucide-react'
+import { CheckCircle2, Hourglass, Clipboard, Music, Globe, TrendingUp } from 'lucide-react'
 import { PageHeader } from '@/components/ui/page-header'
+import { StatCard } from '@/components/ui/stat-card'
 import { AdminModal } from '@/components/ui/modal'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/lib/ui-tokens'
@@ -10,11 +11,13 @@ import { pageWrap, cardCls, btnPrimary, btnGhost, inputCls, labelCls } from '@/l
 interface DistributionItem {
   songId: number
   songTitle: string
+  songCover: string | null
+  songStatus: string
   platforms: Record<string, 'live' | 'submitted' | 'pending' | 'none'>
 }
 
 interface DistributionsApiData {
-  songs: { id: number; title: string; cover: string | null }[]
+  songs: { id: number; title: string; cover: string | null; status: string }[]
   platforms: string[]
   matrix: Record<number, Record<string, string>>
 }
@@ -52,6 +55,8 @@ export default function AdminDistributionsPage() {
   const distributions: DistributionItem[] = (data?.songs ?? []).map((s) => ({
     songId: s.id,
     songTitle: s.title,
+    songCover: s.cover,
+    songStatus: s.status,
     platforms: (data?.matrix?.[s.id] ?? {}) as Record<string, 'live' | 'submitted' | 'pending' | 'none'>,
   }))
 
@@ -106,8 +111,47 @@ export default function AdminDistributionsPage() {
 
       <PageHeader title="发行渠道管理" subtitle={loading ? '加载中...' : '歌曲和平台上架状态矩阵'} />
 
+      {/* Stat cards */}
+      <div className="grid grid-cols-4 gap-3">
+        <StatCard
+          icon={<Music className="w-5 h-5" />}
+          label="可发行歌曲"
+          val={distributions.length}
+          color="var(--accent)"
+          iconBg="rgba(155,142,240,0.1)"
+        />
+        <StatCard
+          icon={<Globe className="w-5 h-5" />}
+          label="发行平台"
+          val={platforms.length}
+          color="var(--green)"
+          iconBg="rgba(0,229,160,0.1)"
+        />
+        <StatCard
+          icon={<CheckCircle2 className="w-5 h-5" />}
+          label="已上架"
+          val={distributions.reduce((n, d) => n + Object.values(d.platforms).filter(v => v === 'live').length, 0)}
+          color="var(--green2)"
+          iconBg="rgba(0,204,142,0.1)"
+        />
+        <StatCard
+          icon={<TrendingUp className="w-5 h-5" />}
+          label="待提交"
+          val={distributions.reduce((n, d) => n + Object.values(d.platforms).filter(v => v === 'pending' || v === 'none').length, 0)}
+          color="var(--orange)"
+          iconBg="rgba(255,179,71,0.1)"
+        />
+      </div>
+
       {/* Matrix Table */}
-      <div className={cardCls}>
+      {distributions.length === 0 ? (
+        <div className={`${cardCls} text-center py-16`}>
+          <Music className="w-12 h-12 text-[var(--text3)] mx-auto mb-4" />
+          <p className="text-[var(--text3)] text-sm">暂无可管理发行渠道的歌曲</p>
+          <p className="text-[var(--text3)] text-xs mt-2">请先在"歌曲管理"中将歌曲设为待发行或已发行状态</p>
+        </div>
+      ) : (
+        <div className={cardCls}>
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b border-[var(--border)]">
@@ -131,9 +175,21 @@ export default function AdminDistributionsPage() {
                 className="border-b border-[var(--border)] last:border-b-0 hover:bg-[var(--bg4)] transition-colors"
               >
                 <td className="px-5 py-3.5">
-                  <span className="text-sm font-medium text-[var(--text)]">
-                    {item.songTitle}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    {item.songCover ? (
+                      <img src={item.songCover} alt="" className="w-10 h-10 rounded object-cover shrink-0" />
+                    ) : (
+                      <div className="w-10 h-10 rounded bg-[var(--bg4)] flex items-center justify-center shrink-0">
+                        <Music className="w-4 h-4 text-[var(--text3)]" />
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-sm font-medium text-[var(--text)] block">
+                        {item.songTitle}
+                      </span>
+                      <span className="text-[11px] text-[var(--text3)]">{item.songStatus === 'published' ? '已发行' : item.songStatus === 'ready_to_publish' ? '待发行' : '已入库'}</span>
+                    </div>
+                  </div>
                 </td>
                 {platforms.map((platform) => {
                   const status = item.platforms[platform] ?? 'none'
@@ -158,6 +214,7 @@ export default function AdminDistributionsPage() {
           </tbody>
         </table>
       </div>
+      )}
 
       {/* Legend */}
       <div className="flex items-center gap-6 px-2">

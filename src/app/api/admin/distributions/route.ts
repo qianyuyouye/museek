@@ -11,12 +11,14 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
   const platforms = await getEnabledPlatforms()
   const platformSet = new Set(platforms)
 
+  // 同时查询已发行和待发行的歌曲（待发行 = ready_to_publish）
   const songs = await prisma.platformSong.findMany({
-    where: { status: 'published' },
+    where: { status: { in: ['published', 'ready_to_publish', 'reviewed'] } },
     select: {
       id: true,
       title: true,
       coverUrl: true,
+      status: true,
       distributions: {
         select: { platform: true, status: true },
       },
@@ -32,7 +34,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
       if (platformSet.has(d.platform)) row[d.platform] = d.status
     }
     matrix[s.id] = row
-    return { id: s.id, title: s.title, cover: await toSignedUrl(s.coverUrl, auth.userId) }
+    return { id: s.id, title: s.title, cover: await toSignedUrl(s.coverUrl, auth.userId), status: s.status }
   }))
 
   return ok({ songs: songList, platforms, matrix })
