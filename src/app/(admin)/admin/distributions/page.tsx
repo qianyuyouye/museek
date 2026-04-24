@@ -225,12 +225,13 @@ export default function AdminDistributionsPage() {
                       className="px-5 py-3.5 cursor-pointer"
                       onClick={() => handleCellClick(item, platform)}
                     >
-                      <span
-                        className="text-xs inline-block"
-                        style={{ color: cfg.color }}
+                      <div
+                        className="text-xs inline-flex items-center gap-1 px-2 py-0.5 rounded-md transition-all duration-150 hover:ring-2 hover:ring-[var(--accent)] hover:ring-opacity-30 hover:-translate-y-[1px] hover:shadow-sm"
+                        style={{ background: cfg.bg, color: cfg.color }}
                       >
-                        {cfg.label}
-                      </span>
+                        {cfg.icon}
+                        <span>{cfg.label}</span>
+                      </div>
                     </td>
                   )
                 })}
