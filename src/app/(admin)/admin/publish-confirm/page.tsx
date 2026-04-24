@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { CheckCircle2, AlertTriangle, Check } from 'lucide-react'
+import { CheckCircle2, AlertTriangle, Check, Search } from 'lucide-react'
 import { PageHeader } from '@/components/ui/page-header'
 import { AdminTab } from '@/components/ui/unified-tabs'
 import { DataTable, Column } from '@/components/ui/data-table'
 import { AdminModal } from '@/components/ui/modal'
 import { useApi, apiCall } from '@/lib/use-api'
-import { pageWrap, cardCls, btnPrimary, btnGhost, btnDanger, btnSuccess, btnSmall, kvRow, kvLabel } from '@/lib/ui-tokens'
+import { pageWrap, cardCls, btnPrimary, btnGhost, btnDanger, btnSuccess, btnSmall, kvRow, kvLabel, inputCls } from '@/lib/ui-tokens'
 import { formatDate } from '@/lib/format'
 
 // ── Types ────────────────────────────────────────────────────────
@@ -57,14 +57,24 @@ export default function PublishConfirmPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('all')
   const [toast, setToast] = useState('')
   const [detailTrack, setDetailTrack] = useState<PublishTrack | null>(null)
+  const [keyword, setKeyword] = useState('')
 
   const { data, loading, refetch } = useApi<{ list: PublishTrack[]; total: number; statusCounts?: Record<string, number> }>(
     `/api/admin/publish-confirm?status=${activeTab}`,
     [activeTab],
   )
 
-  const tracks = data?.list ?? []
+  const allTracks = data?.list ?? []
   const statusCounts = data?.statusCounts ?? {}
+
+  const tracks = useMemo(() => {
+    if (!keyword.trim()) return allTracks
+    const kw = keyword.trim().toLowerCase()
+    return allTracks.filter((t) =>
+      t.title.toLowerCase().includes(kw) ||
+      (t.creatorName ?? '').toLowerCase().includes(kw)
+    )
+  }, [allTracks, keyword])
 
   function showToast(msg: string) {
     setToast(msg)
@@ -322,13 +332,29 @@ export default function PublishConfirmPage() {
 
       <PageHeader
         title={'发行状态确认'}
-        subtitle={loading ? '加载中...' : `共 ${tracks.length} 条发行记录`}
+        subtitle={loading ? '加载中...' : `共 ${allTracks.length} 条发行记录`}
         actions={
           <button className={btnPrimary} onClick={handleSync}>
             {'\uD83D\uDD04'} {'\u89E6\u53D1\u5BF9\u8D26\u540C\u6B65'}
           </button>
         }
       />
+
+      {/* Search */}
+      <div className={`${cardCls} flex items-center gap-3`}>
+        <div className="relative w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text3)]" />
+          <input
+            className={`${inputCls} w-full pl-9`}
+            placeholder="搜索歌曲或创作者"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+          />
+        </div>
+        {keyword && (
+          <span className="text-xs text-[var(--text3)]">找到 {tracks.length} 条</span>
+        )}
+      </div>
 
       {/* Strategy cards */}
       <div className="grid grid-cols-3 gap-4">

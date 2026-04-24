@@ -12,6 +12,7 @@ interface SongItem {
   userId: number
   title: string
   cover: string
+  coverUrl?: string | null
   genre: string
   bpm: number
   aiTools: string[] | string | null
@@ -21,7 +22,6 @@ interface SongItem {
   source: string
   creatorName?: string
   audioUrl?: string | null
-  coverUrl?: string | null
   agencyContract?: boolean
   realNameStatus?: 'unverified' | 'pending' | 'verified' | 'rejected'
 }
@@ -575,7 +575,11 @@ function SongRow({
         />
       </td>
       <td className="px-3 py-3 text-sm border-b border-[var(--border)] whitespace-nowrap">
-        <span className="text-lg">{song.cover}</span>
+        {song.coverUrl ? (
+          <img src={song.coverUrl} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover' }} />
+        ) : (
+          <span className="text-lg">🎵</span>
+        )}
       </td>
       <td className="px-3 py-3 text-sm border-b border-[var(--border)] whitespace-nowrap font-semibold">
         {song.title}

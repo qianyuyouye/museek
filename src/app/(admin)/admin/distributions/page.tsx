@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { CheckCircle2, Hourglass, Clipboard, Music, Globe, TrendingUp } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { CheckCircle2, Hourglass, Clipboard, Music, Globe, TrendingUp, Search } from 'lucide-react'
 import { PageHeader } from '@/components/ui/page-header'
 import { StatCard } from '@/components/ui/stat-card'
 import { AdminModal } from '@/components/ui/modal'
@@ -47,18 +47,27 @@ export default function AdminDistributionsPage() {
   const [toast, setToast] = useState('')
   const [editing, setEditing] = useState<EditingCell | null>(null)
   const [saving, setSaving] = useState(false)
+  const [keyword, setKeyword] = useState('')
 
   const { data, loading, refetch } = useApi<DistributionsApiData>(
     '/api/admin/distributions',
   )
 
-  const distributions: DistributionItem[] = (data?.songs ?? []).map((s) => ({
+  const allDistributions: DistributionItem[] = (data?.songs ?? []).map((s) => ({
     songId: s.id,
     songTitle: s.title,
     songCover: s.cover,
     songStatus: s.status,
     platforms: (data?.matrix?.[s.id] ?? {}) as Record<string, 'live' | 'submitted' | 'pending' | 'none'>,
   }))
+
+  const distributions = useMemo(() => {
+    if (!keyword.trim()) return allDistributions
+    const kw = keyword.trim().toLowerCase()
+    return allDistributions.filter((d) =>
+      d.songTitle.toLowerCase().includes(kw)
+    )
+  }, [allDistributions, keyword])
 
   const platforms = data?.platforms ?? []
 
@@ -109,7 +118,23 @@ export default function AdminDistributionsPage() {
         </div>
       )}
 
-      <PageHeader title="发行渠道管理" subtitle={loading ? '加载中...' : '歌曲和平台上架状态矩阵'} />
+      <PageHeader title="发行渠道管理" subtitle={loading ? '加载中...' : `共 ${allDistributions.length} 首歌曲`} />
+
+      {/* Search */}
+      <div className={`${cardCls} flex items-center gap-3`}>
+        <div className="relative w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text3)]" />
+          <input
+            className={`${inputCls} w-full pl-9`}
+            placeholder="搜索歌曲名称"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+          />
+        </div>
+        {keyword && (
+          <span className="text-xs text-[var(--text3)]">找到 {distributions.length} 首</span>
+        )}
+      </div>
 
       {/* Stat cards */}
       <div className="grid grid-cols-4 gap-3">
@@ -217,11 +242,12 @@ export default function AdminDistributionsPage() {
       )}
 
       {/* Legend */}
-      <div className="flex items-center gap-6 px-2">
+      <div className="flex items-center gap-6 px-2 mt-2 text-[var(--text3)]">
+        <span className="text-xs font-medium">矩阵状态说明：</span>
         {(['live', 'submitted', 'pending', 'none'] as const).map((key) => {
           const cfg = STATUS_CONFIG[key]
           return (
-            <div key={key} className="flex items-center gap-1.5 text-xs text-[var(--text3)]">
+            <div key={key} className="flex items-center gap-1.5 text-xs">
               <span>{cfg.icon}</span>
               <span>{cfg.label}</span>
             </div>

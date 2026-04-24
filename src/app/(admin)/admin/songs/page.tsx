@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { Cloud, Circle, CheckCircle2, Music, FileText, Lightbulb } from 'lucide-react'
+import { Cloud, Circle, CheckCircle2, Music, FileText, Lightbulb, Search } from 'lucide-react'
 import { PageHeader } from '@/components/ui/page-header'
 import { AdminTab } from '@/components/ui/unified-tabs'
 import { DataTable, Column } from '@/components/ui/data-table'
@@ -36,7 +36,7 @@ interface SongItem {
   id: number
   userId: number
   title: string
-  cover: string
+  coverUrl: string | null
   source: string
   score: number | null
   copyrightCode: string
@@ -77,6 +77,7 @@ export default function AdminSongsPage() {
   const [page] = useState(1)
   const [toast, setToast] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
+  const [keyword, setKeyword] = useState('')
 
   // Channel modal
   const [channelModal, setChannelModal] = useState<SongItem | null>(null)
@@ -92,6 +93,16 @@ export default function AdminSongsPage() {
   const songs = data?.list ?? []
   const statusCounts = data?.statusCounts ?? {}
 
+  const filteredByKeyword = useMemo(() => {
+    if (!keyword.trim()) return songs
+    const kw = keyword.trim().toLowerCase()
+    return songs.filter((s) =>
+      s.title.toLowerCase().includes(kw) ||
+      (s.creatorName ?? '').toLowerCase().includes(kw) ||
+      s.copyrightCode.toLowerCase().includes(kw)
+    )
+  }, [songs, keyword])
+
   function showToast(msg: string, type: 'success' | 'error' = 'success') {
     setToast(msg)
     setToastType(type)
@@ -104,8 +115,8 @@ export default function AdminSongsPage() {
     count: statusCounts[t.key] ?? 0,
   }))
 
-  // API already filters by status tab; use list directly
-  const filteredSongs = songs
+  // API already filters by status tab; apply keyword filter on top
+  const filteredSongs = filteredByKeyword
 
   // ── Status change via API ──────────────────────────────────────
 
@@ -143,9 +154,16 @@ export default function AdminSongsPage() {
 
   const columns: Column<SongItem>[] = [
     {
-      key: 'cover',
+      key: 'coverUrl',
       title: '封面',
-      render: (v) => <span style={{ fontSize: 22 }}>{v as string}</span>,
+      render: (v, row) => {
+        const url = (v as string | null) ?? (row as SongItem).coverUrl
+        return url ? (
+          <img src={url} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover' }} />
+        ) : (
+          <span style={{ fontSize: 22, color: 'var(--text3)' }}>🎵</span>
+        )
+      },
     },
     {
       key: 'title',
@@ -225,9 +243,9 @@ export default function AdminSongsPage() {
         )
       case 'pending_review':
         return (
-          <div style={{ display: 'flex', gap: 4 }}>
+          <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
             <button className={`${btnGhost} ${btnSmall}`} onClick={(e) => { e.stopPropagation(); setEditModal(song) }}>编辑</button>
-            <span style={{ fontSize: 11, color: 'var(--text3)' }}>在评审端处理</span>
+            <span style={{ fontSize: 11, color: 'var(--text3)', padding: '2px 8px', borderRadius: 8, background: 'var(--bg4)' }}>在评审端处理</span>
           </div>
         )
       case 'reviewed':
@@ -317,6 +335,19 @@ export default function AdminSongsPage() {
         title="歌曲库管理"
         subtitle={loading ? '加载中...' : `共 ${songs.length} 首歌曲`}
       />
+
+      {/* Search */}
+      <div className={cardCls}>
+        <div className="relative w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text3)]" />
+          <input
+            className={`${inputCls} w-full pl-9`}
+            placeholder="搜索歌名、创作者或版权编号"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+          />
+        </div>
+      </div>
 
       {/* Tabs */}
       <div>
