@@ -95,6 +95,7 @@ const SETTLE_STATUS: Record<string, { l: string; c: string }> = {
   confirmed: { l: '已确认', c: 'var(--accent)' },
   exported: { l: '已导出', c: 'var(--text2)' },
   paid: { l: '已打款', c: 'var(--green2)' },
+  exception: { l: '异常', c: 'var(--red)' },
 }
 
 const MAP_STATUS: Record<string, { l: string; c: string }> = {
@@ -823,7 +824,7 @@ function SettleTab({ showToast, settlements, refetch }: { showToast: (msg: strin
     { key: 'platform', title: '来源平台' },
     { key: 'plays', title: '播放量', render: v => (v as number)?.toLocaleString() },
     { key: 'rawRevenue', title: '原始收益', render: v => `¥${(v as number)?.toFixed(2)}` },
-    { key: 'creatorRatio', title: '创作者比例', render: v => `${v as number}%` },
+    { key: 'creatorRatio', title: '创作者比例', render: v => `${((v as number) * 100).toFixed(0)}%` },
     { key: 'creatorAmount', title: '创作者应得', render: v => <span style={{ fontWeight: 600, color: 'var(--green2)' }}>¥{(v as number)?.toFixed(2)}</span> },
     {
       key: 'status', title: '状态', render: v => {
@@ -836,10 +837,18 @@ function SettleTab({ showToast, settlements, refetch }: { showToast: (msg: strin
         const r = row as unknown as Settlement
         const handleSettle = async (action: string) => {
           const res = await apiCall('/api/admin/revenue/settlements', 'POST', { ids: [r.id], action })
-          if (res.ok) { showToast(`已${action === 'confirm' ? '确认' : action === 'export' ? '导出' : '标记打款'}`); refetch() }
+          if (res.ok) {
+            const labels: Record<string, string> = { confirm: '确认', export: '导出', pay: '标记打款', exception: '标记异常' }
+            showToast(`已${labels[action] ?? '操作'}`); refetch()
+          }
           else showToast(res.message ?? '操作失败')
         }
-        if (r.status === 'pending') return <button className={`${btnSuccess} ${btnSmall}`} onClick={e => { e.stopPropagation(); handleSettle('confirm') }}>确认</button>
+        if (r.status === 'pending') return (
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button className={`${btnSuccess} ${btnSmall}`} onClick={e => { e.stopPropagation(); handleSettle('confirm') }}>确认</button>
+            <button className={`${btnDanger} ${btnSmall}`} onClick={e => { e.stopPropagation(); handleSettle('exception') }}>异常</button>
+          </div>
+        )
         if (r.status === 'confirmed') return <button className={`${btnPrimary} ${btnSmall}`} onClick={e => { e.stopPropagation(); handleSettle('export') }}>导出</button>
         if (r.status === 'exported') return <button className={`${btnGhost} ${btnSmall}`} onClick={e => { e.stopPropagation(); handleSettle('pay') }}>标记打款</button>
         return <span style={{ fontSize: 11, color: 'var(--green2)' }}><CheckCircle2 className="inline w-3.5 h-3.5" /></span>
@@ -985,7 +994,7 @@ function PlatformSettleTab({ showToast }: { showToast: (msg: string) => void }) 
     },
     { key: 'period', title: '账期' },
     { key: 'rawRevenue', title: '原始收益', render: v => `¥${(v as number).toFixed(2)}` },
-    { key: 'creatorRatio', title: '创作者比例', render: v => `${v as number}%` },
+    { key: 'creatorRatio', title: '创作者比例', render: v => `${((v as number) * 100).toFixed(0)}%` },
     { key: 'creatorAmount', title: '创作者应得', render: v => <span style={{ fontWeight: 600, color: 'var(--green2)' }}>¥{(v as number).toFixed(2)}</span> },
     {
       key: 'status', title: '结算状态', render: v => {

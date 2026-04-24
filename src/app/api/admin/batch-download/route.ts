@@ -20,7 +20,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
 
   const songs = await prisma.platformSong.findMany({
     where: { id: { in: songIds } },
-    include: { user: { select: { name: true, realName: true, realNameStatus: true } } },
+    include: { user: { select: { name: true, realName: true, realNameStatus: true, agencyContract: true } } },
   })
 
   const zip = new JSZip()
@@ -69,7 +69,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
 
   // Validation report
   const report = songs.map(song => {
-    const missingAgency = song.user.realNameStatus !== 'verified'
+    const missingAgency = !song.user.agencyContract
     const missingRealName = song.user.realNameStatus !== 'verified'
     const missingIsrc = !song.isrc || !song.isrc.trim()
     return { song, missingAgency, missingRealName, missingIsrc }

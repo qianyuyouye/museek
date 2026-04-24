@@ -22,7 +22,7 @@ interface PublishTrack {
   submittedAt: string | null
   liveDate: string | null
   hasRevenue: boolean
-  status: 'pending' | 'submitted' | 'live' | 'data_confirmed' | 'exception'
+  status: 'pending' | 'submitted' | 'live' | 'failed'
   isrc?: string | null
   copyrightCode?: string
 }
@@ -33,8 +33,7 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> =
   pending: { label: '待提交', color: 'var(--text2)', bg: 'rgba(107,114,128,.06)' },
   submitted: { label: '待确认上架', color: 'var(--orange)', bg: 'rgba(253,203,110,.08)' },
   live: { label: '已上架', color: 'var(--green)', bg: 'rgba(85,239,196,.1)' },
-  data_confirmed: { label: '数据已确认', color: 'var(--green2)', bg: 'rgba(85,239,196,.08)' },
-  exception: { label: '异常', color: 'var(--red)', bg: 'rgba(255,107,107,.08)' },
+  failed: { label: '异常', color: 'var(--red)', bg: 'rgba(255,107,107,.08)' },
 }
 
 function daysSince(dateStr: string | null): number | null {
@@ -49,7 +48,7 @@ type TabKey = 'pending' | 'submitted' | 'live' | 'exception' | 'all'
 
 function filterByTab(tracks: PublishTrack[], tab: TabKey): PublishTrack[] {
   if (tab === 'all') return tracks
-  if (tab === 'live') return tracks.filter((t) => t.status === 'live' || t.status === 'data_confirmed')
+  if (tab === 'exception') return tracks.filter((t) => t.status === 'failed')
   return tracks.filter((t) => t.status === tab)
 }
 
@@ -77,7 +76,7 @@ export default function PublishConfirmPage() {
     pending: statusCounts.pending ?? 0,
     submitted: statusCounts.submitted ?? 0,
     live: statusCounts.live ?? 0,
-    exception: statusCounts.exception ?? 0,
+    exception: (statusCounts.failed ?? 0),
     all: statusCounts.all ?? Object.values(statusCounts).reduce((a, b) => a + (typeof b === 'number' ? b : 0), 0),
   }), [statusCounts])
 
@@ -241,7 +240,7 @@ export default function PublishConfirmPage() {
                 </button>
               </div>
             )
-          case 'exception':
+          case 'failed':
             return (
               <div className="flex gap-1">
                 <button
@@ -265,7 +264,6 @@ export default function PublishConfirmPage() {
               </div>
             )
           case 'live':
-          case 'data_confirmed':
             return (
               <button
                 className={`${btnGhost} ${btnSmall}`}

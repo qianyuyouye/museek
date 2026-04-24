@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Cloud, Circle, CheckCircle2, Music, FileText, Lightbulb } from 'lucide-react'
 import { PageHeader } from '@/components/ui/page-header'
 import { AdminTab } from '@/components/ui/unified-tabs'
@@ -108,11 +108,8 @@ export default function AdminSongsPage() {
     count: statusCounts[t.key] ?? 0,
   }))
 
-  // Filtered songs
-  const filteredSongs = useMemo(() => {
-    if (activeTab === 'all') return songs
-    return songs.filter((s) => s.status === activeTab)
-  }, [songs, activeTab])
+  // API already filters by status tab; use list directly
+  const filteredSongs = songs
 
   // ── Status change via API ──────────────────────────────────────
 
@@ -499,6 +496,22 @@ function EditModal({ song, onClose, onSuccess, showToast }: {
     creationDesc: '',
     aiTools: '',
   })
+
+  // Load existing values from song on mount
+  useEffect(() => {
+    setForm({
+      genre: song.genre ?? '',
+      bpm: song.bpm != null ? String(song.bpm) : '',
+      lyrics: '',
+      lyricist: '',
+      composer: '',
+      performer: '',
+      albumName: '',
+      albumArtist: '',
+      creationDesc: '',
+      aiTools: Array.isArray((song as any).aiTools) ? ((song as any).aiTools as string[]).join(', ') : '',
+    })
+  }, [song])
   const [saving, setSaving] = useState(false)
 
   async function handleSave() {

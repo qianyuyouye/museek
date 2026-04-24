@@ -169,6 +169,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
 
   if (!file) return err('请选择 CSV 文件')
   if (!(await isPlatformEnabled(platformStr, { allowLegacyKeys: true }))) return err('无效的平台')
+  if (platformStr !== 'qishui') return err('其他平台收益导入暂未开放，请先使用汽水音乐 CSV 模板导入')
 
   const ab = await file.arrayBuffer()
   const text = decodeCsvBuffer(Buffer.from(ab))

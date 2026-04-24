@@ -118,11 +118,6 @@ export default function AdminIsrcPage() {
       title: '流派',
     },
     {
-      key: '_duration',
-      title: '时长',
-      render: () => <span>3:24</span>,
-    },
-    {
       key: '_action',
       title: '操作',
       render: (_v, row) => {

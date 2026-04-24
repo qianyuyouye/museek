@@ -52,6 +52,7 @@ const TRANSITION: Record<string, { from: SettleStatus; to: SettleStatus; timeFie
   confirm: { from: 'pending', to: 'confirmed' },
   export: { from: 'confirmed', to: 'exported', timeField: 'exportedAt' },
   pay: { from: 'exported', to: 'paid', timeField: 'paidAt' },
+  exception: { from: 'pending', to: 'exception' },
 }
 
 export const POST = safeHandler(async function POST(request: NextRequest) {
