@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, err, safeHandler} from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
 import { toSignedUrl } from '@/lib/signed-url'
+import { invalidate } from '@/lib/cache'
 
 export const GET = safeHandler(async function GET(
   request: NextRequest,
@@ -144,6 +145,9 @@ export const POST = safeHandler(async function POST(
 
     return updated
   })
+
+  // 看板统计依赖歌曲状态，写后使缓存失效
+  invalidate('dashboard')
 
   return ok({ id: distId, status: transition.to })
 })

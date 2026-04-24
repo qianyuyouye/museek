@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, safeHandler} from '@/lib/api-utils'
 import { logAdminAction } from '@/lib/log-action'
+import { invalidate } from '@/lib/cache'
 
 export const POST = safeHandler(async function POST(request: NextRequest) {
   const auth = await requirePermission(request, 'admin.publish_confirm.operate')
@@ -94,5 +95,6 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     targetType: 'distribution',
     detail: { autoConfirmed: result.autoConfirmed, exceptions: result.exceptions },
   })
+  invalidate('dashboard')
   return ok(result)
 })
