@@ -116,16 +116,34 @@ export const POST = safeHandler(async function POST(
     data[field] = value === 'NOW' ? now : value
   }
 
-  const updated = await prisma.distribution.update({
-    where: { id: distId },
-    data,
+  await prisma.$transaction(async (tx) => {
+    const updated = await tx.distribution.update({
+      where: { id: distId },
+      data,
+    })
+
+    // 同步更新关联的 PlatformSong 状态，确保首页/歌曲库统计一致
+    if (transition.to === 'live') {
+      await tx.platformSong.update({
+        where: { id: distribution.songId },
+        data: { status: 'published' },
+      })
+    } else if (action === 'submit') {
+      await tx.platformSong.update({
+        where: { id: distribution.songId },
+        data: { status: 'ready_to_publish' },
+      })
+    }
+
+    await logAdminAction(request, {
+      action: `distribution_${action}`,
+      targetType: 'distribution',
+      targetId: distId,
+      detail: { platform: distribution.platform, from: transition.from, to: transition.to },
+    })
+
+    return updated
   })
 
-  await logAdminAction(request, {
-    action: `distribution_${action}`,
-    targetType: 'distribution',
-    targetId: distId,
-    detail: { platform: distribution.platform, from: transition.from, to: transition.to },
-  })
-  return ok(updated)
+  return ok({ id: distId, status: transition.to })
 })
