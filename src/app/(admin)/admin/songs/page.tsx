@@ -153,14 +153,6 @@ export default function AdminSongsPage() {
 
   const columns: Column<SongItem>[] = [
     {
-      key: 'id',
-      title: '操作',
-      render: (_v, row) => {
-        const song = row as SongItem
-        return <ActionButtons song={song} />
-      },
-    },
-    {
       key: 'coverUrl',
       title: '封面',
       render: (v, row) => {
@@ -214,6 +206,15 @@ export default function AdminSongsPage() {
           return <StatusBadge label={map.label} color={map.color} bg={map.bg} />
         }
         return <span>{status}</span>
+      },
+    },
+    {
+      key: 'id',
+      title: '操作',
+      className: 'pr-2',
+      render: (_v, row) => {
+        const song = row as SongItem
+        return <ActionButtons song={song} />
       },
     },
   ]

@@ -6,6 +6,7 @@ import { Inbox } from 'lucide-react'
 export interface Column<T> {
   key: string
   title: string
+  className?: string
   render?: (value: unknown, row: T) => ReactNode
 }
 
@@ -30,7 +31,7 @@ export function DataTable<T>({
             {columns.map((col) => (
               <th
                 key={col.key}
-                className="px-4 py-2.5 text-left text-xs font-semibold text-[var(--text3)] uppercase tracking-wide border-b border-[var(--border)] whitespace-nowrap"
+                className={`px-4 py-2.5 text-left text-xs font-semibold text-[var(--text3)] uppercase tracking-wide border-b border-[var(--border)] whitespace-nowrap ${col.className ?? ''}`}
               >
                 {col.title}
               </th>
@@ -67,7 +68,7 @@ export function DataTable<T>({
                 {columns.map((col) => (
                   <td
                     key={col.key}
-                    className="px-4 py-3 text-sm text-[var(--text)] border-b border-[var(--border)] whitespace-nowrap"
+                    className={`px-4 py-3 text-sm text-[var(--text)] border-b border-[var(--border)] whitespace-nowrap ${col.className ?? ''}`}
                   >
                     {col.render
                       ? col.render((row as Record<string, unknown>)[col.key], row)
