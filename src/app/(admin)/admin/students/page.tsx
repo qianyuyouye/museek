@@ -56,6 +56,7 @@ export default function AdminStudentsPage() {
   const [searchText, setSearchText] = useState('')
   const [filterStatus, setFilterStatus] = useState('全部实名状态')
   const [editing, setEditing] = useState(false)
+  const [editUserId, setEditUserId] = useState<number | null>(null)
   const [editForm, setEditForm] = useState<{ name: string; realName: string; phone: string; email: string; avatarUrl: string }>({
     name: '',
     realName: '',
@@ -97,6 +98,7 @@ export default function AdminStudentsPage() {
 
   function openEdit() {
     if (!detailStudent) return
+    setEditUserId(detailStudent.id)
     setEditForm({
       name: detailStudent.name ?? '',
       realName: detailStudent.realName ?? '',
@@ -109,7 +111,7 @@ export default function AdminStudentsPage() {
   }
 
   function openEditFromList(s: Student) {
-    setDetail(s.id)
+    setEditUserId(s.id)
     setEditForm({
       name: s.name ?? '',
       realName: s.realName ?? '',
@@ -122,7 +124,7 @@ export default function AdminStudentsPage() {
   }
 
   async function saveEdit() {
-    if (detail === null) return
+    if (editUserId === null) return
     if (!editForm.name.trim()) { setEditError('昵称不能为空'); return }
 
     const body: Record<string, unknown> = { name: editForm.name.trim() }
@@ -137,12 +139,12 @@ export default function AdminStudentsPage() {
     body.email = editForm.email || null
     body.avatarUrl = editForm.avatarUrl || null
 
-    const res = await apiCall(`/api/admin/students/${detail}`, 'PUT', body)
+    const res = await apiCall(`/api/admin/students/${editUserId}`, 'PUT', body)
     if (res.ok) {
       setEditing(false)
       showToast('用户信息已更新')
-      refetchDetail()
       refetch()
+      if (detail !== null) refetchDetail()
     } else {
       setEditError(res.message ?? '更新失败')
     }
