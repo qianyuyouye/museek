@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { CheckCircle2, AlertTriangle, Check, Search } from 'lucide-react'
+import { CheckCircle2, AlertTriangle, Check, Search, Upload, Bell, Radio, AlertCircle, RotateCcw, Phone, Users } from 'lucide-react'
 import { PageHeader } from '@/components/ui/page-header'
 import { AdminTab } from '@/components/ui/unified-tabs'
 import { DataTable, Column } from '@/components/ui/data-table'
@@ -90,10 +90,10 @@ export default function PublishConfirmPage() {
   }), [statusCounts])
 
   const tabs = [
-    { key: 'pending', label: '\uD83D\uDCE4 \u5F85\u63D0\u4EA4', count: tabCounts.pending },
-    { key: 'submitted', label: '\uD83D\uDD14 \u5F85\u786E\u8BA4\u4E0A\u67B6', count: tabCounts.submitted },
-    { key: 'live', label: '\u2705 \u5DF2\u53D1\u884C', count: tabCounts.live },
-    { key: 'exception', label: '\u26A0\uFE0F \u5F02\u5E38', count: tabCounts.exception },
+    { key: 'pending', label: <span className="flex items-center gap-1.5"><Upload className="w-4 h-4" />待提交</span>, count: tabCounts.pending },
+    { key: 'submitted', label: <span className="flex items-center gap-1.5"><Bell className="w-4 h-4" />待确认上架</span>, count: tabCounts.submitted },
+    { key: 'live', label: <span className="flex items-center gap-1.5"><Radio className="w-4 h-4" />已发行</span>, count: tabCounts.live },
+    { key: 'exception', label: <span className="flex items-center gap-1.5"><AlertCircle className="w-4 h-4" />异常</span>, count: tabCounts.exception },
     { key: 'all', label: '\u5168\u90E8', count: tabCounts.all },
   ]
 
@@ -120,7 +120,7 @@ export default function PublishConfirmPage() {
   async function handleSync() {
     const res = await apiCall('/api/admin/publish-confirm/sync', 'POST')
     if (res.ok) {
-      showToast('🔄 对账同步完成')
+      showToast('对账同步完成')
       refetch()
     } else {
       showToast(res.message ?? '同步失败')
@@ -166,7 +166,7 @@ export default function PublishConfirmPage() {
         if (days === null) return <span style={{ color: 'var(--text3)' }}>-</span>
         return (
           <span style={{ color: days > 30 ? 'var(--red)' : 'var(--text)', fontWeight: days > 30 ? 600 : 400 }}>
-            {days}{'\u5929'}{days > 30 ? ' \u26A0\uFE0F' : ''}
+            {days}{'天'}{days > 30 ? ' ⚠' : ''}
           </span>
         )
       },
@@ -181,7 +181,7 @@ export default function PublishConfirmPage() {
       title: '\u672C\u671F\u6709\u6570\u636E?',
       render: (v) =>
         (v as boolean) ? (
-          <span style={{ color: 'var(--green2)', fontWeight: 600 }}>{'\u2713 \u662F'}</span>
+          <span style={{ color: 'var(--green2)', fontWeight: 600 }}><Check className="w-3.5 h-3.5 inline mr-1" />是</span>
         ) : (
           <span style={{ color: 'var(--text3)' }}>{'\u672A\u8FD4\u56DE'}</span>
         ),
@@ -265,10 +265,10 @@ export default function PublishConfirmPage() {
                   className={`${btnGhost} ${btnSmall}`}
                   onClick={(e) => {
                     e.stopPropagation()
-                    showToast('\uD83D\uDCDE \u5DF2\u53D1\u8D77\u5E73\u53F0\u5DE5\u5355\uFF0C\u8BF7\u7B49\u5F85\u56DE\u590D')
+                    showToast('已发起平台工单，请等待回复')
                   }}
                 >
-                  {'\uD83D\uDCDE'} {'\u8054\u7CFB\u5E73\u53F0'}
+                  <Phone className="w-3.5 h-3.5" /> {'联系平台'}
                 </button>
               </div>
             )
@@ -301,8 +301,8 @@ export default function PublishConfirmPage() {
       ['歌曲', detailTrack.title],
       ['创作者', detailTrack.creatorName ?? '-'],
       ['平台', detailTrack.platform],
-      ['提交日期', detailTrack.submittedAt ? `${detailTrack.submittedAt}（已提交${days}天）` : '-'],
-      ['上架日期', detailTrack.liveDate ?? '-'],
+      ['提交日期', detailTrack.submittedAt ? `${formatDate(detailTrack.submittedAt)}（已提交${days}天）` : '-'],
+      ['上架日期', detailTrack.liveDate ? formatDate(detailTrack.liveDate) : '-'],
       ['本期数据', detailTrack.hasRevenue ? '有数据' : '未返回'],
       ['版权编号', detailTrack.copyrightCode ?? '-'],
     ]
@@ -335,7 +335,7 @@ export default function PublishConfirmPage() {
         subtitle={loading ? '加载中...' : `共 ${allTracks.length} 条发行记录`}
         actions={
           <button className={btnPrimary} onClick={handleSync}>
-            {'\uD83D\uDD04'} {'\u89E6\u53D1\u5BF9\u8D26\u540C\u6B65'}
+            <RotateCcw className="w-4 h-4" /> {'触发对账同步'}
           </button>
         }
       />
@@ -360,7 +360,7 @@ export default function PublishConfirmPage() {
       <div className="grid grid-cols-3 gap-4">
         <div className={cardCls}>
           <div className="flex items-center gap-2 mb-2">
-            <span style={{ fontSize: 20 }}>{'\u2705'}</span>
+            <CheckCircle2 className="w-5 h-5 text-[var(--green)]" />
             <span className="font-semibold text-sm">{'\u81EA\u52A8\u786E\u8BA4'}</span>
           </div>
           <p className="text-xs text-[var(--text3)] leading-relaxed m-0">
@@ -369,7 +369,7 @@ export default function PublishConfirmPage() {
         </div>
         <div className={cardCls}>
           <div className="flex items-center gap-2 mb-2">
-            <span style={{ fontSize: 20 }}>{'\uD83D\uDC4B'}</span>
+            <Users className="w-5 h-5 text-[var(--accent)]" />
             <span className="font-semibold text-sm">{'\u4EBA\u5DE5\u786E\u8BA4'}</span>
           </div>
           <p className="text-xs text-[var(--text3)] leading-relaxed m-0">
@@ -378,7 +378,7 @@ export default function PublishConfirmPage() {
         </div>
         <div className={cardCls}>
           <div className="flex items-center gap-2 mb-2">
-            <span style={{ fontSize: 20 }}>{'\u26A0\uFE0F'}</span>
+            <AlertTriangle className="w-5 h-5 text-[var(--red)]" />
             <span className="font-semibold text-sm">{'\u5F02\u5E38\u5904\u7406'}</span>
           </div>
           <p className="text-xs text-[var(--text3)] leading-relaxed m-0">

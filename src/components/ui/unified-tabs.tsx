@@ -2,7 +2,7 @@
 
 interface TabItem {
   key: string
-  label: string
+  label: string | React.ReactNode
   count?: number
 }
 
