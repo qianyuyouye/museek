@@ -10,6 +10,7 @@ import { DataTable, Column } from '@/components/ui/data-table'
 import { AdminModal } from '@/components/ui/modal'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, cardCls, btnPrimary, btnGhost, btnSmall, inputCls, labelCls, infoBoxPurple, infoBoxRed } from '@/lib/ui-tokens'
+import { formatDateTime } from '@/lib/format'
 
 // ── Button / input helpers ───────────────────────────────────────
 
@@ -37,6 +38,7 @@ interface CreatorAccount {
   groupIds: number[]
   realNameStatus: string
   songCount: number
+  lastLogin: string
 }
 
 interface UserGroup {
@@ -63,6 +65,8 @@ interface AccountsApiItem {
 interface AccountsApiData {
   list: AccountsApiItem[]
   total: number
+  reviewerCount: number
+  creatorCount: number
 }
 
 // ── Main component ───────────────────────────────────────────────
@@ -86,6 +90,8 @@ export default function AdminAccountsPage() {
   )
 
   const apiList = data?.list ?? []
+  const reviewerTotal = data?.reviewerCount ?? 0
+  const creatorTotal = data?.creatorCount ?? 0
 
   const reviewers: ReviewerAccount[] = apiList
     .filter((u) => u.type === 'reviewer')
@@ -99,7 +105,7 @@ export default function AdminAccountsPage() {
       groupIds: u.groups.map((g) => g.id),
       groupNames: u.groups.map((g) => g.name),
       status: (u.status === 'active' ? 'active' : 'disabled') as 'active' | 'disabled',
-      lastLogin: u.lastLoginAt ?? '-',
+      lastLogin: u.lastLoginAt ?? '',
     }))
 
   const creators: CreatorAccount[] = apiList
@@ -114,6 +120,7 @@ export default function AdminAccountsPage() {
       groupIds: u.groups.map((g) => g.id),
       realNameStatus: u.realNameStatus ?? 'none',
       songCount: (u as AccountsApiItem & { songCount?: number }).songCount ?? 0,
+      lastLogin: u.lastLoginAt ?? '',
     }))
 
   const groups: UserGroup[] = Array.from(
@@ -127,8 +134,8 @@ export default function AdminAccountsPage() {
 
   // ── Tab config ──────────────────────────────────────────────
   const tabs = [
-    { key: 'reviewer', label: '评审账号', count: reviewers.length },
-    { key: 'creator', label: '创作者账号管控', count: creators.length },
+    { key: 'reviewer', label: '评审账号', count: loading ? undefined : reviewerTotal },
+    { key: 'creator', label: '创作者账号管控', count: loading ? undefined : creatorTotal },
   ]
 
   // ── Reviewer columns ───────────────────────────────────────
@@ -177,7 +184,11 @@ export default function AdminAccountsPage() {
           <span style={{ color: 'var(--red)', fontSize: 12 }}><Ban className="inline w-3 h-3 mr-0.5" />已禁用</span>
         ),
     },
-    { key: 'lastLogin', title: '最后登录' },
+    {
+      key: 'lastLogin',
+      title: '最后登录',
+      render: (v) => <span style={{ fontSize: 12, color: 'var(--text3)' }}>{formatDateTime(v as string)}</span>,
+    },
     {
       key: 'id',
       title: '操作',
@@ -273,6 +284,10 @@ export default function AdminAccountsPage() {
       },
     },
     { key: 'songCount', title: '作品数' },
+    {
+      key: 'lastLogin', title: '最后登录',
+      render: (v) => <span style={{ fontSize: 12, color: 'var(--text3)' }}>{formatDateTime(v as string)}</span>,
+    },
     {
       key: 'id',
       title: '操作',

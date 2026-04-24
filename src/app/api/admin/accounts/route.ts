@@ -34,8 +34,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     ]
   }
 
-  const [total, users] = await Promise.all([
-    prisma.user.count({ where }),
+  const [users, total, reviewerCount, creatorCount] = await Promise.all([
     prisma.user.findMany({
       where,
       skip,
@@ -48,6 +47,9 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
         _count: { select: { songs: true } },
       },
     }),
+    prisma.user.count({ where }),
+    prisma.user.count({ where: { type: 'reviewer' } }),
+    prisma.user.count({ where: { type: 'creator' } }),
   ])
 
   // 评审 Tab 附带评审绩效统计（批改数/平均用时/平均评分/推荐率）
@@ -96,5 +98,5 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     ...(tab === 'reviewer' ? (reviewerStats.get(u.id) ?? { reviewCount: 0, avgTimeSeconds: 0, avgScore: 0, recommendRate: 0 }) : {}),
   }))
 
-  return ok({ list, total, page, pageSize })
+  return ok({ list, total, page, pageSize, reviewerCount, creatorCount })
 })

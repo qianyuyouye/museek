@@ -2,7 +2,7 @@ services:
   app:
     build: .
     ports:
-      - "5173:3000"
+      - "3003:3000"
     environment:
       - DATABASE_URL=mysql://root:${MYSQL_ROOT_PASSWORD:-museek2026}@db:3306/museek
       - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
@@ -33,7 +33,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    entrypoint: ["sh", "-c", "npx prisma db push --skip-generate && node prisma/seed.js"]
+    entrypoint: ["sh", "-c", "npx prisma db push --accept-data-loss --skip-generate && node prisma/seed.js"]
     restart: "no"
     profiles: ["init"]
 

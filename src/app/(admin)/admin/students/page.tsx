@@ -11,6 +11,7 @@ import { StatusBadge } from '@/components/ui/status-badge'
 import { SONG_STATUS_MAP } from '@/lib/constants'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, cardCls, btnPrimary, btnGhost, btnDanger, btnSuccess, btnSmall, inputCls, labelCls, kvRow, kvLabel, infoBoxOrange, infoBoxRed, infoBoxGray } from '@/lib/ui-tokens'
+import { formatDateTime } from '@/lib/format'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -203,6 +204,7 @@ export default function AdminStudentsPage() {
       ['所属用户组', groupNames],
       ['作品数', s.songCount],
       ['总收益', `¥${s.totalRevenue ?? 0}`],
+      ['最后登录', s.lastLoginAt ? formatDateTime(s.lastLoginAt) : '—'],
     ]
 
     return (
@@ -452,6 +454,10 @@ export default function AdminStudentsPage() {
       },
     },
     { key: 'songCount', title: '作品数' },
+    {
+      key: 'lastLoginAt', title: '最后登录',
+      render: (v) => <span style={{ fontSize: 12, color: 'var(--text3)' }}>{v ? formatDateTime(v as string) : '—'}</span>,
+    },
     {
       key: 'actions', title: '操作',
       render: (_v, row) => {
