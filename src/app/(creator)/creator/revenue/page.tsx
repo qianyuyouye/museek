@@ -178,11 +178,20 @@ export default function CreatorRevenuePage() {
       </div>
 
       {/* Update time */}
-      <div className="flex items-center gap-2 text-xs text-[var(--text3)]">
-        <span>数据更新于 2026-04-10 10:00</span>
-        <span className="opacity-50">·</span>
-        <span>下次更新: 2026-07-10 (Q2 数据)</span>
-      </div>
+      {(() => {
+        const now = new Date()
+        const y = now.getFullYear()
+        const q = Math.floor(now.getMonth() / 3) + 1
+        const nextQ = q < 4 ? q + 1 : 1
+        const nextY = q < 4 ? y : y + 1
+        return (
+          <div className="flex items-center gap-2 text-xs text-[var(--text3)]">
+            <span>数据更新于 {now.toLocaleDateString('zh-CN')}</span>
+            <span className="opacity-50">·</span>
+            <span>下次更新: Q{nextQ} {nextY} 数据</span>
+          </div>
+        )
+      })()}
 
       {/* Stat Cards */}
       <div className="grid grid-cols-4 gap-4">

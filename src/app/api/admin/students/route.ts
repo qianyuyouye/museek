@@ -70,6 +70,8 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     adminLevel: u.adminLevel,
     realNameStatus: u.realNameStatus,
     agencyContract: u.agencyContract,
+    agencyApplied: u.agencyApplied,
+    agencyAppliedAt: u.agencyAppliedAt,
     status: u.status,
     lastLoginAt: u.lastLoginAt,
     createdAt: u.createdAt,

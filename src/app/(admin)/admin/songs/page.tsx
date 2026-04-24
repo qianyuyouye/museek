@@ -78,10 +78,6 @@ export default function AdminSongsPage() {
   const [toast, setToast] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
 
-  // ISRC modal
-  const [isrcModal, setIsrcModal] = useState<SongItem | null>(null)
-  const [isrcInput, setIsrcInput] = useState('')
-
   // Channel modal
   const [channelModal, setChannelModal] = useState<SongItem | null>(null)
 
@@ -126,10 +122,6 @@ export default function AdminSongsPage() {
         showToast(`发行失败：创作者「${song.creatorName ?? '未知'}」尚未完成实名认证`, 'error')
         return
       }
-      if (!song.isrc) {
-        showToast(`发行失败：歌曲「${song.title}」尚未绑定 ISRC 编码`, 'error')
-        return
-      }
     }
 
     const res = await apiCall(`/api/admin/songs/${songId}/status`, 'POST', { action })
@@ -144,24 +136,6 @@ export default function AdminSongsPage() {
       refetch()
     } else {
       showToast(res.message ?? '操作失败', 'error')
-    }
-  }
-
-  async function handleBindIsrc() {
-    if (!isrcModal) return
-    const trimmed = isrcInput.trim()
-    if (!trimmed) {
-      showToast('请输入 ISRC 编码', 'error')
-      return
-    }
-    const res = await apiCall(`/api/admin/songs/${isrcModal.id}/isrc`, 'POST', { isrc: trimmed })
-    if (res.ok) {
-      showToast(`歌曲「${isrcModal.title}」已绑定 ISRC：${trimmed}`)
-      setIsrcModal(null)
-      setIsrcInput('')
-      refetch()
-    } else {
-      showToast(res.message ?? '绑定失败', 'error')
     }
   }
 
@@ -206,21 +180,6 @@ export default function AdminSongsPage() {
       ),
     },
     {
-      key: 'isrc',
-      title: 'ISRC',
-      render: (v) => {
-        const isrc = v as string | null
-        if (isrc) {
-          return (
-            <span style={{ color: 'var(--green2)', fontFamily: 'monospace', fontSize: 12 }}>
-              {isrc}
-            </span>
-          )
-        }
-        return <span style={{ color: 'var(--text3)', fontSize: 12 }}>待申报</span>
-      },
-    },
-    {
       key: 'status',
       title: '状态',
       render: (v) => {
@@ -257,12 +216,6 @@ export default function AdminSongsPage() {
               确认发行
             </button>
             <button
-              className={`${btnGhost} ${btnSmall}`}
-              onClick={(e) => { e.stopPropagation(); setIsrcModal(song); setIsrcInput(song.isrc ?? '') }}
-            >
-              绑ISRC
-            </button>
-            <button
               className={`${btnDanger} ${btnSmall}`}
               onClick={(e) => { e.stopPropagation(); handleStatusChange(song.id, 'return') }}
             >
@@ -286,12 +239,6 @@ export default function AdminSongsPage() {
               onClick={(e) => { e.stopPropagation(); handleStatusChange(song.id, 'publish') }}
             >
               手动发行
-            </button>
-            <button
-              className={`${btnGhost} ${btnSmall}`}
-              onClick={(e) => { e.stopPropagation(); setIsrcModal(song); setIsrcInput(song.isrc ?? '') }}
-            >
-              绑ISRC
             </button>
           </div>
         )
@@ -385,39 +332,6 @@ export default function AdminSongsPage() {
         />
       </div>
 
-      {/* ISRC 绑定弹窗 */}
-      <AdminModal
-        open={!!isrcModal}
-        onClose={() => { setIsrcModal(null); setIsrcInput('') }}
-        title={`绑定 ISRC · ${isrcModal?.title ?? ''}`}
-        width={420}
-      >
-        <div className="flex flex-col gap-4">
-          <div>
-            <label className={labelCls}>ISRC 编码</label>
-            <input
-              className={inputCls}
-              placeholder="如：CNF121200001"
-              value={isrcInput}
-              onChange={(e) => setIsrcInput(e.target.value)}
-              style={{ fontFamily: 'monospace' }}
-            />
-          </div>
-          <div
-            className="p-3 rounded-lg text-xs leading-relaxed text-[var(--accent2)]"
-            style={{ background: 'rgba(108,92,231,.08)' }}
-          >
-            ISRC（国际标准录音制品编码）是歌曲发行的必要条件。绑定后将用于数字音乐分发与版税追踪。
-          </div>
-          <button
-            className={`${btnPrimary} w-full flex justify-center`}
-            onClick={handleBindIsrc}
-          >
-            确认绑定
-          </button>
-        </div>
-      </AdminModal>
-
       {/* 渠道查看弹窗 */}
       <AdminModal
         open={!!channelModal}
@@ -449,7 +363,7 @@ export default function AdminSongsPage() {
                 })}
               </div>
               <div className="text-xs text-[var(--text3)] text-center pt-2">
-                ISRC：{channelModal.isrc ?? '未分配'} · 版权编号：{channelModal.copyrightCode}
+                版权编号：{channelModal.copyrightCode}
               </div>
             </div>
           )

@@ -92,7 +92,8 @@ describe('歌曲 · 状态变更通知', () => {
   })
 })
 
-describe('歌曲 · ISRC 绑定 + 授权 PDF', () => {
+// ISRC 功能已停用，相关测试跳过
+describe.skip('歌曲 · ISRC 绑定 + 授权 PDF', () => {
   it('TC-A-08 绑 ISRC POST → 200', async () => {
     const r = await http('/api/admin/songs/1/isrc', {
       method: 'POST',

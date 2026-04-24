@@ -23,7 +23,6 @@ interface SongDetail {
   composer?: string | null
   albumName?: string | null
   albumArtist?: string | null
-  isrc?: string | null
   lyrics?: string | null
   styleDesc?: string | null
   creationDesc?: string | null
@@ -46,10 +45,18 @@ interface ReviewDraftData {
 
 // ── AI Analysis Panel ──────────────────────────────────────────
 function AIAnalysisPanel({ songId, bpm }: { songId: number; bpm?: number }) {
-  const { data, loading } = useApi<{
+  const { data, loading, error } = useApi<{
     detectedBpm: string; key: string; loudness: string;
     spectrum: string; structure: string; productionQuality: string; summary: string
   }>(`/api/review/songs/${songId}/analysis`, [songId])
+  const detailsRef = useRef<HTMLDetailsElement>(null)
+
+  // 分析中自动展开，完成后由用户自行折叠
+  useEffect(() => {
+    if (loading && detailsRef.current && !detailsRef.current.open) {
+      detailsRef.current.open = true
+    }
+  }, [loading])
 
   const items = data ? [
     ['检测BPM', data.detectedBpm || String(bpm || '-')],
@@ -63,18 +70,39 @@ function AIAnalysisPanel({ songId, bpm }: { songId: number; bpm?: number }) {
     ['调性', '-'], ['响度', '-'], ['频谱', '-'], ['段落', '-'], ['制作度', '-'],
   ]
 
+  if (loading) {
+    return (
+      <details ref={detailsRef} className="mt-4" open>
+        <summary className="cursor-pointer text-sm text-[var(--accent2)] py-2">
+          <Bot className="w-4 h-4 inline mr-1 -mt-0.5" />AI预分析报告（仅供参考） 分析中...
+        </summary>
+        <div className="p-6 bg-[var(--bg4)] rounded-lg mt-2 text-center text-xs text-[var(--text3)]">
+          <div className="inline-block w-5 h-5 border-2 border-[var(--accent2)] border-t-transparent rounded-full animate-spin mr-2" />
+          AI 正在分析歌曲，请稍候...
+        </div>
+      </details>
+    )
+  }
+
   return (
-    <details className="mt-4">
+    <details ref={detailsRef} className="mt-4">
       <summary className="cursor-pointer text-sm text-[var(--accent2)] py-2">
-        <Bot className="w-4 h-4 inline mr-1 -mt-0.5" />AI预分析报告（仅供参考）{loading ? ' 分析中...' : data?.summary ? ` · ${data.summary}` : ''}
+        <Bot className="w-4 h-4 inline mr-1 -mt-0.5" />AI预分析报告（仅供参考）{data?.summary ? ` · ${data.summary}` : ''}
       </summary>
-      <div className="p-3 bg-[var(--bg4)] rounded-lg mt-2 text-xs grid grid-cols-2 gap-2">
-        {items.map(([k, v]) => (
-          <div key={k} className="p-1.5 bg-[var(--bg3)] rounded">
-            <span className="text-[var(--text3)]">{k}：</span>{v}
-          </div>
-        ))}
-      </div>
+      {error && (
+        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg mt-2 text-xs text-red-400">
+          ⚠ {error}
+        </div>
+      )}
+      {!error && (
+        <div className="p-3 bg-[var(--bg4)] rounded-lg mt-2 text-xs grid grid-cols-2 gap-2">
+          {items.map(([k, v]) => (
+            <div key={k} className="p-1.5 bg-[var(--bg3)] rounded">
+              <span className="text-[var(--text3)]">{k}：</span>{v}
+            </div>
+          ))}
+        </div>
+      )}
     </details>
   )
 }
@@ -114,7 +142,7 @@ function useToast() {
     setTimeout(() => setMsg(''), 3000)
   }
   const Toast = msg ? (
-    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-[var(--text)] text-white px-5 py-3 rounded-xl text-sm shadow-lg animate-[fadeIn_0.2s]">
+    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900/95 text-white px-5 py-3 rounded-xl text-sm shadow-lg animate-[fadeIn_0.2s]">
       {msg}
     </div>
   ) : null
@@ -403,7 +431,6 @@ export default function ReviewAssessPage() {
                   ['作曲', song.composer],
                   ['专辑', song.albumName],
                   ['专辑艺人', song.albumArtist],
-                  ['ISRC', song.isrc],
                 ].map(([k, v]) => (
                   <div key={k as string} className="flex gap-2">
                     <span className="text-[var(--text3)] w-14 shrink-0">{k}：</span>

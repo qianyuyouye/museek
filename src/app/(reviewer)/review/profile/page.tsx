@@ -307,7 +307,7 @@ export default function ReviewerProfilePage() {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-[var(--text)] text-white px-6 py-2.5 rounded-lg text-sm z-[100] shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-gray-900/95 text-white px-6 py-2.5 rounded-lg text-sm z-[100] shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
           {toast}
         </div>
       )}

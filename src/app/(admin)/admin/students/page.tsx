@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { CheckCircle2, XCircle, Circle, Ban, Music, User } from 'lucide-react'
+import { CheckCircle2, XCircle, Circle, Ban, Music, User, Pencil } from 'lucide-react'
 import { useConfirm } from '@/components/ui/confirm-dialog'
 import { PageHeader } from '@/components/ui/page-header'
+import { AdminModal } from '@/components/ui/modal'
 import { DataTable, Column } from '@/components/ui/data-table'
 import { SearchBar } from '@/components/ui/search-bar'
 import { StatusBadge } from '@/components/ui/status-badge'
@@ -24,6 +25,9 @@ interface Student {
   adminLevel: string | null
   realNameStatus: string
   agencyContract: boolean
+  agencyApplied: boolean
+  agencyAppliedAt?: string | null
+  agencyRejectReason?: string | null
   status: string
   groups: { id: number; name: string }[]
   songCount: number
@@ -50,6 +54,15 @@ export default function AdminStudentsPage() {
   const [toast, setToast] = useState('')
   const [searchText, setSearchText] = useState('')
   const [filterStatus, setFilterStatus] = useState('全部实名状态')
+  const [editing, setEditing] = useState(false)
+  const [editForm, setEditForm] = useState<{ name: string; realName: string; phone: string; email: string; avatarUrl: string }>({
+    name: '',
+    realName: '',
+    phone: '',
+    email: '',
+    avatarUrl: '',
+  })
+  const [editError, setEditError] = useState('')
 
   const statusFilterMap: Record<string, string> = {
     已认证: 'verified',
@@ -79,6 +92,46 @@ export default function AdminStudentsPage() {
   function showToast(msg: string) {
     setToast(msg)
     setTimeout(() => setToast(''), 3000)
+  }
+
+  function openEdit() {
+    if (!detailStudent) return
+    setEditForm({
+      name: detailStudent.name ?? '',
+      realName: detailStudent.realName ?? '',
+      phone: '',
+      email: detailStudent.email ?? '',
+      avatarUrl: detailStudent.avatarUrl ?? '',
+    })
+    setEditError('')
+    setEditing(true)
+  }
+
+  async function saveEdit() {
+    if (!detailStudent) return
+    if (!editForm.name.trim()) { setEditError('昵称不能为空'); return }
+
+    const body: Record<string, unknown> = { name: editForm.name.trim() }
+    if (editForm.realName.trim()) body.realName = editForm.realName.trim()
+    if (editForm.phone.trim()) {
+      if (!/^1[3-9]\d{9}$/.test(editForm.phone.trim())) {
+        setEditError('手机号格式不正确')
+        return
+      }
+      body.phone = editForm.phone.trim()
+    }
+    body.email = editForm.email || null
+    body.avatarUrl = editForm.avatarUrl || null
+
+    const res = await apiCall(`/api/admin/students/${detailStudent.id}`, 'PUT', body)
+    if (res.ok) {
+      setEditing(false)
+      showToast('用户信息已更新')
+      refetchDetail()
+      refetch()
+    } else {
+      setEditError(res.message ?? '更新失败')
+    }
   }
 
   // ── Detail view ──────────────────────────────────────────────
@@ -139,9 +192,14 @@ export default function AdminStudentsPage() {
         <PageHeader
           title={`用户档案 · ${s.realName || s.name || s.phone || '未命名'}`}
           actions={
-            <button className={btnGhost} onClick={() => setDetail(null)}>
-              ← 返回列表
-            </button>
+            <div className="flex gap-2">
+              <button className={btnGhost} onClick={openEdit}>
+                <Pencil className="inline w-3.5 h-3.5 mr-1" />编辑
+              </button>
+              <button className={btnGhost} onClick={() => setDetail(null)}>
+                ← 返回列表
+              </button>
+            </div>
           }
         />
 
@@ -281,6 +339,112 @@ export default function AdminStudentsPage() {
               )}
             </div>
 
+            {/* Agency agreement section */}
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 8, color: 'var(--text2)' }}>
+                代理协议签署状态
+              </div>
+
+              {s.agencyContract && (
+                <div>
+                  <span
+                    style={{
+                      fontSize: 12,
+                      padding: '4px 12px',
+                      borderRadius: 20,
+                      background: 'rgba(85,239,196,.12)',
+                      color: 'var(--green2)',
+                      display: 'inline-block',
+                      marginBottom: 10,
+                    }}
+                  >
+                    <CheckCircle2 className="inline w-3.5 h-3.5 mr-1" />已签署
+                  </span>
+                  {s.agencySignedAt && (
+                    <div style={{ fontSize: 12, color: 'var(--text3)' }}>
+                      签署于 {new Date(s.agencySignedAt).toLocaleDateString('zh-CN')}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {s.agencyApplied && !s.agencyContract && (
+                <div>
+                  <div className={infoBoxOrange}>
+                    待确认 — 用户已提交代理协议签署申请，请通过第三方电子签平台确认
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                    <button
+                      className={btnSuccess}
+                      onClick={async () => {
+                        const res = await apiCall(`/api/admin/students/${s.id}/agency`, 'POST', { action: 'confirm' })
+                        if (res.ok) {
+                          showToast('已确认签署')
+                          refetchDetail()
+                          refetch()
+                        } else {
+                          showToast(res.message || '操作失败')
+                        }
+                      }}
+                    >
+                      确认签署
+                    </button>
+                    <button
+                      className={btnDanger}
+                      onClick={async () => {
+                        const reason = prompt('请输入驳回原因（选填）：')
+                        if (reason === null) return
+                        const res = await apiCall(`/api/admin/students/${s.id}/agency`, 'POST', { action: 'reject', reason })
+                        if (res.ok) {
+                          showToast('已驳回申请')
+                          refetchDetail()
+                          refetch()
+                        } else {
+                          showToast(res.message || '操作失败')
+                        }
+                      }}
+                    >
+                      驳回
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {!s.agencyApplied && !s.agencyContract && s.agencyRejectReason && (
+                <div>
+                  <div className={infoBoxRed}>
+                    <XCircle className="inline w-3.5 h-3.5 mr-1" />已驳回 — {s.agencyRejectReason}
+                  </div>
+                  <button
+                    className={btnGhost}
+                    style={{ marginTop: 8 }}
+                    onClick={async () => {
+                      const reason = prompt('请输入新的驳回原因：', s.agencyRejectReason || '')
+                      if (reason === null) return
+                      const res = await apiCall(`/api/admin/students/${s.id}/agency`, 'POST', { action: 'reject', reason })
+                      if (res.ok) {
+                        showToast('已更新驳回原因')
+                        refetchDetail()
+                        refetch()
+                      } else {
+                        showToast(res.message || '操作失败')
+                      }
+                    }}
+                  >
+                    修改驳回原因
+                  </button>
+                </div>
+              )}
+
+              {!s.agencyApplied && !s.agencyContract && !s.agencyRejectReason && (
+                <div>
+                  <div className={infoBoxGray}>
+                    <Circle className="inline w-3.5 h-3.5 mr-1" />未申请 — 用户尚未提交代理协议签署申请
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Disable account */}
             <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
               <button
@@ -343,6 +507,77 @@ export default function AdminStudentsPage() {
             )}
           </div>
         </div>
+
+        {/* 编辑用户信息 Modal */}
+        <AdminModal
+        open={editing}
+        onClose={() => setEditing(false)}
+        title={`编辑用户信息 · ${s.realName || s.name || '未命名'}`}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {editError && (
+            <div className="p-3 rounded-md text-[13px] bg-[rgba(255,107,107,.08)] border border-[rgba(255,107,107,.15)] text-[var(--red)]">
+              {editError}
+            </div>
+          )}
+          <div>
+            <label className={labelCls}>昵称</label>
+            <input
+              className={inputCls}
+              placeholder="用户昵称"
+              value={editForm.name}
+              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>真实姓名</label>
+            <input
+              className={inputCls}
+              placeholder="真实姓名（可选）"
+              value={editForm.realName}
+              onChange={(e) => setEditForm({ ...editForm, realName: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>手机号</label>
+            <input
+              className={inputCls}
+              placeholder="留空则不修改，输入完整 11 位手机号"
+              value={editForm.phone}
+              onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+            />
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
+              当前号码：{s.phone}（留空表示不修改）
+            </div>
+          </div>
+          <div>
+            <label className={labelCls}>邮箱</label>
+            <input
+              className={inputCls}
+              placeholder="邮箱地址（可选）"
+              value={editForm.email}
+              onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>头像 URL</label>
+            <input
+              className={inputCls}
+              placeholder="头像图片链接（可选）"
+              value={editForm.avatarUrl}
+              onChange={(e) => setEditForm({ ...editForm, avatarUrl: e.target.value })}
+            />
+          </div>
+          <div className="flex gap-2">
+            <button className={`${btnGhost} flex-1 justify-center`} onClick={() => setEditing(false)}>
+              取消
+            </button>
+            <button className={`${btnPrimary} flex-1 justify-center`} onClick={saveEdit}>
+              保存
+            </button>
+          </div>
+        </div>
+      </AdminModal>
       </div>
     )
   }
@@ -432,12 +667,19 @@ export default function AdminStudentsPage() {
     {
       key: 'agencyContract',
       title: '代理协议',
-      render: (v) =>
-        v ? (
-          <span style={{ color: 'var(--green2)', fontSize: 12 }}>已签署</span>
-        ) : (
-          <span style={{ color: 'var(--text3)', fontSize: 12 }}>未签署</span>
-        ),
+      render: (_v, row) => {
+        const s = row as Student
+        if (s.agencyContract) {
+          return <span style={{ color: 'var(--green2)', fontSize: 12 }}>已签署</span>
+        }
+        if (s.agencyApplied) {
+          return <span style={{ color: 'var(--orange)', fontSize: 12 }}>申请中</span>
+        }
+        if (s.agencyRejectReason) {
+          return <span style={{ color: 'var(--red)', fontSize: 12 }} title={s.agencyRejectReason}>已驳回</span>
+        }
+        return <span style={{ color: 'var(--text3)', fontSize: 12 }}>未申请</span>
+      },
     },
     { key: 'songCount', title: '作品数' },
   ]

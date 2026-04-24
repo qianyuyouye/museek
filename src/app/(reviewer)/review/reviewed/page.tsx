@@ -42,7 +42,6 @@ interface ReviewedDetail {
   composer?: string | null
   albumName?: string | null
   albumArtist?: string | null
-  isrc?: string | null
   lyrics?: string | null
   styleDesc?: string | null
   creationDesc?: string | null
@@ -176,7 +175,6 @@ function DetailModal({ reviewId, onClose }: { reviewId: number; onClose: () => v
                 ['作曲', data.composer],
                 ['专辑', data.albumName],
                 ['专辑艺人', data.albumArtist],
-                ['ISRC', data.isrc],
               ] as [string, string | null | undefined][]).map(([k, v]) => (
                 <div key={k} className="flex gap-2">
                   <span className="text-[var(--text3)] w-16 shrink-0">{k}：</span>

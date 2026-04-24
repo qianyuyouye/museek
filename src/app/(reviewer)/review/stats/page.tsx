@@ -196,7 +196,7 @@ export default function ReviewStatsPage() {
         <h1 className={textPageTitle}>
           我的绩效
         </h1>
-        <span className="text-sm text-[var(--text3)]">2026年3月</span>
+        <span className="text-sm text-[var(--text3)]">{new Date().getFullYear()}年{new Date().getMonth() + 1}月</span>
       </div>
 
       {/* 4 stat cards */}

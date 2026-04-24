@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Sidebar, type MenuItem } from './sidebar'
 import {
   LayoutDashboard, FileText, Users, ClipboardList, Headphones, KeyRound,
-  Shield, ShieldCheck, Music, Download, Tag, Globe, CircleCheck,
+  Shield, ShieldCheck, Music, Download, Globe, CircleCheck,
   Coins, Settings, ScrollText
 } from 'lucide-react'
 
@@ -29,7 +29,7 @@ const ADMIN_MENUS: (MenuItem & { permKey?: string })[] = [
 
   { key: 'd5', label: '', icon: '', href: '', divider: '歌曲与发行' },
   { key: 'songs', label: '歌曲库', icon: <Music size={16} />, href: '/admin/songs', permKey: 'admin.songs.view' },
-  { key: 'isrc', label: 'ISRC管理', icon: <Tag size={16} />, href: '/admin/isrc', permKey: 'admin.isrc.view' },
+  // { key: 'isrc', label: 'ISRC管理', icon: <Tag size={16} />, href: '/admin/isrc', permKey: 'admin.isrc.view' },
   { key: 'distributions', label: '发行渠道', icon: <Globe size={16} />, href: '/admin/distributions', permKey: 'admin.distributions.view' },
   { key: 'publish-confirm', label: '发行确认', icon: <CircleCheck size={16} />, href: '/admin/publish-confirm', permKey: 'admin.publish_confirm.view' },
   { key: 'batch-download', label: '批量下载', icon: <Download size={16} />, href: '/admin/batch-download', permKey: 'admin.batch_download.view' },

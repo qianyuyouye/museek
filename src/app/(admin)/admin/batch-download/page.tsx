@@ -17,7 +17,6 @@ interface SongItem {
   aiTools: string[] | string | null
   score: number | null
   copyrightCode: string
-  isrc: string | null
   status: string
   source: string
   creatorName?: string
@@ -37,7 +36,6 @@ interface ValidationIssue {
   song: SongItem
   missingAgency: boolean
   missingRealName: boolean
-  missingIsrc: boolean
 }
 
 function validateSong(s: SongItem): ValidationIssue {
@@ -45,12 +43,11 @@ function validateSong(s: SongItem): ValidationIssue {
     song: s,
     missingAgency: s.agencyContract !== true,
     missingRealName: s.realNameStatus !== 'verified',
-    missingIsrc: !s.isrc || !s.isrc.trim(),
   }
 }
 
 function hasAnyIssue(v: ValidationIssue) {
-  return v.missingAgency || v.missingRealName || v.missingIsrc
+  return v.missingAgency || v.missingRealName
 }
 
 // ── Button / style helpers ──────────────────────────────────────
@@ -359,7 +356,6 @@ export default function BatchDownloadPage() {
                 'AI工具': aiToolsText(s.aiTools),
                 '评分': s.score ?? '',
                 '版权编号': s.copyrightCode,
-                'ISRC': s.isrc ?? '',
                 '状态': (SONG_STATUS_MAP[s.status] ?? { label: s.status }).label,
               }))
               downloadCSV(exportData, `作品元数据_${new Date().toISOString().slice(0, 10)}.csv`)
@@ -414,7 +410,7 @@ export default function BatchDownloadPage() {
                     className="w-4 h-4 accent-[var(--accent)] cursor-pointer"
                   />
                 </th>
-                {['封面', '歌曲名', '创作者', '风格', 'BPM', 'AI工具', '评分', '版权编号', 'ISRC', '状态', '操作'].map(
+                {['封面', '歌曲名', '创作者', '风格', 'BPM', 'AI工具', '评分', '版权编号', '状态', '操作'].map(
                   (h) => (
                     <th
                       key={h}
@@ -430,7 +426,7 @@ export default function BatchDownloadPage() {
               {filtered.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={12}
+                    colSpan={10}
                     className="px-3 py-10 text-center text-sm text-[var(--text3)]"
                   >
                     📭 暂无数据
@@ -509,7 +505,6 @@ function ValidationPreviewModal({
                     <div className="mt-1 flex flex-wrap gap-2 text-xs">
                       {v.missingAgency && <span className="px-1.5 py-0.5 rounded bg-[var(--red)] text-white">未签代理协议</span>}
                       {v.missingRealName && <span className="px-1.5 py-0.5 rounded bg-[var(--red)] text-white">未实名认证</span>}
-                      {v.missingIsrc && <span className="px-1.5 py-0.5 rounded bg-[var(--orange)] text-white">ISRC 未申报</span>}
                     </div>
                   </div>
                 ))}
@@ -567,12 +562,6 @@ function SongRow({
     return <span style={{ color, fontWeight: 600 }}>{song.score}</span>
   })()
 
-  const isrcEl = song.isrc ? (
-    <span className="text-[var(--green2)] font-mono text-xs">{song.isrc}</span>
-  ) : (
-    <span className="text-[var(--red)] text-xs"><AlertTriangle className="inline w-3 h-3 mr-0.5" />无</span>
-  )
-
   return (
     <tr
       className="hover:bg-[var(--bg4)] transition-colors"
@@ -608,9 +597,6 @@ function SongRow({
       </td>
       <td className="px-3 py-3 text-sm border-b border-[var(--border)] whitespace-nowrap">
         <span className="font-mono text-xs text-[var(--text2)]">{song.copyrightCode}</span>
-      </td>
-      <td className="px-3 py-3 text-sm border-b border-[var(--border)] whitespace-nowrap">
-        {isrcEl}
       </td>
       <td className="px-3 py-3 text-sm border-b border-[var(--border)] whitespace-nowrap">
         <span

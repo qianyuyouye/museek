@@ -39,7 +39,8 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     select: {
       id: true, name: true, realName: true, phone: true, email: true,
       avatarUrl: true, type: true, adminLevel: true, realNameStatus: true,
-      agencyContract: true, agencySignedAt: true, status: true,
+      agencyContract: true, agencySignedAt: true, agencyApplied: true,
+      agencyAppliedAt: true, agencyRejectReason: true, status: true,
       lastLoginAt: true, createdAt: true,
       userGroups: {
         include: { group: { select: { id: true, name: true } } },
@@ -60,6 +61,9 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     realNameStatus: user.realNameStatus,
     agencyContract: user.agencyContract,
     agencySignedAt: user.agencySignedAt,
+    agencyApplied: user.agencyApplied,
+    agencyAppliedAt: user.agencyAppliedAt,
+    agencyRejectReason: user.agencyRejectReason,
     status: user.status,
     lastLoginAt: user.lastLoginAt,
     createdAt: user.createdAt,

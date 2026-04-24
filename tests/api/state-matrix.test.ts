@@ -110,11 +110,11 @@ describe('状态机 · 非法转移拒绝', () => {
     expect(r.status).toBe(404)
   })
 
-  it('TC-SM-012 发行校验缺失三要素返回具体原因', async () => {
-    // 构造一首 reviewed 状态但未签/未实名/未 ISRC 的候选
+  it('TC-SM-012 发行校验缺失两要素返回具体原因', async () => {
+    // 构造一首 reviewed 状态但未签/未实名的候选（ISRC 校验已移除）
     const list = await http('/api/admin/songs?status=reviewed&pageSize=50', { cookie: adminCookie })
-    const songs = list.json.data.list as { id: number; agencyContract: boolean; realNameStatus: string; isrc: string | null }[]
-    const candidate = songs.find((s) => !s.agencyContract || s.realNameStatus !== 'verified' || !s.isrc)
+    const songs = list.json.data.list as { id: number; agencyContract: boolean; realNameStatus: string }[]
+    const candidate = songs.find((s) => !s.agencyContract || s.realNameStatus !== 'verified')
     if (!candidate) return
     const r = await tryAction(candidate.id, 'publish')
     expect(r.status).toBe(400)

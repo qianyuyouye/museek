@@ -71,24 +71,22 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   const report = songs.map(song => {
     const missingAgency = !song.user.agencyContract
     const missingRealName = song.user.realNameStatus !== 'verified'
-    const missingIsrc = !song.isrc || !song.isrc.trim()
-    return { song, missingAgency, missingRealName, missingIsrc }
+    return { song, missingAgency, missingRealName }
   })
   const lines: string[] = ['Museek 批量下载校验报告', `生成时间：${new Date().toISOString().slice(0, 16).replace('T', ' ')}`, '']
-  lines.push(`==== 通过 (${report.filter(v => !v.missingAgency && !v.missingRealName && !v.missingIsrc).length}) ====`)
+  lines.push(`==== 通过 (${report.filter(v => !v.missingAgency && !v.missingRealName).length}) ====`)
   for (const v of report) {
-    if (!v.missingAgency && !v.missingRealName && !v.missingIsrc) {
+    if (!v.missingAgency && !v.missingRealName) {
       lines.push(`[${v.song.copyrightCode}] ${v.song.title}`)
     }
   }
   lines.push('')
-  lines.push(`==== 不合规 (${report.filter(v => v.missingAgency || v.missingRealName || v.missingIsrc).length}) ====`)
+  lines.push(`==== 不合规 (${report.filter(v => v.missingAgency || v.missingRealName).length}) ====`)
   for (const v of report) {
-    if (v.missingAgency || v.missingRealName || v.missingIsrc) {
+    if (v.missingAgency || v.missingRealName) {
       lines.push(`[${v.song.copyrightCode}] ${v.song.title}`)
       if (v.missingAgency) lines.push('  ❌ 未签代理协议')
       if (v.missingRealName) lines.push('  ❌ 未实名认证')
-      if (v.missingIsrc) lines.push('  ⚠️ ISRC 未申报')
     }
   }
   zip.file('validation-report.txt', lines.join('\n') + '\n')
@@ -98,7 +96,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     songs.map(s => ({
       id: s.id, title: s.title, creator: s.user.realName || s.user.name || `用户${s.userId}`,
       genre: s.genre, bpm: s.bpm, aiTools: s.aiTools ?? [], score: s.score,
-      copyrightCode: s.copyrightCode, isrc: s.isrc, status: s.status,
+      copyrightCode: s.copyrightCode, status: s.status,
     })),
     null, 2,
   ))

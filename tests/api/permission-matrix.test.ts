@@ -117,7 +117,7 @@ describe('主题3 · 权限矩阵回归', () => {
   it('TC-TM3-006 权限树 admin 子树含 PRD 附录 G 定义的 underscore 规范 key', () => {
     const adminPortal = PERMISSION_TREE.find((p) => p.key === 'admin')!
     const treeKeys = new Set(adminPortal.children.map((c) => c.key))
-    for (const k of ['admin.cms', 'admin.publish_confirm', 'admin.batch_download', 'admin.isrc']) {
+    for (const k of ['admin.cms', 'admin.publish_confirm', 'admin.batch_download']) {
       expect(treeKeys.has(k)).toBe(true)
     }
     const revenue = adminPortal.children.find((c) => c.key === 'admin.revenue')!

@@ -52,6 +52,11 @@ const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(function Aud
     [src],
   )
 
+  const barDelays = useMemo(
+    () => Array.from({ length: BAR_COUNT }, () => Math.random() * 2),
+    [src],
+  )
+
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
@@ -154,6 +159,7 @@ const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(function Aud
   return (
     <div className="p-4 bg-[var(--bg4)] rounded-[10px]">
       <audio ref={audioRef} src={src} preload="metadata" />
+      <style>{`@keyframes spectrumBar { 0%, 100% { transform: scaleY(0.4); } 50% { transform: scaleY(1); } }`}</style>
 
       <div className="flex justify-between items-center mb-3">
         <div className="flex gap-2 items-center">
@@ -255,6 +261,8 @@ const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(function Aud
                     : inLoop && abLoopOn
                     ? 'rgba(99,102,241,0.35)'
                     : 'rgba(148,163,184,0.45)',
+                  animation: isPlaying ? `spectrumBar 0.8s ease-in-out ${barDelays[i]}s infinite` : 'none',
+                  transformOrigin: 'bottom',
                 }}
               />
             )

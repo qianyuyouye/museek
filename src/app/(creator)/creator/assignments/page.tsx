@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle, cardCls, btnPrimary, btnGhost, btnSuccess, inputCls, labelCls } from '@/lib/ui-tokens'
 import { formatDate } from '@/lib/format'
@@ -68,9 +68,18 @@ export default function CreatorAssignmentsPage() {
   const { data: assignmentsData, loading, refetch } = useApi<{ list: AssignmentItem[]; total: number }>('/api/creator/assignments')
   // 高级信息预填来源（GAP-CRTR-004）
   const { data: profile } = useApi<{ realName?: string | null; name?: string | null }>('/api/profile')
+  // 动态获取 AI 工具选项
+  const { data: settingsOptions } = useApi<{ aiTools?: string[] }>('/api/settings/options')
   const [activeAssignment, setActiveAssignment] = useState<number | null>(null)
   const [submittedView, setSubmittedView] = useState<number | null>(null)
-  const [formFields, setFormFields] = useState<FormFieldDef[]>(DEFAULT_FORM_FIELDS)
+  // 默认表单字段，AI 工具选项从设置动态获取
+  const defaultFields = useMemo(() => {
+    const aiTools = settingsOptions?.aiTools ?? ['汽水创作实验室', 'Suno', 'Udio', '其他']
+    return DEFAULT_FORM_FIELDS.map(f =>
+      f.key === 'aiTool' ? { ...f, options: aiTools } : f,
+    )
+  }, [settingsOptions?.aiTools])
+  const [formFields, setFormFields] = useState<FormFieldDef[]>(defaultFields)
   const [formData, setFormData] = useState<Record<string, string | string[]>>({})
   const [audioUploaded, setAudioUploaded] = useState(false)
   const [audioUrl, setAudioUrl] = useState('')
@@ -196,7 +205,7 @@ export default function CreatorAssignmentsPage() {
   // ── Toast element ──────────────────────────────────────────
 
   const toastEl = toast ? (
-    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] bg-[var(--text)] text-white px-6 py-3 rounded-xl text-sm font-medium shadow-[0_8px_32px_rgba(0,0,0,0.2)] animate-[fadeIn_0.3s]">
+    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] bg-gray-900/95 text-white px-6 py-3 rounded-xl text-sm font-medium shadow-[0_8px_32px_rgba(0,0,0,0.2)] animate-[fadeIn_0.3s]">
       {toast}
     </div>
   ) : null

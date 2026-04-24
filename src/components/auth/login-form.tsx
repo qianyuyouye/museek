@@ -427,7 +427,7 @@ export function LoginForm({ portal }: { portal: string }) {
                   <label className="flex items-center gap-2 text-xs text-[var(--text2)] cursor-pointer">
                     <input type="checkbox" checked={agreeMusic} onChange={e => setAgreeMusic(e.target.checked)} style={{ accentColor: cfg.accent }} />
                     <span>
-                      <a style={{ color: cfg.accent, cursor: 'pointer' }} onClick={() => handleOpenAgreement('agency')}>《音乐代理发行协议》</a>
+                      <a style={{ color: cfg.accent, cursor: 'pointer' }} onClick={() => handleOpenAgreement('agency')}>《音乐代理发行协议签署提醒》</a>
                     </span>
                   </label>
                 </div>

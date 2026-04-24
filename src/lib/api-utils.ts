@@ -42,7 +42,7 @@ function inferPermissionKey(request: NextRequest): string {
 
   // songs 子路径的模块纠偏
   if (rawModule === 'songs') {
-    if (/\/isrc(\b|\/|$)/.test(path)) moduleName = 'isrc'
+    // if (/\/isrc(\b|\/|$)/.test(path)) moduleName = 'isrc'
     // agency-pdf 走 songs.export，下面 GET 分支会命中
   }
 

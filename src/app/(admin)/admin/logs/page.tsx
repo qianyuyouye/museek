@@ -63,7 +63,7 @@ export default function AdminLogsPage() {
     song_archive: '归档歌曲',
     song_restore: '恢复归档',
     song_review_done: '评审归档',
-    assign_isrc: '绑定 ISRC',
+    // assign_isrc: '绑定 ISRC',
     upsert_distribution: '更新发行渠道',
     sync_distributions: '触发对账同步',
     confirm_distribution: '确认上架',

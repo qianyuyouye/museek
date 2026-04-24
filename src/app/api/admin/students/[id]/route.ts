@@ -64,6 +64,9 @@ export const GET = safeHandler(async function GET(request: NextRequest, context:
     realNameStatus: user.realNameStatus,
     agencyContract: user.agencyContract,
     agencySignedAt: user.agencySignedAt,
+    agencyApplied: user.agencyApplied,
+    agencyAppliedAt: user.agencyAppliedAt,
+    agencyRejectReason: user.agencyRejectReason,
     status: user.status,
     lastLoginAt: user.lastLoginAt,
     createdAt: user.createdAt,
@@ -85,13 +88,33 @@ export const PUT = safeHandler(async function PUT(request: NextRequest, context:
   if (!existing) return err('用户不存在', 404)
 
   const body = await request.json()
-  const { name, email, status, adminLevel } = body
+  const { name, email, status, adminLevel, phone, realName, avatarUrl } = body
+
+  // Check phone uniqueness before applying changes
+  if (phone !== undefined) {
+    if (typeof phone !== 'string' || !/^1[3-9]\d{9}$/.test(phone)) {
+      return err('手机号格式不正确')
+    }
+    const phoneExists = await prisma.user.findUnique({ where: { phone } })
+    if (phoneExists && phoneExists.id !== userId) {
+      return err('该手机号已被其他用户使用')
+    }
+  }
 
   const validStatuses = ['active', 'disabled']
   const validAdminLevels = [null, 'group_admin', 'system_admin']
   const data: Record<string, unknown> = {}
-  if (name !== undefined) data.name = name
-  if (email !== undefined) data.email = email
+  if (name !== undefined) {
+    if (typeof name !== 'string' || name.trim().length === 0) return err('昵称不能为空')
+    data.name = name.trim()
+  }
+  if (realName !== undefined) {
+    if (typeof realName !== 'string' || realName.trim().length === 0) return err('真实姓名不能为空')
+    data.realName = realName.trim()
+  }
+  if (phone !== undefined) data.phone = phone
+  if (email !== undefined) data.email = email || null
+  if (avatarUrl !== undefined) data.avatarUrl = avatarUrl || null
   if (status !== undefined) {
     if (!validStatuses.includes(status)) return err('无效的状态值')
     data.status = status
@@ -115,7 +138,10 @@ export const PUT = safeHandler(async function PUT(request: NextRequest, context:
   return ok({
     id: updated.id,
     name: updated.name,
+    realName: updated.realName,
+    phone: updated.phone,
     email: updated.email,
+    avatarUrl: updated.avatarUrl,
     status: updated.status,
     adminLevel: updated.adminLevel,
   })

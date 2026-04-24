@@ -115,7 +115,8 @@ describe('发行确认 /admin/publish-confirm', () => {
   })
 })
 
-describe('ISRC /admin/songs/:id/isrc', () => {
+// ISRC 功能已停用，相关测试跳过
+describe.skip('ISRC /admin/songs/:id/isrc', () => {
   it('TC-ISRC-001 不存在歌曲 → 404', async () => {
     const r = await http('/api/admin/songs/99999999/isrc', {
       method: 'POST',

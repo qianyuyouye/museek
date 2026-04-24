@@ -51,7 +51,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { agencySignedAt: true, agencyContract: true },
+    select: { agencySignedAt: true, agencyContract: true, agencyApplied: true, agencyRejectReason: true },
   })
   if (!user) return err('用户不存在', 404)
 
@@ -80,6 +80,8 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
       version: getVersion(SETTING_KEYS.AGENCY_TERMS),
       signed: user.agencyContract,
       signedAt: agencySignedAt,
+      applied: user.agencyApplied,
+      rejectReason: user.agencyRejectReason,
     },
   ])
 })

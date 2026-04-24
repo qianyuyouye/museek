@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { apiCall, useApi } from '@/lib/use-api'
 import { extractAudioFeatures, type AudioFeatures } from '@/lib/audio-extract'
 import { pageWrap, textPageTitle, cardCls, btnPrimary, btnGhost, btnSuccess, inputCls, labelCls } from '@/lib/ui-tokens'
-import { CheckCircle2, Bot, Music } from 'lucide-react'
+import { CheckCircle2, Bot, Music, Copy, Check } from 'lucide-react'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -51,8 +52,8 @@ const INITIAL_FORM: UploadForm = {
   audioFeatures: null,
 }
 
-const AI_TOOLS = ['汽水创作实验室', 'Suno', 'Udio', '其他']
-const GENRES = ['Pop', 'Rock', 'R&B', 'Hip-Hop', '电子', '古典', '民谣']
+const FALLBACK_AI_TOOLS = ['汽水创作实验室', 'Suno', 'Udio', '其他']
+const FALLBACK_GENRES = ['Pop', 'Rock', 'R&B', 'Hip-Hop', '电子', '古典', '民谣']
 const CONTRIBUTIONS = [
   { value: 'lead', label: '主导', desc: '我提供完整构思，AI辅助生成' },
   { value: 'participant', label: '参与', desc: 'AI生成初稿后，我进行实质性修改' },
@@ -94,8 +95,8 @@ function WaveformPlayer() {
           }}
         />
       ))}
-      <span className="ml-2 text-xs text-[var(--text2)] whitespace-nowrap">
-        3:24 / 3:24
+      <span className="ml-2 text-xs text-[var(--text3)] whitespace-nowrap">
+        未选择音频
       </span>
       <style jsx>{`
         @keyframes waveAnim {
@@ -155,7 +156,7 @@ function Toast({ message }: { message: string }) {
   return (
     <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-[fadeInDown_0.3s_ease]">
       <div
-        className="px-5 py-3 rounded-xl text-sm font-medium shadow-lg bg-[var(--text)] text-white"
+        className="px-5 py-3 rounded-xl text-sm font-medium shadow-lg bg-gray-900/95 text-white"
       >
         {message}
       </div>
@@ -174,9 +175,15 @@ export default function CreatorUploadPage() {
   const [toast, setToast] = useState('')
   const [revisionSongId, setRevisionSongId] = useState<number | null>(null)
   const [prefilling, setPrefilling] = useState(false)
+  const [submitted, setSubmitted] = useState<{ id: number; copyrightCode: string } | null>(null)
+  const [copied, setCopied] = useState(false)
 
   // 高级信息字段（GAP-CRTR-004）
   const { data: profile } = useApi<{ realName?: string | null; name?: string | null }>('/api/profile')
+  // 从管理端设置动态获取 AI 工具和流派选项
+  const { data: settingsOptions } = useApi<{ aiTools?: string[]; genres?: string[] }>('/api/settings/options')
+  const aiTools = settingsOptions?.aiTools ?? FALLBACK_AI_TOOLS
+  const genres = settingsOptions?.genres ?? FALLBACK_GENRES
   const [performer, setPerformer] = useState('')
   const [albumName, setAlbumName] = useState('')
   const [albumArtist, setAlbumArtist] = useState('')
@@ -412,12 +419,7 @@ export default function CreatorUploadPage() {
     })
 
     if (res.ok) {
-      showToast(
-        revisionSongId
-          ? `🎉 作品已重新提交，版权编号：${res.data?.copyrightCode}`
-          : `🎉 作品提交成功！版权编号：${res.data?.copyrightCode}`,
-      )
-      setTimeout(() => router.push('/creator/songs'), 1500)
+      setSubmitted({ id: res.data!.id, copyrightCode: res.data!.copyrightCode })
     } else {
       showToast(`${res.message || '提交失败'}`)
     }
@@ -435,6 +437,76 @@ export default function CreatorUploadPage() {
     ['创作贡献', form.contribution],
     ['原创声明', form.originality ? '已确认' : '未确认'],
   ]
+
+  // ── Success View ─────────────────────────────────────────────
+  if (submitted) {
+    return (
+      <div className={pageWrap}>
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[var(--green2)] to-[var(--accent)] flex items-center justify-center mb-6 shadow-lg">
+            <CheckCircle2 size={32} className="text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-[var(--text)] mb-2">
+            {revisionSongId ? '作品已重新提交' : '作品提交成功'}
+          </h2>
+          <p className="text-sm text-[var(--text2)] mb-8">
+            {revisionSongId
+              ? '作品已更新并进入评审队列'
+              : '您的作品已成功上传，正在等待评审'}
+          </p>
+
+          {/* Copyright Code Card */}
+          <div className="w-full max-w-md p-6 rounded-xl bg-gradient-to-br from-[rgba(99,102,241,0.08)] to-[rgba(6,148,162,0.08)] border border-[var(--accent)]/20 text-center mb-6">
+            <div className="text-xs text-[var(--text3)] mb-2">版权编号</div>
+            <div className="text-3xl font-mono font-bold text-[var(--accent2)] mb-4 tracking-wider">
+              {submitted.copyrightCode}
+            </div>
+            <button
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border border-[var(--accent)]/30 text-[var(--accent)] hover:bg-[rgba(99,102,241,0.08)] transition-colors"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(submitted.copyrightCode)
+                  setCopied(true)
+                  setTimeout(() => setCopied(false), 2000)
+                } catch {
+                  setCopied(false)
+                }
+              }}
+            >
+              {copied ? (
+                <>
+                  <Check size={14} /> 已复制
+                </>
+              ) : (
+                <>
+                  <Copy size={14} /> 点击复制
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <Link href="/creator/songs">
+              <button className={btnGhost}>查看我的作品</button>
+            </Link>
+            {!revisionSongId && (
+              <button
+                className={btnPrimary}
+                onClick={() => {
+                  setSubmitted(null)
+                  setForm(INITIAL_FORM)
+                  setStep(1)
+                }}
+              >
+                继续上传
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={pageWrap}>
@@ -602,7 +674,7 @@ export default function CreatorUploadPage() {
                   value={form.aiTool}
                   onChange={(e) => upd('aiTool', e.target.value)}
                 >
-                  {AI_TOOLS.map((t) => (
+                  {aiTools.map((t) => (
                     <option key={t}>{t}</option>
                   ))}
                 </select>
@@ -617,7 +689,7 @@ export default function CreatorUploadPage() {
                   value={form.genre}
                   onChange={(e) => upd('genre', e.target.value)}
                 >
-                  {GENRES.map((g) => (
+                  {genres.map((g) => (
                     <option key={g}>{g}</option>
                   ))}
                 </select>

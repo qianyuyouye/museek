@@ -67,7 +67,6 @@ export const POST = safeHandler(async function POST(
     const missing: string[] = []
     if (!song.user.agencyContract) missing.push('用户未签署经纪合同')
     if (song.user.realNameStatus !== 'verified') missing.push('用户未完成实名认证')
-    if (!song.isrc) missing.push('歌曲未绑定 ISRC')
     if (missing.length > 0) {
       return err(`发行条件不满足：${missing.join('、')}`)
     }

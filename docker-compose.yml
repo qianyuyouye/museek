@@ -44,8 +44,8 @@ services:
       - MYSQL_DATABASE=museek
     # 生产环境不暴露端口，只在内部网络访问
     # 开发调试时取消注释：
-    # ports:
-    #   - "3306:3306"
+    ports:
+      - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:

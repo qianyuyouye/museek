@@ -23,7 +23,6 @@ interface Song {
   status: string
   score: number | null
   copyrightCode: string
-  isrc: string | null
   likeCount: number
   createdAt: string
   audioUrl?: string | null
@@ -220,21 +219,33 @@ function scoreColor(v: number): string {
 export default function CreatorSongsPage() {
   const [tab, setTab] = useState<TabKey>('all')
   const [detail, setDetail] = useState<number | null>(null)
+  const [tabCounts, setTabCounts] = useState<Record<TabKey, number | null>>({
+    all: null, pending_review: null, needs_revision: null, in_library: null, published: null,
+  })
+
+  // 首次加载时拉取各状态歌曲数量
+  useEffect(() => {
+    Promise.allSettled(
+      ['all', 'pending_review', 'needs_revision', 'in_library', 'published'].map(async (s) => {
+        const r = await fetch(`/api/creator/songs?status=${s}&pageSize=1`, { credentials: 'include' })
+        const j = await r.json()
+        return { key: s as TabKey, count: j.code === 200 ? j.data.total : 0 }
+      }),
+    ).then(results => {
+      const counts: Record<TabKey, number> = {
+        all: 0, pending_review: 0, needs_revision: 0, in_library: 0, published: 0,
+      }
+      for (const r of results) {
+        if (r.status === 'fulfilled') counts[r.value.key] = r.value.count
+      }
+      setTabCounts(counts)
+    })
+  }, [])
 
   const statusParam = tab === 'all' ? '' : tab
   const { data, loading } = useApi<{ list: Song[]; total: number }>(`/api/creator/songs?status=${statusParam}`, [tab])
 
   const mySongs = data?.list ?? []
-
-  // Count per tab - we only have data for current tab, so show counts from current data
-  // For tabs, the API returns filtered data; we show the current count
-  const tabCounts: Record<TabKey, number | null> = {
-    all: null,
-    pending_review: null,
-    needs_revision: null,
-    in_library: null,
-    published: null,
-  }
 
   // ── Detail View ──────────────────────────────────────────────
 
@@ -307,7 +318,6 @@ export default function CreatorSongsPage() {
                   ['AI工具', (song.aiTools ?? []).join(', ') || '—'],
                   ['流派', song.genre],
                   ['BPM', String(song.bpm)],
-                  ['ISRC', song.isrc || '待申报'],
                 ] as [string, string][]
               ).map(([k, v]) => (
                 <div key={k} className="px-2 py-2 bg-[var(--bg4)] rounded-md">

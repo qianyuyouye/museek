@@ -23,7 +23,6 @@ interface PublishTrack {
   liveDate: string | null
   hasRevenue: boolean
   status: 'pending' | 'submitted' | 'live' | 'failed'
-  isrc?: string | null
   copyrightCode?: string
 }
 
@@ -295,7 +294,6 @@ export default function PublishConfirmPage() {
       ['提交日期', detailTrack.submittedAt ? `${detailTrack.submittedAt}（已提交${days}天）` : '-'],
       ['上架日期', detailTrack.liveDate ?? '-'],
       ['本期数据', detailTrack.hasRevenue ? '有数据' : '未返回'],
-      ['ISRC', detailTrack.isrc ?? '-'],
       ['版权编号', detailTrack.copyrightCode ?? '-'],
     ]
 

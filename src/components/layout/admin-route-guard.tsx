@@ -12,7 +12,7 @@ const PUBLIC_ADMIN_PATHS = ['/admin/dashboard', '/admin/login']
 // 部分 URL 使用菜单的父模块权限（子路径共享）
 const PATH_ALIAS: Record<string, string> = {
   '/admin/batch-download': 'admin.songs.view',
-  '/admin/isrc': 'admin.songs.view',
+  // '/admin/isrc': 'admin.songs.view',
 }
 
 function inferPermKey(pathname: string): string | null {

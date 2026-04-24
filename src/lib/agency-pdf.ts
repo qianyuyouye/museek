@@ -6,7 +6,6 @@ export interface AgencyPdfPayload {
   creatorRealName: string | null
   creatorPhone: string
   agencySignedAt: Date | null
-  isrc: string | null
   issueDate: Date
 }
 
@@ -38,7 +37,6 @@ export async function buildAgencyPdf(p: AgencyPdfPayload): Promise<Buffer> {
       const kv = (k: string, v: string) => { doc.text(`${k}: ${v}`) }
       kv('Title', p.songTitle)
       kv('Copyright Code', p.copyrightCode)
-      kv('ISRC', p.isrc ?? '(pending)')
       kv('Creator', p.creatorRealName ?? '(not set)')
       kv('Phone', p.creatorPhone)
       kv('Signed At', p.agencySignedAt ? p.agencySignedAt.toISOString().slice(0, 10) : '(not signed)')

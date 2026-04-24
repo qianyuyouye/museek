@@ -32,6 +32,9 @@ interface UserProfile {
   realNameStatus: string
   agencyContract: boolean
   agencySignedAt: string | null
+  agencyApplied: boolean
+  agencyAppliedAt: string | null
+  agencyRejectReason: string | null
   createdAt: string
   groupIds?: number[]
 }
@@ -115,7 +118,7 @@ function Toast({
   }, [onDone])
 
   return (
-    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] bg-[var(--text)] text-white px-5 py-2.5 rounded-lg text-sm shadow-lg">
+    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] bg-gray-900/95 text-white px-5 py-2.5 rounded-lg text-sm shadow-lg">
       {msg}
     </div>
   )
@@ -129,6 +132,8 @@ interface AgreementItem {
   version: string
   signedAt: string
   signed: boolean
+  applied?: boolean
+  rejectReason?: string
 }
 
 export default function CreatorProfile() {
@@ -393,7 +398,7 @@ export default function CreatorProfile() {
                     : '查看认证'}
               </button>
             } />
-            <ProfileRow icon={<BadgeCheck size={14} />} label="角色" value="学生" />
+            <ProfileRow icon={<BadgeCheck size={14} />} label="角色" value="创作者" />
             <ProfileRow icon={<Calendar size={14} />} label="注册时间" value={user.createdAt ? new Date(user.createdAt).toLocaleDateString('zh-CN') : '—'} />
           </div>
         </div>
@@ -404,38 +409,89 @@ export default function CreatorProfile() {
           <div className={cardCls}>
             <h3 className="text-[15px] font-semibold mb-3">协议管理</h3>
             <div className="text-[13px] mb-3">
-              {(agreements || []).map((a, i) => (
-                <div
-                  key={i}
-                  className="flex justify-between items-center py-2 border-b border-[var(--border)] last:border-b-0"
-                >
-                  <div className="min-w-0">
-                    <span
-                      className="inline-block text-[11px] px-2 py-0.5 rounded mr-2"
-                      style={{ background: a.signed ? 'rgba(85,239,196,0.12)' : 'rgba(107,114,128,0.12)', color: a.signed ? 'var(--green2)' : 'var(--text3)' }}
-                    >
-                      {a.signed ? '已签署' : '未签署'}
-                    </span>
-                    <span className="font-medium">{a.name}</span>
-                    {a.signedAt && (
-                      <span className="text-[var(--text3)] text-xs ml-2">签署于 {a.signedAt}</span>
-                    )}
-                  </div>
-                  <button
-                    className={btnGhost}
-                    onClick={() => setViewAgreement({ name: a.name, content: a.content, version: a.version })}
+              {(agreements || []).map((a, i) => {
+                const isAgency = i === 2
+                let statusLabel: string
+                let statusColor: string
+                let statusBg: string
+
+                if (isAgency) {
+                  if (a.signed) {
+                    statusLabel = '已签署'
+                    statusColor = 'var(--green2)'
+                    statusBg = 'rgba(85,239,196,0.12)'
+                  } else if (a.applied) {
+                    statusLabel = '申请审核中'
+                    statusColor = 'var(--orange)'
+                    statusBg = 'rgba(253,203,110,0.12)'
+                  } else if (a.rejectReason) {
+                    statusLabel = '已驳回'
+                    statusColor = 'var(--red)'
+                    statusBg = 'rgba(255,107,107,0.12)'
+                  } else {
+                    statusLabel = '未申请'
+                    statusColor = 'var(--text3)'
+                    statusBg = 'rgba(107,114,128,0.12)'
+                  }
+                } else {
+                  statusLabel = '已签署'
+                  statusColor = 'var(--green2)'
+                  statusBg = 'rgba(85,239,196,0.12)'
+                }
+
+                return (
+                  <div
+                    key={i}
+                    className="flex justify-between items-center py-2 border-b border-[var(--border)] last:border-b-0"
                   >
-                    查看详情
-                  </button>
-                </div>
-              ))}
+                    <div className="min-w-0">
+                      <span
+                        className="inline-block text-[11px] px-2 py-0.5 rounded mr-2"
+                        style={{ background: statusBg, color: statusColor }}
+                      >
+                        {statusLabel}
+                      </span>
+                      <span className="font-medium">{a.name}</span>
+                      {a.signedAt && (
+                        <span className="text-[var(--text3)] text-xs ml-2">签署于 {a.signedAt}</span>
+                      )}
+                      {!isAgency && false && a.rejectReason && (
+                        <span className="text-[var(--red)] text-xs ml-2">驳回：{a.rejectReason}</span>
+                      )}
+                    </div>
+                    <button
+                      className={btnGhost}
+                      onClick={() => setViewAgreement({ name: a.name, content: a.content, version: a.version })}
+                    >
+                      查看详情
+                    </button>
+                  </div>
+                )
+              })}
             </div>
-            <button
-              className="bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] text-white px-3 py-1 rounded-lg text-xs font-medium cursor-pointer border-0"
-              onClick={() => setSignAgencyModal(true)}
-            >
-              补签协议
-            </button>
+            {(function () {
+              const agency = (agreements || [])[2]
+              if (!agency) return null
+              if (agency.signed) return null
+              if (agency.applied) {
+                return (
+                  <button
+                    className="bg-[var(--bg4)] text-[var(--text3)] px-3 py-1 rounded-lg text-xs font-medium cursor-not-allowed border-0"
+                    disabled
+                  >
+                    申请审核中
+                  </button>
+                )
+              }
+              return (
+                <button
+                  className="bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] text-white px-3 py-1 rounded-lg text-xs font-medium cursor-pointer border-0"
+                  onClick={() => setSignAgencyModal(true)}
+                >
+                  申请签署
+                </button>
+              )
+            })()}
           </div>
 
           {/* Login Logs */}
@@ -721,7 +777,7 @@ export default function CreatorProfile() {
 
       {/* Sign Agency Modal */}
       <Modal
-        title="补签代理发行协议"
+        title="申请签署代理发行协议"
         open={signAgencyModal}
         onClose={() => {
           setSignAgencyModal(false)
@@ -752,14 +808,14 @@ export default function CreatorProfile() {
             setSignAgencyModal(false)
             setAgencyRead(false)
             if (res.ok) {
-              showToast('代理发行协议签署成功')
+              showToast('申请已提交，请等待管理员确认')
               refetch()
             } else {
-              showToast(res.message || '签署失败')
+              showToast(res.message || '提交失败')
             }
           }}
         >
-          确认签署
+          提交申请
         </button>
       </Modal>
 

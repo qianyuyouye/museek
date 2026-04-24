@@ -76,7 +76,7 @@ async function loadConfig(): Promise<AiConfig> {
     baseUrl: fromDb.baseUrl || process.env.AI_API_BASE_URL || 'https://api.openai.com/v1',
     apiKey: fromDb.apiKey || process.env.AI_API_KEY || '',
     model: fromDb.model || process.env.AI_MODEL || 'gpt-4o-mini',
-    timeoutMs: fromDb.timeoutMs ?? 5000,
+    timeoutMs: fromDb.timeoutMs ?? 10000,
   }
 }
 
@@ -187,7 +187,7 @@ export async function pingAi(config: Pick<AiConfig, 'baseUrl' | 'apiKey' | 'mode
         messages: [{ role: 'user', content: 'ping' }],
         max_tokens: 5,
       }),
-      signal: AbortSignal.timeout(config.timeoutMs ?? 5000),
+      signal: AbortSignal.timeout(config.timeoutMs ?? 10000),
     })
     if (res.ok) return { ok: true, message: '连接成功' }
     const body = await res.text().catch(() => '')

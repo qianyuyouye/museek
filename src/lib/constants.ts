@@ -55,7 +55,7 @@ export const PERMISSION_TREE: PermissionPortal[] = [
       { key: 'admin.accounts', label: '账号与权限', actions: ['view', 'edit', 'manage'] },
       { key: 'admin.songs', label: '歌曲库管理', actions: ['view', 'edit', 'manage', 'operate', 'export'] },
       { key: 'admin.batch_download', label: '作品库批量下载', actions: ['view', 'operate'] },
-      { key: 'admin.isrc', label: 'ISRC管理', actions: ['view', 'edit', 'manage', 'export'] },
+      // { key: 'admin.isrc', label: 'ISRC管理', actions: ['view', 'edit', 'manage', 'export'] },
       { key: 'admin.distributions', label: '发行渠道', actions: ['view', 'edit', 'operate'] },
       { key: 'admin.publish_confirm', label: '发行状态确认', actions: ['view', 'operate'] },
       { key: 'admin.revenue', label: '收益管理', actions: ['view', 'edit', 'operate', 'export', 'settle'] },

@@ -32,7 +32,6 @@ export const GET = safeHandler(async function GET(
     creatorRealName: song.user.realName,
     creatorPhone: song.user.phone,
     agencySignedAt: song.user.agencySignedAt,
-    isrc: song.isrc,
     issueDate: new Date(),
   })
 
