@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { CheckCircle2, XCircle, Circle, Ban, Music, User, Pencil } from 'lucide-react'
 import { useConfirm } from '@/components/ui/confirm-dialog'
 import { PageHeader } from '@/components/ui/page-header'
@@ -107,8 +107,21 @@ export default function AdminStudentsPage() {
     setEditing(true)
   }
 
+  function openEditFromList(s: Student) {
+    setDetail(s.id)
+    setEditForm({
+      name: s.name ?? '',
+      realName: s.realName ?? '',
+      phone: '',
+      email: s.email ?? '',
+      avatarUrl: s.avatarUrl ?? '',
+    })
+    setEditError('')
+    setEditing(true)
+  }
+
   async function saveEdit() {
-    if (!detailStudent) return
+    if (detail === null) return
     if (!editForm.name.trim()) { setEditError('昵称不能为空'); return }
 
     const body: Record<string, unknown> = { name: editForm.name.trim() }
@@ -123,7 +136,7 @@ export default function AdminStudentsPage() {
     body.email = editForm.email || null
     body.avatarUrl = editForm.avatarUrl || null
 
-    const res = await apiCall(`/api/admin/students/${detailStudent.id}`, 'PUT', body)
+    const res = await apiCall(`/api/admin/students/${detail}`, 'PUT', body)
     if (res.ok) {
       setEditing(false)
       showToast('用户信息已更新')
@@ -137,17 +150,29 @@ export default function AdminStudentsPage() {
   // ── Detail view ──────────────────────────────────────────────
   if (detail !== null) {
     if (detailLoading) {
-      return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>加载中...</div>
+      return (
+        <div className={pageWrap}>
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>加载中...</div>
+          <AdminModal open={editing} onClose={() => setEditing(false)} title={`编辑用户信息 · ${editForm.name || '未命名'}`}>
+            <EditForm editForm={editForm} setEditForm={setEditForm} editError={editError} setEditing={setEditing} saveEdit={saveEdit} />
+          </AdminModal>
+        </div>
+      )
     }
 
     if (!detailStudent) {
       return (
-        <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>
-          用户不存在
-          <br />
-          <button className={btnGhost} style={{ marginTop: 12 }} onClick={() => setDetail(null)}>
-            ← 返回列表
-          </button>
+        <div className={pageWrap}>
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>
+            用户不存在
+            <br />
+            <button className={btnGhost} style={{ marginTop: 12 }} onClick={() => setDetail(null)}>
+              ← 返回列表
+            </button>
+          </div>
+          <AdminModal open={editing} onClose={() => setEditing(false)} title={`编辑用户信息 · ${editForm.name || '未命名'}`}>
+            <EditForm editForm={editForm} setEditForm={setEditForm} editError={editError} setEditing={setEditing} saveEdit={saveEdit} />
+          </AdminModal>
         </div>
       )
     }
@@ -182,7 +207,6 @@ export default function AdminStudentsPage() {
 
     return (
       <div className={pageWrap}>
-        {/* Toast */}
         {toast && (
           <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-[var(--bg3)] border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
             {toast}
@@ -203,7 +227,6 @@ export default function AdminStudentsPage() {
           }
         />
 
-        {/* 2-column grid */}
         <div className="grid grid-cols-2 gap-5">
           {/* Left: 基本信息 */}
           <div className={cardCls}>
@@ -224,77 +247,31 @@ export default function AdminStudentsPage() {
 
               {s.realNameStatus === 'pending' && (
                 <div>
-                  <div className={infoBoxOrange}>
-                    待审核 — 用户已提交实名认证信息，请审核
-                  </div>
+                  <div className={infoBoxOrange}>待审核 — 用户已提交实名认证信息，请审核</div>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button
-                      className={btnSuccess}
-                      onClick={async () => {
-                        const res = await apiCall(`/api/admin/students/${s.id}/verify`, 'POST', { action: 'approve' })
-                        if (res.ok) {
-                          showToast('已通过实名认证')
-                          refetchDetail()
-                          refetch()
-                        } else {
-                          showToast(res.message || '操作失败')
-                        }
-                      }}
-                    >
-                      通过认证
-                    </button>
-                    <button
-                      className={btnDanger}
-                      onClick={async () => {
-                        const res = await apiCall(`/api/admin/students/${s.id}/verify`, 'POST', { action: 'reject' })
-                        if (res.ok) {
-                          showToast('已驳回，已通知用户修改后重新提交')
-                          refetchDetail()
-                          refetch()
-                        } else {
-                          showToast(res.message || '操作失败')
-                        }
-                      }}
-                    >
-                      驳回
-                    </button>
+                    <button className={btnSuccess} onClick={async () => {
+                      const res = await apiCall(`/api/admin/students/${s.id}/verify`, 'POST', { action: 'approve' })
+                      if (res.ok) { showToast('已通过实名认证'); refetchDetail(); refetch() }
+                      else showToast(res.message || '操作失败')
+                    }}>通过认证</button>
+                    <button className={btnDanger} onClick={async () => {
+                      const res = await apiCall(`/api/admin/students/${s.id}/verify`, 'POST', { action: 'reject' })
+                      if (res.ok) { showToast('已驳回，已通知用户修改后重新提交'); refetchDetail(); refetch() }
+                      else showToast(res.message || '操作失败')
+                    }}>驳回</button>
                   </div>
                 </div>
               )}
 
               {s.realNameStatus === 'verified' && (
                 <div>
-                  <span
-                    style={{
-                      fontSize: 12,
-                      padding: '4px 12px',
-                      borderRadius: 20,
-                      background: 'rgba(85,239,196,.12)',
-                      color: 'var(--green2)',
-                      display: 'inline-block',
-                      marginBottom: 10,
-                    }}
-                  >
+                  <span style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, background: 'rgba(85,239,196,.12)', color: 'var(--green2)', display: 'inline-block', marginBottom: 10 }}>
                     <CheckCircle2 className="inline w-3.5 h-3.5 mr-1" />已认证
                   </span>
                   {s.realName && (
                     <div style={{ fontSize: 12, display: 'grid', gap: 4 }}>
-                      {(
-                        [
-                          ['真实姓名', s.realName],
-                          ['身份证号', s.idCard || '—'],
-                        ] as [string, string][]
-                      ).map(([k, v]) => (
-                        <div
-                          key={k}
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            padding: '6px 10px',
-                            background: 'var(--bg)',
-                            borderRadius: 4,
-                          }}
-                        >
+                      {([['真实姓名', s.realName], ['身份证号', s.idCard || '—']] as [string, string][]).map(([k, v]) => (
+                        <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', background: 'var(--bg)', borderRadius: 4 }}>
                           <span style={{ color: 'var(--text3)' }}>{k}</span>
                           <span>{v}</span>
                         </div>
@@ -306,161 +283,86 @@ export default function AdminStudentsPage() {
 
               {s.realNameStatus === 'rejected' && (
                 <div>
-                  <div className={infoBoxRed}>
-                    <XCircle className="inline w-3.5 h-3.5 mr-1" />已驳回 — 用户可修改后重新提交
-                  </div>
-                  <button
-                    className={btnGhost}
-                    onClick={async () => {
-                      const res = await apiCall(`/api/admin/students/${s.id}/notify`, 'POST', { preset: 'realname_resubmit' })
-                      showToast(res.ok ? '已通知用户重新提交实名认证' : (res.message || '发送失败'))
-                    }}
-                  >
-                    发送提醒
-                  </button>
+                  <div className={infoBoxRed}><XCircle className="inline w-3.5 h-3.5 mr-1" />已驳回 — 用户可修改后重新提交</div>
+                  <button className={btnGhost} onClick={async () => {
+                    const res = await apiCall(`/api/admin/students/${s.id}/notify`, 'POST', { preset: 'realname_resubmit' })
+                    showToast(res.ok ? '已通知用户重新提交实名认证' : (res.message || '发送失败'))
+                  }}>发送提醒</button>
                 </div>
               )}
 
               {s.realNameStatus === 'unverified' && (
                 <div>
-                  <div className={infoBoxGray}>
-                    <Circle className="inline w-3.5 h-3.5 mr-1" />未提交 — 用户尚未发起实名认证
-                  </div>
-                  <button
-                    className={btnGhost}
-                    onClick={async () => {
-                      const res = await apiCall(`/api/admin/students/${s.id}/notify`, 'POST', { preset: 'realname_unverified' })
-                      showToast(res.ok ? '已向用户发送实名认证提醒' : (res.message || '发送失败'))
-                    }}
-                  >
-                    发送提醒
-                  </button>
+                  <div className={infoBoxGray}><Circle className="inline w-3.5 h-3.5 mr-1" />未提交 — 用户尚未发起实名认证</div>
+                  <button className={btnGhost} onClick={async () => {
+                    const res = await apiCall(`/api/admin/students/${s.id}/notify`, 'POST', { preset: 'realname_unverified' })
+                    showToast(res.ok ? '已向用户发送实名认证提醒' : (res.message || '发送失败'))
+                  }}>发送提醒</button>
                 </div>
               )}
             </div>
 
             {/* Agency agreement section */}
             <div style={{ marginTop: 12 }}>
-              <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 8, color: 'var(--text2)' }}>
-                代理协议签署状态
-              </div>
+              <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 8, color: 'var(--text2)' }}>代理协议签署状态</div>
 
               {s.agencyContract && (
                 <div>
-                  <span
-                    style={{
-                      fontSize: 12,
-                      padding: '4px 12px',
-                      borderRadius: 20,
-                      background: 'rgba(85,239,196,.12)',
-                      color: 'var(--green2)',
-                      display: 'inline-block',
-                      marginBottom: 10,
-                    }}
-                  >
+                  <span style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, background: 'rgba(85,239,196,.12)', color: 'var(--green2)', display: 'inline-block', marginBottom: 10 }}>
                     <CheckCircle2 className="inline w-3.5 h-3.5 mr-1" />已签署
                   </span>
-                  {s.agencySignedAt && (
-                    <div style={{ fontSize: 12, color: 'var(--text3)' }}>
-                      签署于 {new Date(s.agencySignedAt).toLocaleDateString('zh-CN')}
-                    </div>
-                  )}
+                  {s.agencySignedAt && <div style={{ fontSize: 12, color: 'var(--text3)' }}>签署于 {new Date(s.agencySignedAt).toLocaleDateString('zh-CN')}</div>}
                 </div>
               )}
 
               {s.agencyApplied && !s.agencyContract && (
                 <div>
-                  <div className={infoBoxOrange}>
-                    待确认 — 用户已提交代理协议签署申请，请通过第三方电子签平台确认
-                  </div>
+                  <div className={infoBoxOrange}>待确认 — 用户已提交代理协议签署申请，请通过第三方电子签平台确认</div>
                   <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                    <button
-                      className={btnSuccess}
-                      onClick={async () => {
-                        const res = await apiCall(`/api/admin/students/${s.id}/agency`, 'POST', { action: 'confirm' })
-                        if (res.ok) {
-                          showToast('已确认签署')
-                          refetchDetail()
-                          refetch()
-                        } else {
-                          showToast(res.message || '操作失败')
-                        }
-                      }}
-                    >
-                      确认签署
-                    </button>
-                    <button
-                      className={btnDanger}
-                      onClick={async () => {
-                        const reason = prompt('请输入驳回原因（选填）：')
-                        if (reason === null) return
-                        const res = await apiCall(`/api/admin/students/${s.id}/agency`, 'POST', { action: 'reject', reason })
-                        if (res.ok) {
-                          showToast('已驳回申请')
-                          refetchDetail()
-                          refetch()
-                        } else {
-                          showToast(res.message || '操作失败')
-                        }
-                      }}
-                    >
-                      驳回
-                    </button>
+                    <button className={btnSuccess} onClick={async () => {
+                      const res = await apiCall(`/api/admin/students/${s.id}/agency`, 'POST', { action: 'confirm' })
+                      if (res.ok) { showToast('已确认签署'); refetchDetail(); refetch() }
+                      else showToast(res.message || '操作失败')
+                    }}>确认签署</button>
+                    <button className={btnDanger} onClick={async () => {
+                      const reason = prompt('请输入驳回原因（选填）：')
+                      if (reason === null) return
+                      const res = await apiCall(`/api/admin/students/${s.id}/agency`, 'POST', { action: 'reject', reason })
+                      if (res.ok) { showToast('已驳回申请'); refetchDetail(); refetch() }
+                      else showToast(res.message || '操作失败')
+                    }}>驳回</button>
                   </div>
                 </div>
               )}
 
               {!s.agencyApplied && !s.agencyContract && s.agencyRejectReason && (
                 <div>
-                  <div className={infoBoxRed}>
-                    <XCircle className="inline w-3.5 h-3.5 mr-1" />已驳回 — {s.agencyRejectReason}
-                  </div>
-                  <button
-                    className={btnGhost}
-                    style={{ marginTop: 8 }}
-                    onClick={async () => {
-                      const reason = prompt('请输入新的驳回原因：', s.agencyRejectReason || '')
-                      if (reason === null) return
-                      const res = await apiCall(`/api/admin/students/${s.id}/agency`, 'POST', { action: 'reject', reason })
-                      if (res.ok) {
-                        showToast('已更新驳回原因')
-                        refetchDetail()
-                        refetch()
-                      } else {
-                        showToast(res.message || '操作失败')
-                      }
-                    }}
-                  >
-                    修改驳回原因
-                  </button>
+                  <div className={infoBoxRed}><XCircle className="inline w-3.5 h-3.5 mr-1" />已驳回 — {s.agencyRejectReason}</div>
+                  <button className={btnGhost} style={{ marginTop: 8 }} onClick={async () => {
+                    const reason = prompt('请输入新的驳回原因：', s.agencyRejectReason || '')
+                    if (reason === null) return
+                    const res = await apiCall(`/api/admin/students/${s.id}/agency`, 'POST', { action: 'reject', reason })
+                    if (res.ok) { showToast('已更新驳回原因'); refetchDetail(); refetch() }
+                    else showToast(res.message || '操作失败')
+                  }}>修改驳回原因</button>
                 </div>
               )}
 
               {!s.agencyApplied && !s.agencyContract && !s.agencyRejectReason && (
                 <div>
-                  <div className={infoBoxGray}>
-                    <Circle className="inline w-3.5 h-3.5 mr-1" />未申请 — 用户尚未提交代理协议签署申请
-                  </div>
+                  <div className={infoBoxGray}><Circle className="inline w-3.5 h-3.5 mr-1" />未申请 — 用户尚未提交代理协议签署申请</div>
                 </div>
               )}
             </div>
 
-            {/* Disable account */}
             <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
-              <button
-                className={`${btnDanger} ${btnSmall}`}
-                onClick={async () => {
-                  if (await confirm({ message: `确认禁用「${s.name}」的账号？`, danger: true })) {
-                    const res = await apiCall(`/api/admin/students/${s.id}`, 'PUT', { status: 'disabled' })
-                    if (res.ok) {
-                      showToast(`已禁用账号：${s.name}`)
-                      refetchDetail()
-                    } else {
-                      showToast(res.message || '操作失败')
-                    }
-                  }
-                }}
-              >
+              <button className={`${btnDanger} ${btnSmall}`} onClick={async () => {
+                if (await confirm({ message: `确认禁用「${s.name}」的账号？`, danger: true })) {
+                  const res = await apiCall(`/api/admin/students/${s.id}`, 'PUT', { status: 'disabled' })
+                  if (res.ok) { showToast(`已禁用账号：${s.name}`); refetchDetail() }
+                  else showToast(res.message || '操作失败')
+                }
+              }}>
                 <Ban className="inline w-3.5 h-3.5 mr-1" />禁用账号
               </button>
             </div>
@@ -468,39 +370,19 @@ export default function AdminStudentsPage() {
 
           {/* Right: 作品列表 */}
           <div className={cardCls}>
-            <h3 className="text-base font-semibold mb-4">
-              作品列表（{userSongs.length}首）
-            </h3>
+            <h3 className="text-base font-semibold mb-4">作品列表（{userSongs.length}首）</h3>
             {userSongs.length === 0 ? (
-              <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text3)', fontSize: 14 }}>
-                📭 暂无作品
-              </div>
+              <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text3)', fontSize: 14 }}>📭 暂无作品</div>
             ) : (
               userSongs.map((sg) => {
                 const statusInfo = SONG_STATUS_MAP[sg.status]
                 return (
-                  <div
-                    key={sg.id}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '8px 0',
-                      borderBottom: '1px solid var(--border)',
-                      fontSize: 13,
-                    }}
-                  >
+                  <div key={sg.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span>{sg.cover || <Music className="w-4 h-4 text-[var(--text3)]" />}</span>
                       <span>{sg.title}</span>
                     </div>
-                    {statusInfo && (
-                      <StatusBadge
-                        label={statusInfo.label}
-                        color={statusInfo.color}
-                        bg={statusInfo.bg}
-                      />
-                    )}
+                    {statusInfo && <StatusBadge label={statusInfo.label} color={statusInfo.color} bg={statusInfo.bg} />}
                   </div>
                 )
               })
@@ -508,76 +390,9 @@ export default function AdminStudentsPage() {
           </div>
         </div>
 
-        {/* 编辑用户信息 Modal */}
-        <AdminModal
-        open={editing}
-        onClose={() => setEditing(false)}
-        title={`编辑用户信息 · ${s.realName || s.name || '未命名'}`}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {editError && (
-            <div className="p-3 rounded-md text-[13px] bg-[rgba(255,107,107,.08)] border border-[rgba(255,107,107,.15)] text-[var(--red)]">
-              {editError}
-            </div>
-          )}
-          <div>
-            <label className={labelCls}>昵称</label>
-            <input
-              className={inputCls}
-              placeholder="用户昵称"
-              value={editForm.name}
-              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className={labelCls}>真实姓名</label>
-            <input
-              className={inputCls}
-              placeholder="真实姓名（可选）"
-              value={editForm.realName}
-              onChange={(e) => setEditForm({ ...editForm, realName: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className={labelCls}>手机号</label>
-            <input
-              className={inputCls}
-              placeholder="留空则不修改，输入完整 11 位手机号"
-              value={editForm.phone}
-              onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-            />
-            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
-              当前号码：{s.phone}（留空表示不修改）
-            </div>
-          </div>
-          <div>
-            <label className={labelCls}>邮箱</label>
-            <input
-              className={inputCls}
-              placeholder="邮箱地址（可选）"
-              value={editForm.email}
-              onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className={labelCls}>头像 URL</label>
-            <input
-              className={inputCls}
-              placeholder="头像图片链接（可选）"
-              value={editForm.avatarUrl}
-              onChange={(e) => setEditForm({ ...editForm, avatarUrl: e.target.value })}
-            />
-          </div>
-          <div className="flex gap-2">
-            <button className={`${btnGhost} flex-1 justify-center`} onClick={() => setEditing(false)}>
-              取消
-            </button>
-            <button className={`${btnPrimary} flex-1 justify-center`} onClick={saveEdit}>
-              保存
-            </button>
-          </div>
-        </div>
-      </AdminModal>
+        <AdminModal open={editing} onClose={() => setEditing(false)} title={`编辑用户信息 · ${editForm.name || '未命名'}`}>
+          <EditForm editForm={editForm} setEditForm={setEditForm} editError={editError} setEditing={setEditing} saveEdit={saveEdit} />
+        </AdminModal>
       </div>
     )
   }
@@ -602,117 +417,67 @@ export default function AdminStudentsPage() {
   }
 
   const listColumns: Column<Student>[] = [
+    { key: 'avatarUrl', title: '', render: (v) => <span style={{ fontSize: 20 }}>{(v as string) || <User className="w-5 h-5 text-[var(--text3)]" />}</span> },
     {
-      key: 'avatarUrl',
-      title: '',
-      render: (v) => <span style={{ fontSize: 20 }}>{(v as string) || <User className="w-5 h-5 text-[var(--text3)]" />}</span>,
+      key: 'name', title: '姓名',
+      render: (v, row) => { const u = row as unknown as Student; return <span style={{ fontWeight: 600 }}>{u.realName || (v as string) || '—'}</span> },
     },
     {
-      key: 'name',
-      title: '姓名',
+      key: 'type', title: '属性',
       render: (v, row) => {
-        const u = row as unknown as Student
-        return <span style={{ fontWeight: 600 }}>{u.realName || (v as string) || '—'}</span>
-      },
-    },
-    {
-      key: 'type',
-      title: '属性',
-      render: (v, row) => {
-        const roleColors: Record<string, string> = {
-          creator: 'var(--accent2)',
-          reviewer: 'var(--green)',
-          admin: 'var(--orange)',
-        }
-        const roleLabels: Record<string, string> = {
-          creator: '创作者',
-          reviewer: '评审',
-          admin: '管理员',
-        }
-        const role = v as string
-        const r = row as Student
+        const roleColors: Record<string, string> = { creator: 'var(--accent2)', reviewer: 'var(--green)', admin: 'var(--orange)' }
+        const roleLabels: Record<string, string> = { creator: '创作者', reviewer: '评审', admin: '管理员' }
+        const role = v as string; const r = row as Student
         const suffix = r.adminLevel === 'group_admin' ? ' · 组管理员' : ''
-        return (
-          <span style={{ fontSize: 12, color: roleColors[role] ?? 'var(--text2)' }}>
-            {roleLabels[role] ?? '创作者'}
-            {suffix}
-          </span>
-        )
+        return <span style={{ fontSize: 12, color: roleColors[role] ?? 'var(--text2)' }}>{roleLabels[role] ?? '创作者'}{suffix}</span>
       },
     },
     { key: 'phone', title: '手机号' },
     {
-      key: 'realNameStatus',
-      title: '实名',
-      render: (v) => {
-        const status = v as string
-        return (
-          <span style={{ fontSize: 12, color: realNameColorMap[status] ?? 'var(--text3)' }}>
-            {realNameLabelMap[status] ?? '未认证'}
-          </span>
-        )
-      },
+      key: 'realNameStatus', title: '实名',
+      render: (v) => <span style={{ fontSize: 12, color: realNameColorMap[v as string] ?? 'var(--text3)' }}>{realNameLabelMap[v as string] ?? '未认证'}</span>,
     },
     {
-      key: 'groups',
-      title: '用户组',
-      render: (v) => {
-        const groups = (v as { id: number; name: string }[]) || []
-        const names = groups.map((g) => g.name).join(', ')
-        return (
-          <span style={{ fontSize: 11, color: 'var(--text3)' }}>{names || '—'}</span>
-        )
-      },
+      key: 'groups', title: '用户组',
+      render: (v) => <span style={{ fontSize: 11, color: 'var(--text3)' }}>{((v as { id: number; name: string }[]) || []).map((g) => g.name).join(', ') || '—'}</span>,
     },
     {
-      key: 'agencyContract',
-      title: '代理协议',
+      key: 'agencyContract', title: '代理协议',
       render: (_v, row) => {
         const s = row as Student
-        if (s.agencyContract) {
-          return <span style={{ color: 'var(--green2)', fontSize: 12 }}>已签署</span>
-        }
-        if (s.agencyApplied) {
-          return <span style={{ color: 'var(--orange)', fontSize: 12 }}>申请中</span>
-        }
-        if (s.agencyRejectReason) {
-          return <span style={{ color: 'var(--red)', fontSize: 12 }} title={s.agencyRejectReason}>已驳回</span>
-        }
+        if (s.agencyContract) return <span style={{ color: 'var(--green2)', fontSize: 12 }}>已签署</span>
+        if (s.agencyApplied) return <span style={{ color: 'var(--orange)', fontSize: 12 }}>申请中</span>
+        if (s.agencyRejectReason) return <span style={{ color: 'var(--red)', fontSize: 12 }} title={s.agencyRejectReason}>已驳回</span>
         return <span style={{ color: 'var(--text3)', fontSize: 12 }}>未申请</span>
       },
     },
     { key: 'songCount', title: '作品数' },
+    {
+      key: 'actions', title: '操作',
+      render: (_v, row) => {
+        const s = row as Student
+        return (
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button className={btnSmall} style={{ color: 'var(--accent)' }} onClick={(e) => { e.stopPropagation(); openEditFromList(s) }}>编辑</button>
+          </div>
+        )
+      },
+    },
   ]
 
   return (
     <div className={pageWrap}>
-      {/* Toast */}
       {toast && (
-        <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-[var(--bg3)] border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
-          {toast}
-        </div>
+        <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-[var(--bg3)] border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">{toast}</div>
       )}
 
-      <PageHeader
-        title="用户档案库"
-        subtitle={`共 ${studentsData?.total ?? 0} 名创作者`}
-      />
+      <PageHeader title="用户档案库" subtitle={`共 ${studentsData?.total ?? 0} 名创作者`} />
 
-      {/* Search bar row */}
       <div className="flex gap-3">
         <div style={{ flex: 1 }}>
-          <SearchBar
-            value={searchText}
-            onChange={setSearchText}
-            placeholder="搜索姓名/手机号/邮箱"
-          />
+          <SearchBar value={searchText} onChange={setSearchText} placeholder="搜索姓名/手机号/邮箱" />
         </div>
-        <select
-          className={inputCls}
-          style={{ width: 160 }}
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-        >
+        <select className={inputCls} style={{ width: 160 }} value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
           <option>全部实名状态</option>
           <option>已认证</option>
           <option>待审核</option>
@@ -721,14 +486,56 @@ export default function AdminStudentsPage() {
         </select>
       </div>
 
-      {/* DataTable card */}
       <div className={cardCls}>
-        <DataTable
-          columns={listColumns}
-          data={students}
-          rowKey={(r) => r.id}
-          onRowClick={(row) => setDetail((row as unknown as Student).id)}
-        />
+        <DataTable columns={listColumns} data={students} rowKey={(r) => r.id} onRowClick={(row) => setDetail((row as unknown as Student).id)} />
+      </div>
+
+      <AdminModal open={editing} onClose={() => setEditing(false)} title={`编辑用户信息 · ${editForm.name || '未命名'}`}>
+        <EditForm editForm={editForm} setEditForm={setEditForm} editError={editError} setEditing={setEditing} saveEdit={saveEdit} />
+      </AdminModal>
+    </div>
+  )
+}
+
+// ── Edit form sub-component ──────────────────────────────────────
+
+function EditForm({
+  editForm, setEditForm, editError, setEditing, saveEdit,
+}: {
+  editForm: { name: string; realName: string; phone: string; email: string; avatarUrl: string }
+  setEditForm: (v: { name: string; realName: string; phone: string; email: string; avatarUrl: string }) => void
+  editError: string
+  setEditing: (v: boolean) => void
+  saveEdit: () => Promise<void>
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {editError && (
+        <div className="p-3 rounded-md text-[13px] bg-[rgba(255,107,107,.08)] border border-[rgba(255,107,107,.15)] text-[var(--red)]">{editError}</div>
+      )}
+      <div>
+        <label className={labelCls}>昵称</label>
+        <input className={inputCls} placeholder="用户昵称" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+      </div>
+      <div>
+        <label className={labelCls}>真实姓名</label>
+        <input className={inputCls} placeholder="真实姓名（可选）" value={editForm.realName} onChange={(e) => setEditForm({ ...editForm, realName: e.target.value })} />
+      </div>
+      <div>
+        <label className={labelCls}>手机号</label>
+        <input className={inputCls} placeholder="留空则不修改，输入完整 11 位手机号" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
+      </div>
+      <div>
+        <label className={labelCls}>邮箱</label>
+        <input className={inputCls} placeholder="邮箱地址（可选）" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
+      </div>
+      <div>
+        <label className={labelCls}>头像 URL</label>
+        <input className={inputCls} placeholder="头像图片链接（可选）" value={editForm.avatarUrl} onChange={(e) => setEditForm({ ...editForm, avatarUrl: e.target.value })} />
+      </div>
+      <div className="flex gap-2">
+        <button className={`${btnGhost} flex-1 justify-center`} onClick={() => setEditing(false)}>取消</button>
+        <button className={`${btnPrimary} flex-1 justify-center`} onClick={saveEdit}>保存</button>
       </div>
     </div>
   )
