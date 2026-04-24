@@ -69,6 +69,9 @@ export default function AdminSongsPage() {
   const [channelSongId, setChannelSongId] = useState<number | null>(null)
   const [channelData, setChannelData] = useState<{ title: string; copyrightCode: string; isrc: string | null; distributions: { id: number; platform: string; status: string; submittedAt: string | null; liveDate: string | null; url: string | null }[] } | null>(null)
 
+  // Archive confirmation modal
+  const [archiveModal, setArchiveModal] = useState<{ songId: number; title: string } | null>(null)
+
   // Edit modal
   const [editModal, setEditModal] = useState<SongItem | null>(null)
 
@@ -150,6 +153,14 @@ export default function AdminSongsPage() {
 
   const columns: Column<SongItem>[] = [
     {
+      key: 'id',
+      title: '操作',
+      render: (_v, row) => {
+        const song = row as SongItem
+        return <ActionButtons song={song} />
+      },
+    },
+    {
       key: 'coverUrl',
       title: '封面',
       render: (v, row) => {
@@ -203,14 +214,6 @@ export default function AdminSongsPage() {
           return <StatusBadge label={map.label} color={map.color} bg={map.bg} />
         }
         return <span>{status}</span>
-      },
-    },
-    {
-      key: 'id',
-      title: '操作',
-      render: (_v, row) => {
-        const song = row as SongItem
-        return <ActionButtons song={song} />
       },
     },
   ]
@@ -287,7 +290,7 @@ export default function AdminSongsPage() {
             */}
             <button
               className={`${btnDanger} ${btnSmall}`}
-              onClick={(e) => { e.stopPropagation(); handleStatusChange(song.id, 'archive') }}
+              onClick={(e) => { e.stopPropagation(); setArchiveModal({ songId: song.id, title: song.title }) }}
             >
               归档
             </button>
@@ -404,6 +407,37 @@ export default function AdminSongsPage() {
         })() : (
           <div className="text-center py-8 text-[var(--text3)] text-sm">加载中...</div>
         )}
+      </AdminModal>
+
+      {/* 归档确认弹窗 */}
+      <AdminModal
+        open={!!archiveModal}
+        onClose={() => setArchiveModal(null)}
+        title="确认归档"
+        width={400}
+      >
+        <div className="flex flex-col gap-4">
+          <div className="text-sm text-[var(--text2)]">
+            确定要将歌曲「<span className="font-medium text-[var(--text)]">{archiveModal?.title}</span>」归档吗？
+          </div>
+          <p className="text-xs text-[var(--text3)]">
+            归档后歌曲将从"已发行"状态回退到"已入库"，不再对外发行。
+          </p>
+          <div className="flex gap-2 justify-end">
+            <button className={`${btnGhost} ${btnSmall}`} onClick={() => setArchiveModal(null)}>取消</button>
+            <button
+              className={`${btnDanger} ${btnSmall}`}
+              onClick={() => {
+                if (archiveModal) {
+                  handleStatusChange(archiveModal.songId, 'archive')
+                  setArchiveModal(null)
+                }
+              }}
+            >
+              确认归档
+            </button>
+          </div>
+        </div>
       </AdminModal>
 
       {/* Edit Modal */}
