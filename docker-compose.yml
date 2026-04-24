@@ -33,7 +33,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    entrypoint: ["sh", "-c", "echo 'Checking if database already has data...'; USER_COUNT=$(mysql -h db -u root -p$${MYSQL_ROOT_PASSWORD:-museek2026} museek -Ns -e \"SELECT COUNT(*) FROM users\" 2>/dev/null); if [ \"$USER_COUNT\" = \"0\" ] || [ -z \"$USER_COUNT\" ]; then echo \"Database empty, running init...\"; npx prisma db push --skip-generate && node prisma/seed.js; else echo \"⚠️  Database already has $USER_COUNT users, skipping init to prevent data loss.\"; echo \"    If you need to re-init, first run: docker compose exec db mysql -uroot -p museek -e 'DELETE FROM users'\"; fi"]
+    entrypoint: ["sh", "-c", "node prisma/safe-init.js"]
     restart: "no"
     profiles: ["init"]
 
