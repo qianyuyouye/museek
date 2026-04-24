@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Shield, CheckCircle2, Ban, Settings, AlertTriangle, Clipboard, Check, Users, User } from 'lucide-react'
+import { Shield, CheckCircle2, Ban, Settings, AlertTriangle, Clipboard, Check, Users, User, Pencil, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useConfirm } from '@/components/ui/confirm-dialog'
 import { PageHeader } from '@/components/ui/page-header'
@@ -76,6 +76,9 @@ export default function AdminAccountsPage() {
   const [permModal, setPermModal] = useState<ReviewerAccount | CreatorAccount | null>(null)
   const [resetPwd, setResetPwd] = useState<{ name: string; password: string } | null>(null)
   const [copied, setCopied] = useState(false)
+  const [editModal, setEditModal] = useState<ReviewerAccount | CreatorAccount | null>(null)
+  const [editForm, setEditForm] = useState({ name: '', phone: '', email: '', password: '' })
+  const [editError, setEditError] = useState('')
 
   const { data, loading, refetch } = useApi<AccountsApiData>(
     `/api/admin/accounts?tab=${tab}`,
@@ -182,51 +185,42 @@ export default function AdminAccountsPage() {
         const r = row as ReviewerAccount
         return (
           <div style={{ display: 'flex', gap: 4 }}>
-            <button
-              className={`${btnGhost} ${btnSmall}`}
-              onClick={(e) => {
-                e.stopPropagation()
-                setPermModal(r)
-              }}
-            >
-              权限
-            </button>
-            <button
-              className={`${btnGhost} ${btnSmall}`}
-              onClick={async (e) => {
-                e.stopPropagation()
-                const res = await apiCall<{ password?: string; generated?: boolean }>(`/api/admin/accounts/${r.id}/reset-password`, 'POST', {})
-                if (res.ok) {
-                  if (res.data?.password) {
-                    setCopied(false)
-                    setResetPwd({ name: r.name, password: res.data.password })
-                  } else {
-                    showToast(`已重置 ${r.name} 的密码`)
-                  }
-                  refetch()
-                } else showToast(res.message ?? '重置失败')
-              }}
-            >
-              重置密码
-            </button>
-            <button
-              className={`${btnGhost} ${btnSmall}`}
-              style={
-                r.status === 'active'
-                  ? { color: 'var(--red)', borderColor: 'var(--red)' }
-                  : { color: 'var(--green2)', borderColor: 'var(--green2)' }
-              }
-              onClick={async (e) => {
-                e.stopPropagation()
-                if (await confirm({ message: `确认${r.status === 'active' ? '禁用' : '启用'}「${r.name}」？`, danger: true })) {
-                  const res = await apiCall(`/api/admin/accounts/${r.id}/toggle-status`, 'POST')
-                  if (res.ok) { showToast(`已${r.status === 'active' ? '禁用' : '启用'} ${r.name}`); refetch() }
-                  else showToast(res.message ?? '操作失败')
+            <button className={`${btnGhost} ${btnSmall}`} onClick={(e) => { e.stopPropagation(); setPermModal(r) }}>权限</button>
+            <button className={`${btnGhost} ${btnSmall}`} onClick={(e) => {
+              e.stopPropagation()
+              setEditForm({ name: r.name, phone: '', email: r.email, password: '' })
+              setEditError('')
+              setEditModal(r)
+            }}><Pencil className="w-3 h-3 mr-0.5" />编辑</button>
+            <button className={`${btnGhost} ${btnSmall}`} onClick={async (e) => {
+              e.stopPropagation()
+              const res = await apiCall<{ password?: string; generated?: boolean }>(`/api/admin/accounts/${r.id}/reset-password`, 'POST', {})
+              if (res.ok) {
+                if (res.data?.password) {
+                  setCopied(false)
+                  setResetPwd({ name: r.name, password: res.data.password })
+                } else {
+                  showToast(`已重置 ${r.name} 的密码`)
                 }
-              }}
-            >
-              {r.status === 'active' ? '禁用' : '启用'}
-            </button>
+                refetch()
+              } else showToast(res.message ?? '重置失败')
+            }}>重置密码</button>
+            <button className={`${btnGhost} ${btnSmall}`} style={r.status === 'active' ? { color: 'var(--red)', borderColor: 'var(--red)' } : { color: 'var(--green2)', borderColor: 'var(--green2)' }} onClick={async (e) => {
+              e.stopPropagation()
+              if (await confirm({ message: `确认${r.status === 'active' ? '禁用' : '启用'}「${r.name}」？`, danger: true })) {
+                const res = await apiCall(`/api/admin/accounts/${r.id}/toggle-status`, 'POST')
+                if (res.ok) { showToast(`已${r.status === 'active' ? '禁用' : '启用'} ${r.name}`); refetch() }
+                else showToast(res.message ?? '操作失败')
+              }
+            }}>{r.status === 'active' ? '禁用' : '启用'}</button>
+            <button className={`${btnGhost} ${btnSmall}`} style={{ color: 'var(--red)', borderColor: 'var(--red)' }} onClick={async (e) => {
+              e.stopPropagation()
+              if (await confirm({ message: `确认删除「${r.name}」？此操作不可恢复。`, danger: true })) {
+                const res = await apiCall(`/api/admin/accounts/${r.id}`, 'DELETE')
+                if (res.ok) { showToast(`已删除 ${r.name}`); refetch() }
+                else showToast(res.message ?? '删除失败')
+              }
+            }}><Trash2 className="w-3 h-3 mr-0.5" />删除</button>
           </div>
         )
       },
@@ -286,47 +280,34 @@ export default function AdminAccountsPage() {
         const r = row as CreatorAccount
         return (
           <div style={{ display: 'flex', gap: 4 }}>
-            <button
-              className={`${btnGhost} ${btnSmall}`}
-              onClick={(e) => {
-                e.stopPropagation()
-                setPermModal(r)
-              }}
-            >
-              权限
-            </button>
-            <button
-              className={`${btnGhost} ${btnSmall}`}
-              onClick={async (e) => {
-                e.stopPropagation()
-                const res = await apiCall<{ password?: string; generated?: boolean }>(`/api/admin/accounts/${r.id}/reset-password`, 'POST', {})
-                if (res.ok) {
-                  if (res.data?.password) {
-                    setCopied(false)
-                    setResetPwd({ name: r.name, password: res.data.password })
-                  } else {
-                    showToast(`已重置 ${r.name} 的密码`)
-                  }
-                  refetch()
-                } else showToast(res.message ?? '重置失败')
-              }}
-            >
-              重置密码
-            </button>
-            <button
-              className={`${btnGhost} ${btnSmall}`}
-              style={{ color: 'var(--red)', borderColor: 'var(--red)' }}
-              onClick={async (e) => {
-                e.stopPropagation()
-                if (await confirm({ message: `确认禁用「${r.name}」？`, danger: true })) {
-                  const res = await apiCall(`/api/admin/accounts/${r.id}/toggle-status`, 'POST')
-                  if (res.ok) { showToast(`已禁用 ${r.name}`); refetch() }
-                  else showToast(res.message ?? '操作失败')
+            <button className={`${btnGhost} ${btnSmall}`} onClick={(e) => { e.stopPropagation(); setPermModal(r) }}>权限</button>
+            <button className={`${btnGhost} ${btnSmall}`} onClick={(e) => {
+              e.stopPropagation()
+              setEditForm({ name: r.name, phone: '', email: '', password: '' })
+              setEditError('')
+              setEditModal(r)
+            }}><Pencil className="w-3 h-3 mr-0.5" />编辑</button>
+            <button className={`${btnGhost} ${btnSmall}`} onClick={async (e) => {
+              e.stopPropagation()
+              const res = await apiCall<{ password?: string; generated?: boolean }>(`/api/admin/accounts/${r.id}/reset-password`, 'POST', {})
+              if (res.ok) {
+                if (res.data?.password) {
+                  setCopied(false)
+                  setResetPwd({ name: r.name, password: res.data.password })
+                } else {
+                  showToast(`已重置 ${r.name} 的密码`)
                 }
-              }}
-            >
-              禁用
-            </button>
+                refetch()
+              } else showToast(res.message ?? '重置失败')
+            }}>重置密码</button>
+            <button className={`${btnGhost} ${btnSmall}`} style={{ color: 'var(--red)', borderColor: 'var(--red)' }} onClick={async (e) => {
+              e.stopPropagation()
+              if (await confirm({ message: `确认删除「${r.name}」？此操作不可恢复。`, danger: true })) {
+                const res = await apiCall(`/api/admin/accounts/${r.id}`, 'DELETE')
+                if (res.ok) { showToast(`已删除 ${r.name}`); refetch() }
+                else showToast(res.message ?? '删除失败')
+              }
+            }}><Trash2 className="w-3 h-3 mr-0.5" />删除</button>
           </div>
         )
       },
@@ -452,6 +433,59 @@ export default function AdminAccountsPage() {
               }
             }}
           />
+        )}
+      </AdminModal>
+
+      {/* 编辑账号 Modal */}
+      <AdminModal
+        open={!!editModal}
+        onClose={() => setEditModal(null)}
+        title={`编辑账号 · ${editModal?.name ?? ''}`}
+      >
+        {editModal && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {editError && (
+              <div className="p-3 rounded-md text-[13px] bg-[rgba(255,107,107,.08)] border border-[rgba(255,107,107,.15)] text-[var(--red)]">{editError}</div>
+            )}
+            <div>
+              <label className={labelCls}>姓名</label>
+              <input className={inputCls} value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+            </div>
+            <div>
+              <label className={labelCls}>手机号</label>
+              <input className={inputCls} placeholder="留空不修改，输入完整 11 位" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
+              <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>当前：{editModal.phone}（留空表示不修改）</div>
+            </div>
+            <div>
+              <label className={labelCls}>邮箱</label>
+              <input className={inputCls} placeholder="邮箱地址" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
+              <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>当前：{('email' in editModal ? editModal.email : '') || '未设置'}</div>
+            </div>
+            <div>
+              <label className={labelCls}>新密码 <span style={{ color: 'var(--text3)' }}>(留空不修改)</span></label>
+              <input className={inputCls} type="password" placeholder="≥8位，含字母+数字" value={editForm.password} onChange={(e) => setEditForm({ ...editForm, password: e.target.value })} />
+            </div>
+            <div className="flex gap-2">
+              <button className={`${btnGhost} flex-1 justify-center`} onClick={() => setEditModal(null)}>取消</button>
+              <button className={`${btnPrimary} flex-1 justify-center`} onClick={async () => {
+                if (!editForm.name.trim()) { setEditError('姓名不能为空'); return }
+                if (editForm.phone && !/^1[3-9]\d{9}$/.test(editForm.phone.trim())) { setEditError('手机号格式不正确'); return }
+                if (editForm.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editForm.email.trim())) { setEditError('邮箱格式不正确'); return }
+                const body: Record<string, unknown> = { name: editForm.name.trim() }
+                if (editForm.phone.trim()) body.phone = editForm.phone.trim()
+                body.email = editForm.email.trim() || null
+                if (editForm.password.trim()) body.password = editForm.password.trim()
+                const res = await apiCall(`/api/admin/accounts/${editModal.id}`, 'PUT', body)
+                if (res.ok) {
+                  setEditModal(null)
+                  showToast('账号信息已更新')
+                  refetch()
+                } else {
+                  setEditError(res.message ?? '更新失败')
+                }
+              }}>保存</button>
+            </div>
+          </div>
         )}
       </AdminModal>
 
