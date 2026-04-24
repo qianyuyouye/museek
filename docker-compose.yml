@@ -33,7 +33,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    entrypoint: ["node", "-e", "const {PrismaClient}=require('@prisma/client');const {execSync}=require('child_process');const p=new PrismaClient();p.user.count().then(c=>{console.log('⚠️  DB already has',c,'users, skipping init.');process.exit(0)}).catch(()=>{console.log('DB empty, running init...');execSync('npx prisma db push --skip-generate',{stdio:'inherit'});execSync('node prisma/seed.js',{stdio:'inherit'})}).finally(()=>p.$disconnect())"]
+    entrypoint: ["node", "scripts/init-db.js"]
     restart: "no"
     profiles: ["init"]
 
