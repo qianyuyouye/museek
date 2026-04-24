@@ -162,7 +162,7 @@ export default function AdminDistributionsPage() {
         <StatCard
           icon={<TrendingUp className="w-5 h-5" />}
           label="待提交"
-          val={distributions.reduce((n, d) => n + Object.values(d.platforms).filter(v => v === 'pending' || v === 'none').length, 0)}
+          val={distributions.reduce((n, d) => n + Object.values(d.platforms).filter(v => v === 'pending').length, 0)}
           color="var(--orange)"
           iconBg="rgba(255,179,71,0.1)"
         />
