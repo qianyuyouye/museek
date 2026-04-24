@@ -270,6 +270,7 @@ export default function AdminSongsPage() {
             >
               查看渠道
             </button>
+            {/* TODO: 下载PDF 功能暂时注释
             <button
               className={`${btnGhost} ${btnSmall}`}
               onClick={async (ev) => {
@@ -287,6 +288,7 @@ export default function AdminSongsPage() {
             >
               下载PDF
             </button>
+            */}
             <button
               className={`${btnDanger} ${btnSmall}`}
               onClick={(e) => { e.stopPropagation(); handleStatusChange(song.id, 'archive') }}
