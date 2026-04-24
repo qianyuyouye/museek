@@ -268,21 +268,18 @@ export default function AdminDashboard() {
         <div
           className="bg-[var(--bg3)] border border-[var(--border)] rounded-xl"
           style={{
-            padding: '18px 16px 10px',
+            padding: '20px 20px 16px',
             boxShadow: '0 1px 4px rgba(0,0,0,.2)',
           }}
         >
-          <div className="flex justify-between items-center mb-3">
+          <div className="flex justify-between items-center mb-4">
             <span className="text-[13.5px] font-semibold text-[var(--text)]">收益趋势</span>
             <span
-              className="text-[11px] text-[var(--text3)] border border-[var(--border)]"
-              style={{
-                background: 'var(--bg4)',
-                padding: '2px 10px',
-                borderRadius: 20,
-              }}
+              className="text-[11px] text-[var(--accent)] font-medium"
             >
-              收益趋势
+              {data?.trend?.values?.length
+                ? `近 ${trendValues.length} 个月`
+                : ''}
             </span>
           </div>
 
@@ -293,19 +290,24 @@ export default function AdminDashboard() {
           >
             <defs>
               <linearGradient id="dashAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--accent)" stopOpacity=".22" />
-                <stop offset="100%" stopColor="var(--accent)" stopOpacity=".02" />
+                <stop offset="0%" stopColor="var(--accent)" stopOpacity=".18" />
+                <stop offset="100%" stopColor="var(--accent)" stopOpacity=".01" />
               </linearGradient>
             </defs>
 
             {/* Grid lines + Y-axis labels */}
             {[0, 0.25, 0.5, 0.75, 1].map((r, i) => {
               const y = PT + (1 - r) * (H - PT - PB)
+              const raw = r * maxV
+              let label: string
+              if (raw >= 10000) label = (raw / 10000).toFixed(1).replace(/\.0$/, '') + 'w'
+              else if (raw >= 1000) label = Math.round(raw / 1000) + 'k'
+              else label = Math.round(raw).toString()
               return (
                 <g key={i}>
-                  <line x1={PL} y1={y} x2={W - PR} y2={y} stroke="var(--border)" strokeWidth="1" />
-                  <text x={PL - 5} y={y + 4} textAnchor="end" fontSize="10" fill="var(--text3)">
-                    {Math.round((r * maxV) / 1000) + 'k'}
+                  <line x1={PL} y1={y} x2={W - PR} y2={y} stroke="var(--border)" strokeWidth="1" strokeDasharray={i === 0 ? '0' : '3 3'} />
+                  <text x={PL - 6} y={y + 4} textAnchor="end" fontSize="10" fill="var(--text3)">
+                    {label}
                   </text>
                 </g>
               )
@@ -324,7 +326,16 @@ export default function AdminDashboard() {
             {/* Area fill */}
             <path d={areaPath} fill="url(#dashAreaGrad)" />
 
-            {/* Smooth line */}
+            {/* Smooth line with glow */}
+            <path
+              d={linePath}
+              fill="none"
+              stroke="var(--accent)"
+              strokeWidth="3"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              opacity="0.3"
+            />
             <path
               d={linePath}
               fill="none"
@@ -342,38 +353,56 @@ export default function AdminDashboard() {
                 onMouseLeave={() => setHov(null)}
                 style={{ cursor: 'pointer' }}
               >
-                <circle cx={p.x} cy={p.y} r="9" fill="transparent" />
+                {/* Invisible hit area */}
+                <circle cx={p.x} cy={p.y} r="10" fill="transparent" />
+                {/* Visible dot */}
                 <circle
                   cx={p.x}
                   cy={p.y}
-                  r={hov === i ? 5 : 2.5}
-                  fill={hov === i ? 'var(--accent)' : 'var(--text)'}
+                  r={hov === i ? 5 : 3}
+                  fill={hov === i ? '#fff' : 'var(--bg3)'}
                   stroke="var(--accent)"
-                  strokeWidth="2.5"
+                  strokeWidth={hov === i ? 2.5 : 2}
+                  style={{ transition: 'r 0.15s ease, fill 0.15s ease' }}
                 />
               </g>
             ))}
+
+            {/* Hover crosshair line */}
+            {hovPt && hov !== null && (
+              <line
+                x1={hovPt.x}
+                y1={PT}
+                x2={hovPt.x}
+                y2={H - PB}
+                stroke="var(--accent)"
+                strokeWidth="1"
+                strokeDasharray="4 3"
+                opacity="0.3"
+              />
+            )}
 
             {/* Hover tooltip */}
             {hovPt && hov !== null && (
               <g>
                 <rect
-                  x={tx - 54}
-                  y={hovPt.y - 50}
-                  width="108"
-                  height="38"
+                  x={tx - 52}
+                  y={hovPt.y - 48}
+                  width="104"
+                  height="36"
                   rx="8"
                   fill="var(--bg3)"
-                  stroke="var(--border)"
+                  stroke="var(--accent)"
                   strokeWidth="1"
-                  filter="drop-shadow(0 2px 6px rgba(0,0,0,.08))"
+                  strokeOpacity="0.4"
+                  filter="drop-shadow(0 3px 8px rgba(0,0,0,.12))"
                 />
-                <text x={tx} y={hovPt.y - 32} textAnchor="middle" fontSize="10" fill="var(--text3)">
+                <text x={tx} y={hovPt.y - 30} textAnchor="middle" fontSize="10" fill="var(--text3)">
                   {trendMonths[hov]}
                 </text>
                 <text
                   x={tx}
-                  y={hovPt.y - 18}
+                  y={hovPt.y - 17}
                   textAnchor="middle"
                   fontSize="13"
                   fontWeight="700"
