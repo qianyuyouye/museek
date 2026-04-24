@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { Cloud, Circle, CheckCircle2, Music, FileText, Lightbulb, Search } from 'lucide-react'
+import { FileText, Lightbulb, Search } from 'lucide-react'
 import { PageHeader } from '@/components/ui/page-header'
 import { AdminTab } from '@/components/ui/unified-tabs'
 import { DataTable, Column } from '@/components/ui/data-table'
@@ -27,11 +27,6 @@ const TAB_LABELS: { key: TabKey; label: string }[] = [
 
 // ── Helpers ──────────────────────────────────────────────────────
 
-interface SongDist {
-  platform: string
-  status: string
-}
-
 interface SongItem {
   id: number
   userId: number
@@ -47,16 +42,7 @@ interface SongItem {
   creatorName?: string
   agencyContract?: boolean
   realNameStatus?: string
-  distributions?: SongDist[]
 }
-
-const CHANNEL_META: { key: string; icon: React.ReactNode }[] = [
-  { key: 'QQ音乐', icon: <Music className="w-4 h-4 inline" /> },
-  { key: '网易云音乐', icon: <Cloud className="w-4 h-4 inline" /> },
-  { key: 'Apple Music', icon: <Music className="w-4 h-4 inline" /> },
-  { key: 'Spotify', icon: <Circle className="w-4 h-4 inline text-[var(--green2)]" /> },
-  { key: '酷狗音乐', icon: <Music className="w-4 h-4 inline" /> },
-]
 
 const DIST_STATUS_LABEL: Record<string, { label: string; color: string }> = {
   live: { label: '已上架', color: 'var(--green2)' },
@@ -80,7 +66,8 @@ export default function AdminSongsPage() {
   const [keyword, setKeyword] = useState('')
 
   // Channel modal
-  const [channelModal, setChannelModal] = useState<SongItem | null>(null)
+  const [channelSongId, setChannelSongId] = useState<number | null>(null)
+  const [channelData, setChannelData] = useState<{ title: string; copyrightCode: string; isrc: string | null; distributions: { id: number; platform: string; status: string; submittedAt: string | null; liveDate: string | null; url: string | null }[] } | null>(null)
 
   // Edit modal
   const [editModal, setEditModal] = useState<SongItem | null>(null)
@@ -92,6 +79,15 @@ export default function AdminSongsPage() {
 
   const songs = data?.list ?? []
   const statusCounts = data?.statusCounts ?? {}
+
+  // Fetch channel data when modal opens
+  useEffect(() => {
+    if (channelSongId === null) { setChannelData(null); return }
+    fetch(`/api/admin/songs/${channelSongId}/channels`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(json => { if (json.code === 200) setChannelData(json.data); else setChannelData(null) })
+      .catch(() => setChannelData(null))
+  }, [channelSongId])
 
   const filteredByKeyword = useMemo(() => {
     if (!keyword.trim()) return songs
@@ -266,7 +262,7 @@ export default function AdminSongsPage() {
             <button className={`${btnGhost} ${btnSmall}`} onClick={(e) => { e.stopPropagation(); setEditModal(song) }}>编辑</button>
             <button
               className={`${btnGhost} ${btnSmall}`}
-              onClick={(e) => { e.stopPropagation(); setChannelModal(song) }}
+              onClick={(e) => { e.stopPropagation(); setChannelSongId(song.id) }}
             >
               查看渠道
             </button>
@@ -367,27 +363,31 @@ export default function AdminSongsPage() {
 
       {/* 渠道查看弹窗 */}
       <AdminModal
-        open={!!channelModal}
-        onClose={() => setChannelModal(null)}
-        title={`发行渠道 · ${channelModal?.title ?? ''}`}
+        open={!!channelData}
+        onClose={() => setChannelSongId(null)}
+        title={`发行渠道 · ${channelData?.title ?? ''}`}
         width={480}
       >
-        {channelModal && (() => {
-          const distMap: Record<string, string> = {}
-          ;(channelModal.distributions ?? []).forEach((d) => { distMap[d.platform] = d.status })
+        {channelData ? (() => {
+          if (channelData.distributions.length === 0) {
+            return (
+              <div className="text-center py-8 text-[var(--text3)] text-sm">
+                暂无发行渠道记录
+              </div>
+            )
+          }
           return (
             <div className="flex flex-col gap-3">
               <div className="grid grid-cols-2 gap-2.5">
-                {CHANNEL_META.map((ch) => {
-                  const st = distMap[ch.key] ?? 'none'
-                  const meta = DIST_STATUS_LABEL[st] ?? DIST_STATUS_LABEL.none
+                {channelData.distributions.map((d) => {
+                  const meta = DIST_STATUS_LABEL[d.status] ?? DIST_STATUS_LABEL.none
                   return (
                     <div
-                      key={ch.key}
+                      key={d.id}
                       className="rounded-lg flex justify-between items-center text-[13px]"
                       style={{ padding: '12px 14px', background: 'var(--bg4)' }}
                     >
-                      <span>{ch.icon} {ch.key}</span>
+                      <span>{d.platform}</span>
                       <span className="text-[11px] font-medium" style={{ color: meta.color }}>
                         {meta.label}
                       </span>
@@ -396,11 +396,14 @@ export default function AdminSongsPage() {
                 })}
               </div>
               <div className="text-xs text-[var(--text3)] text-center pt-2">
-                版权编号：{channelModal.copyrightCode}
+                版权编号：{channelData.copyrightCode}
+                {channelData.isrc && ` · ISRC：${channelData.isrc}`}
               </div>
             </div>
           )
-        })()}
+        })() : (
+          <div className="text-center py-8 text-[var(--text3)] text-sm">加载中...</div>
+        )}
       </AdminModal>
 
       {/* Edit Modal */}

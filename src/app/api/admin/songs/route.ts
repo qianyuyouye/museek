@@ -59,7 +59,6 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
       where,
       include: {
         user: { select: { name: true, realName: true, phone: true, agencyContract: true, realNameStatus: true } },
-        distributions: { select: { platform: true, status: true } },
       },
       orderBy: { createdAt: 'desc' },
       skip,
@@ -96,7 +95,6 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     isrc: s.isrc,
     status: s.status,
     likeCount: s.likeCount,
-    distributions: s.distributions,
     audioUrl: await toSignedUrl(s.audioUrl, auth.userId),
     coverUrl: await toSignedUrl(s.coverUrl, auth.userId),
     createdAt: s.createdAt,
