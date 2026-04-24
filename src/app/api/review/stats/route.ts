@@ -62,6 +62,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     totalScore: r.totalScore,
     recommendation: r.recommendation,
     comment: r.comment,
+    durationSeconds: r.durationSeconds,
     reviewedAt: r.reviewedAt,
   }))
 

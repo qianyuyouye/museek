@@ -52,11 +52,15 @@ export const PUT = safeHandler(async function PUT(
   })
   if (!existing) return err('作业不存在', 404)
 
+  const validStatuses = ['draft', 'active', 'completed', 'cancelled']
   const data: Record<string, unknown> = {}
   if (title !== undefined) data.title = title
   if (description !== undefined) data.description = description
   if (deadline !== undefined) data.deadline = new Date(deadline)
-  if (status !== undefined) data.status = status
+  if (status !== undefined) {
+    if (!validStatuses.includes(status)) return err('无效的状态值')
+    data.status = status
+  }
 
   const assignment = await prisma.assignment.update({
     where: { id: assignmentId },

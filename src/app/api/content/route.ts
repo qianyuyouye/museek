@@ -23,9 +23,11 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
   ])
 
   // 列表页每加载一条记录 views +1（记录被浏览的次数）
-  for (const item of list) {
-    await prisma.cmsContent.update({ where: { id: item.id }, data: { views: { increment: 1 } } })
-  }
+  await Promise.all(
+    list.map((item) =>
+      prisma.cmsContent.update({ where: { id: item.id }, data: { views: { increment: 1 } } }).catch(() => {}),
+    ),
+  )
 
   const listWithViews = list.map((item) => ({
     ...item,

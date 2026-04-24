@@ -54,7 +54,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
   // 本周学习时长（最近 7 天内 lastViewedAt 命中的 record 时长近似）
   const weekAgo = Date.now() - 7 * 86400000
   const weekDurationSeconds = records
-    .filter(r => r.lastViewedAt.getTime() >= weekAgo)
+    .filter(r => r.lastViewedAt && r.lastViewedAt.getTime() >= weekAgo)
     .reduce((sum, r) => sum + r.duration, 0)
 
   // 连续学习天数：按 lastViewedAt 的日期去重算最大连续段

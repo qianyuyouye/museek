@@ -33,7 +33,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     select: { settleStatus: true, creatorAmount: true },
   })
   const totalEarnings = settlements.reduce(
-    (a, s) => a + parseFloat(s.creatorAmount.toString()),
+    (a, s) => a + Number(s.creatorAmount),
     0,
   )
 

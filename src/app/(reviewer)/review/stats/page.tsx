@@ -18,6 +18,7 @@ interface ReviewHistoryApi {
   totalScore: number | null
   recommendation: string | null
   comment: string | null
+  durationSeconds: number | null
   reviewedAt: string | null
 }
 
@@ -170,13 +171,21 @@ export default function ReviewStatsPage() {
     not_recommend: '不建议发行',
   }
 
+  function formatDuration(seconds: number | null): string {
+    if (!seconds || seconds === 0) return '< 1分钟'
+    const h = Math.floor(seconds / 3600)
+    const m = Math.floor((seconds % 3600) / 60)
+    if (h > 0) return `${h}小时${m}分钟`
+    return `${m}分钟`
+  }
+
   const history: ReviewHistory[] = (data?.history ?? []).map((h) => ({
     id: h.id,
     title: h.songTitle,
     student: h.creatorName,
     score: h.totalScore ?? 0,
     rec: REC_LABELS[h.recommendation ?? ''] ?? (h.recommendation ?? '-'),
-    duration: '-',
+    duration: formatDuration(h.durationSeconds),
     date: h.reviewedAt ? new Date(h.reviewedAt).toLocaleDateString() : '-',
   }))
 

@@ -87,11 +87,19 @@ export const PUT = safeHandler(async function PUT(request: NextRequest, context:
   const body = await request.json()
   const { name, email, status, adminLevel } = body
 
+  const validStatuses = ['active', 'disabled']
+  const validAdminLevels = [null, 'group_admin', 'system_admin']
   const data: Record<string, unknown> = {}
   if (name !== undefined) data.name = name
   if (email !== undefined) data.email = email
-  if (status !== undefined) data.status = status
-  if (adminLevel !== undefined) data.adminLevel = adminLevel
+  if (status !== undefined) {
+    if (!validStatuses.includes(status)) return err('无效的状态值')
+    data.status = status
+  }
+  if (adminLevel !== undefined) {
+    if (!validAdminLevels.includes(adminLevel)) return err('无效的管理级别')
+    data.adminLevel = adminLevel
+  }
 
   const updated = await prisma.user.update({
     where: { id: userId },

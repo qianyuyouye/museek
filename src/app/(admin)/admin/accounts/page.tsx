@@ -110,7 +110,7 @@ export default function AdminAccountsPage() {
       adminLevel: u.adminLevel as CreatorAccount['adminLevel'],
       groupIds: u.groups.map((g) => g.id),
       realNameStatus: u.realNameStatus ?? 'none',
-      songCount: 0,
+      songCount: (u as AccountsApiItem & { songCount?: number }).songCount ?? 0,
     }))
 
   const groups: UserGroup[] = Array.from(

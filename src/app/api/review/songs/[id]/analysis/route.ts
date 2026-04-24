@@ -24,10 +24,12 @@ export const GET = safeHandler(async function GET(
       aiTools: true,
       styleDesc: true,
       audioFeatures: true,
+      status: true,
     },
   })
 
   if (!song) return err('歌曲不存在', 404)
+  if (song.status !== 'pending_review') return err('该歌曲不在评审状态', 403)
 
   const analysis = await analyzeSong({
     title: song.title,

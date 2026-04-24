@@ -3,6 +3,12 @@ import { prisma } from '@/lib/prisma'
 import { requirePermission, ok, parsePagination, safeHandler} from '@/lib/api-utils'
 import { Prisma } from '@prisma/client'
 
+/** 手机号脱敏：中间4位替换为* */
+function maskPhone(phone: string | null): string | null {
+  if (!phone || phone.length < 7) return phone
+  return phone.slice(0, 3) + '****' + phone.slice(7)
+}
+
 export const GET = safeHandler(async function GET(request: NextRequest) {
   const auth = await requirePermission(request, 'admin.accounts.view')
   if ('error' in auth) return auth.error
@@ -76,7 +82,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     id: u.id,
     name: u.name,
     realName: u.realName,
-    phone: u.phone,
+    phone: maskPhone(u.phone),
     email: u.email,
     avatarUrl: u.avatarUrl,
     type: u.type,

@@ -9,7 +9,7 @@ interface SmsConfig {
   accessKeyId: string
   accessKeySecret: string
   signName: string
-  templateCode: { register: string; resetPassword: string; changePhone: string }
+  templateCode: { register: string; resetPassword: string; changePhone: string; changeEmail: string }
   perPhoneDailyLimit: number
   verifyMaxAttempts: number
 }
@@ -26,6 +26,7 @@ async function loadConfig(): Promise<SmsConfig> {
       register: tc.register || process.env.ALIYUN_SMS_TEMPLATE_CODE || '',
       resetPassword: tc.resetPassword || tc.register || process.env.ALIYUN_SMS_TEMPLATE_CODE || '',
       changePhone: tc.changePhone || tc.register || process.env.ALIYUN_SMS_TEMPLATE_CODE || '',
+      changeEmail: tc.changeEmail || tc.changePhone || tc.register || process.env.ALIYUN_SMS_TEMPLATE_CODE || '',
     },
     perPhoneDailyLimit: fromDb.perPhoneDailyLimit ?? 10,
     verifyMaxAttempts: fromDb.verifyMaxAttempts ?? 5,
@@ -41,7 +42,7 @@ function generateCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString()
 }
 
-export type SmsPurpose = 'register' | 'resetPassword' | 'changePhone'
+export type SmsPurpose = 'register' | 'resetPassword' | 'changePhone' | 'changeEmail'
 
 export async function sendSmsCode(
   phone: string,

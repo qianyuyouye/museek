@@ -8,7 +8,7 @@ import { Bell } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────
 
-type NotificationType = 'work' | 'revenue' | 'system'
+type NotificationType = 'work' | 'revenue' | 'system' | 'assignment'
 
 interface Notification {
   id: number
@@ -26,6 +26,7 @@ const TYPE_LABEL: Record<NotificationType, string> = {
   work: '作品动态',
   revenue: '收益通知',
   system: '系统消息',
+  assignment: '作业通知',
 }
 
 const TABS: { key: 'all' | NotificationType; label: string }[] = [

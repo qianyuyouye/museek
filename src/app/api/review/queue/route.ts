@@ -19,7 +19,9 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
   }
 
   if (search) {
-    where.user = { name: { contains: search } }
+    where.user = {
+      OR: [{ name: { contains: search } }, { realName: { contains: search } }],
+    }
   }
 
   const [songs, total] = await Promise.all([

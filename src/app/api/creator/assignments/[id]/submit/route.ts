@@ -40,7 +40,7 @@ export const POST = safeHandler(async function POST(
   }
 
   const body = await request.json()
-  const { title, aiTools, performer, lyricist, composer, lyrics, styleDesc, genre, bpm, albumName, albumArtist } = body
+  const { title, audioUrl, coverUrl, aiTools, performer, lyricist, composer, lyrics, styleDesc, genre, bpm, albumName, albumArtist } = body
 
   if (!title) return err('标题不能为空')
 
@@ -58,6 +58,8 @@ export const POST = safeHandler(async function POST(
         where: { id: existing.platformSongId! },
         data: {
           title,
+          audioUrl,
+          coverUrl,
           aiTools: aiTools ?? undefined,
           performer: defaults.performer,
           lyricist: defaults.lyricist,
@@ -103,6 +105,8 @@ export const POST = safeHandler(async function POST(
         copyrightCode,
         userId,
         title,
+        audioUrl,
+        coverUrl,
         aiTools: aiTools ?? undefined,
         performer: defaults.performer,
         lyricist: defaults.lyricist,

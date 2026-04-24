@@ -62,6 +62,8 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     id: s.id,
     copyrightCode: s.copyrightCode,
     title: s.title,
+    audioUrl: s.audioUrl,
+    coverUrl: s.coverUrl,
     aiTools: s.aiTools,
     genre: s.genre,
     bpm: s.bpm,
