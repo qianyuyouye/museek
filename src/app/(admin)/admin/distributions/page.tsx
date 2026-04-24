@@ -245,7 +245,7 @@ export default function AdminDistributionsPage() {
       {/* Legend */}
       <div className="flex items-center gap-6 px-2 mt-2 text-[var(--text3)]">
         <span className="text-xs font-medium">矩阵状态说明：</span>
-        {(['live', 'submitted', 'pending', 'none'] as const).map((key) => {
+        {(['live', 'submitted', 'pending'] as const).map((key) => {
           const cfg = STATUS_CONFIG[key]
           return (
             <div key={key} className="flex items-center gap-1.5 text-xs">
