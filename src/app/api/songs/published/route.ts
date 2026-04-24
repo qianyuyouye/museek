@@ -13,7 +13,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
   const [list, total] = await Promise.all([
     prisma.platformSong.findMany({
       where,
-      include: { user: { select: { id: true, name: true, realName: true } } },
+      include: { user: { select: { id: true, name: true } } },
       orderBy: { likeCount: 'desc' },
       skip,
       take: pageSize,
@@ -31,7 +31,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
       copyrightCode: s.copyrightCode,
       likeCount: s.likeCount,
       coverUrl: await toSignedUrl(s.coverUrl),
-      authorName: s.user?.realName || s.user?.name || '未知',
+      authorName: s.user?.name || '未知',
       createdAt: s.createdAt,
     }))),
     total,

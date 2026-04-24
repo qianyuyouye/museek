@@ -36,7 +36,11 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
   // creator / reviewer
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    include: {
+    select: {
+      id: true, name: true, realName: true, phone: true, email: true,
+      avatarUrl: true, type: true, adminLevel: true, realNameStatus: true,
+      agencyContract: true, agencySignedAt: true, status: true,
+      lastLoginAt: true, createdAt: true,
       userGroups: {
         include: { group: { select: { id: true, name: true } } },
       },

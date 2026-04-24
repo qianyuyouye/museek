@@ -12,6 +12,15 @@ export const POST = safeHandler(async function POST() {
   try {
     const payload = await verifyToken(refreshToken)
 
+    // 检查 token 是否已被拉黑（如主动登出、重置密码）
+    const jti = (payload as unknown as Record<string, string>).jti
+    if (jti) {
+      const blacklisted = await prisma.tokenBlacklist.findUnique({ where: { jti } })
+      if (blacklisted && blacklisted.expiresAt > new Date()) {
+        return NextResponse.json({ code: 401, message: 'token 已失效，请重新登录' }, { status: 401 })
+      }
+    }
+
     // 检查用户当前状态，被禁用则拒绝续签，并重新组装完整 payload
     let fullPayload: Parameters<typeof signAccessToken>[0]
 

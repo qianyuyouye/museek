@@ -26,6 +26,11 @@ async function hit(key: string, windowMs: number): Promise<{ count: number; rese
 
   if (cached && now < cached.expiresAt && now < cached.resetAt) {
     cached.count += 1
+    // 同步写回 DB，避免缓存过期后计数丢失
+    await prisma.authRateLimit.update({
+      where: { key },
+      data: { count: cached.count },
+    }).catch(() => {})
     return { count: cached.count, resetAt: cached.resetAt }
   }
 

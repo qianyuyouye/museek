@@ -23,11 +23,7 @@ function SECRET(): Uint8Array {
 /** 生成 12 字节随机 jti（Base64URL 编码 16 字符，放进 JWT 用于 blacklist 定位） */
 function generateJti(): string {
   const bytes = new Uint8Array(12)
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    crypto.getRandomValues(bytes)
-  } else {
-    for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256)
-  }
+  crypto.getRandomValues(bytes)
   // Base64URL 编码（替换 + / = 为 - _ 空）
   return Buffer.from(bytes).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
