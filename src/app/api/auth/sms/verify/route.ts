@@ -33,6 +33,20 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     return NextResponse.json({ code: 423, message: `验证码错误过多，请 ${lockedFor} 秒后重试` }, { status: 423 })
   }
 
+  // 邀请码校验前置（避免无效邀请码消耗验证码）
+  if (!inviteCode) {
+    return NextResponse.json({ code: 400, message: '邀请码不能为空' }, { status: 400 })
+  }
+  // Theme 8: 邀请码爆破防护
+  if (ip && (await isInviteCodeLocked(ip, phone))) {
+    return NextResponse.json({ code: 423, message: '邀请码错误次数过多，请 1 小时后重试' }, { status: 423 })
+  }
+  const group = await prisma.group.findUnique({ where: { inviteCode } })
+  if (!group || group.status !== 'active') {
+    if (ip) await recordInviteCodeFailure(ip, phone)
+    return NextResponse.json({ code: 400, message: '邀请码无效或已停用' }, { status: 400 })
+  }
+
   const valid = await verifySmsCode(phone, code, 'register')
   if (!valid) {
     await recordSmsVerifyFailure(phone)
@@ -46,22 +60,6 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     const pwdErr = validatePassword(password)
     if (pwdErr) {
       return NextResponse.json({ code: 400, message: pwdErr }, { status: 400 })
-    }
-
-    if (!inviteCode) {
-      return NextResponse.json({ code: 400, message: '邀请码不能为空' }, { status: 400 })
-    }
-
-    // Theme 8: 邀请码爆破防护 —— 先查是否已锁
-    if (ip && (await isInviteCodeLocked(ip, phone))) {
-      return NextResponse.json({ code: 423, message: '邀请码错误次数过多，请 1 小时后重试' }, { status: 423 })
-    }
-
-    const group = await prisma.group.findUnique({ where: { inviteCode } })
-    if (!group || group.status !== 'active') {
-      // 记录错误一次；达到阈值则下次请求被拒
-      if (ip) await recordInviteCodeFailure(ip, phone)
-      return NextResponse.json({ code: 400, message: '邀请码无效或已停用' }, { status: 400 })
     }
     const groupId = group.id
 

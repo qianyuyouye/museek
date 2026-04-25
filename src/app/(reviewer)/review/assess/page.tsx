@@ -463,7 +463,7 @@ export default function ReviewAssessPage() {
               </div>
             </div>
 
-            <AIAnalysisPanel songId={song.id} bpm={song.bpm} />
+            {/* <AIAnalysisPanel songId={song.id} bpm={song.bpm} /> */}
           </div>
         </div>
 

@@ -4,7 +4,7 @@ import { signPutUrl } from './signature'
 
 const AUDIO_EXTS = ['.wav', '.mp3']
 const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.webp']
-const MAX_AUDIO = 50 * 1024 * 1024
+const MAX_AUDIO = 200 * 1024 * 1024
 const MAX_IMAGE = 5 * 1024 * 1024
 
 export interface UploadTokenResult {
