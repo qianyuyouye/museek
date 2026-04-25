@@ -80,9 +80,9 @@
 |--------|--------------|-------------|----------|--------|
 | TC-C-02-040 | 预览区 | 进入 Step 3 | 展示完整元数据 + 音频试听 + 封面 | P0 |
 | TC-C-02-041 | 上一步 | 点击 | 回 Step 2，数据保留 | P1 |
-| TC-C-02-042 | 确认提交 | 点击 | 200；toast "已提交，版权编号 AIMU-2026-000XXX"；跳作品库 | P0 |
-| TC-C-02-043 | 版权编号格式 | 提交后查库 | `AIMU-YYYY-NNNNNN` 六位零填充 | P0 |
-| TC-C-02-044 | 版权编号并发 | 10 用户同时提交 | 编号全部唯一、连续递增 | P0 |
+| TC-C-02-042 | 确认提交 | 点击 | 200；toast "已提交，作品编号 AIMU-2026-000XXX"；跳作品库 | P0 |
+| TC-C-02-043 | 作品编号格式 | 提交后查库 | `AIMU-YYYY-NNNNNN` 六位零填充 | P0 |
+| TC-C-02-044 | 作品编号并发 | 10 用户同时提交 | 编号全部唯一、连续递增 | P0 |
 | TC-C-02-045 | 跨年编号重置 | 跨年首次提交 | NNNNNN 从 000001 重新开始 | P1 |
 | TC-C-02-046 | 入库状态 | 查库 | `status=pending_review`, `source=upload`, `version=1`, `user_id=me` | P0 |
 | TC-C-02-047 | 防抖 | 快速双击"确认提交" | 仅创建 1 条记录 | P1 |
@@ -108,7 +108,7 @@
 | TC-C-03-012 | 音频上传 | 同自由上传 Step 1 | 同 TC-C-02-001~015 | P0 |
 | TC-C-03-013 | 声明 Checkbox | 未勾选 | 阻断 | P0 |
 | TC-C-03-014 | 提交按钮 | 校验通过 | `platform_songs` 新增（source=assignment, assignment_id=X）；`assignment_submissions` 新增；`assignments.submission_count+=1` | P0 |
-| TC-C-03-015 | 提交按钮 | 成功 toast | 显示版权编号 `AIMU-YYYY-NNNNNN` | P1 |
+| TC-C-03-015 | 提交按钮 | 成功 toast | 显示作品编号 `AIMU-YYYY-NNNNNN` | P1 |
 | TC-C-03-016 | 重复提交 | 已提交同作业再次访问 | 按钮变"查看详情"；不允许第二次新增 | P0 |
 | TC-C-03-017 | 重新提交 | 详情页点击"重新提交" | 预填旧数据，允许修改并提交 | P0 |
 | TC-C-03-018 | 重新提交副作用 | 点击提交后查库 | `assignment_submissions` 更新（不新增）；`platform_songs.version+=1`，score 清空；旧 `reviews` 保留 | P0 |

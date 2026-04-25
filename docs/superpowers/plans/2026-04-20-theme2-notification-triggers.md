@@ -213,7 +213,7 @@ export type TemplateKey =
 ```typescript
   'tpl.isrc_bound': {
     type: 'work',
-    title: '版权编号已分配：《{songTitle}》',
+    title: '作品编号已分配：《{songTitle}》',
     content: '平台已为作品分配 ISRC 编号：{isrc}。',
     linkUrl: '/creator/songs?id={songId}',
   },

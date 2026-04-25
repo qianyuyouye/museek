@@ -53,7 +53,7 @@
 - 管理端所有写操作 100% 写入 `operation_logs`（P2-2 已覆盖）
 - 列表默认 `page_size=20`，最大 100（PRD 10.3）
 - 所有接口返回统一 `{ code, message, data, pagination }`
-- 版权编号格式固定 `AIMU-YYYY-NNNNNN`，全年唯一自增
+- 作品编号格式固定 `AIMU-YYYY-NNNNNN`，全年唯一自增
 - 状态枚举严格对照 PRD 附录 D，不得新增或变造
 
 ## 维护说明

@@ -126,7 +126,7 @@ function DetailModal({ reviewId, onClose }: { reviewId: number; onClose: () => v
               <div className="text-sm text-[var(--text3)] mt-1">by {data.studentName} · {data.songGenre} · {data.songBpm} BPM</div>
               <div className="flex items-center gap-2 mt-2">
                 <Badge status={data.songStatus} />
-                <span className="text-xs text-[var(--text3)]">版权编号：{data.copyrightCode}</span>
+                <span className="text-xs text-[var(--text3)]">作品编号：{data.copyrightCode}</span>
               </div>
             </div>
           </div>

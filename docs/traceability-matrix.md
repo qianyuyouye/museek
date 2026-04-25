@@ -26,7 +26,7 @@
 | **Phase 1 创作** | 平台外部（汽水/Suno） | ➖ | 不在系统内 |
 | **Phase 2 入库** | 自由上传 3 步（文件→元数据→预览） | ✅ | `creator/upload/page.tsx` + `/api/creator/upload` 完整 |
 | | 作业提交 + 动态字段 | ✅ | `creator/assignments` + `/api/admin/assignments/[id]/fields` 可配置 |
-| | 版权编号 `AIMU-YYYY-NNNNNN` | 🟡 | schema `copyrightCode UNIQUE`，**需确认是否按年重置序号** |
+| | 作品编号 `AIMU-YYYY-NNNNNN` | 🟡 | schema `copyrightCode UNIQUE`，**需确认是否按年重置序号** |
 | | 提交即 `pending_review` | ✅ | |
 | **Phase 3 评审** | 试听（A-B 循环 + 变速） | ✅ | P0-1 已修：`components/review/AudioPlayer.tsx` 真 `<audio>` + 变速/AB/波形进度 |
 | | AI 预分析报告 | ✅ | `/api/review/songs/[id]/analysis` + `lib/ai-analysis.ts` |

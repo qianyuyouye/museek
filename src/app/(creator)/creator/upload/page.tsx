@@ -478,7 +478,7 @@ export default function CreatorUploadPage() {
 
           {/* Copyright Code Card */}
           <div className="w-full max-w-md p-6 rounded-xl bg-gradient-to-br from-[rgba(99,102,241,0.08)] to-[rgba(6,148,162,0.08)] border border-[var(--accent)]/20 text-center mb-6">
-            <div className="text-xs text-[var(--text3)] mb-2">版权编号</div>
+            <div className="text-xs text-[var(--text3)] mb-2">作品编号</div>
             <div className="text-3xl font-mono font-bold text-[var(--accent2)] mb-4 tracking-wider">
               {submitted.copyrightCode}
             </div>
@@ -897,14 +897,6 @@ export default function CreatorUploadPage() {
               <span className="text-[var(--text3)]">歌词正文：</span>
               <p className="mt-1 font-medium whitespace-pre-wrap">
                 {form.lyrics || '未填写'}
-              </p>
-            </div>
-
-            {/* Creation description preview */}
-            <div className="mt-4 p-3 bg-[var(--bg4)] rounded-lg text-[13px]">
-              <span className="text-[var(--text3)]">创作过程说明：</span>
-              <p className="mt-1 font-medium whitespace-pre-wrap">
-                {form.creationDesc || '未填写'}
               </p>
             </div>
 

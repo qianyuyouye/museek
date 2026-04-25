@@ -788,7 +788,7 @@ function AdminSongs(){
         {key:'userId',title:'创作者',render:v=>MOCK.students.find(s=>s.id===v)?.name},
         {key:'source',title:'来源',render:v=>v==='assignment'?<span style={{fontSize:11,color:'var(--accent2)'}}>📝 作业</span>:<span style={{fontSize:11,color:'var(--green)'}}>⬆️ 自由</span>},
         {key:'score',title:'评分',render:v=>v?<span style={{fontWeight:600,color:v>=80?'var(--green2)':'var(--orange)'}}>{v}</span>:'-'},
-        {key:'copyrightCode',title:'版权编号',render:v=><span style={{fontSize:11,fontFamily:'monospace'}}>{v}</span>},
+        {key:'copyrightCode',title:'作品编号',render:v=><span style={{fontSize:11,fontFamily:'monospace'}}>{v}</span>},
         {key:'isrc',title:'ISRC',render:v=>v?<span style={{fontSize:11,fontFamily:'monospace',color:'var(--green2)'}}>{v}</span>:<span style={{fontSize:11,color:'var(--text3)'}}>待申报</span>},
         {key:'status',title:'状态',render:v=><Badge status={v}/>},
         {key:'id',title:'操作',render:(v,r)=>{
@@ -1452,7 +1452,7 @@ function AdminBatchDownload(){
             <th style={{padding:'10px 12px',textAlign:'left',borderBottom:'1px solid var(--border)',width:36}}>
               <input type="checkbox" checked={allChecked} ref={el=>{if(el)el.indeterminate=someChecked}} onChange={toggleAll} style={{cursor:'pointer'}}/>
             </th>
-            {['','歌曲名','创作者','风格','BPM','AI工具','评分','版权编号','ISRC','状态','文件'].map((h,i)=>
+            {['','歌曲名','创作者','风格','BPM','AI工具','评分','作品编号','ISRC','状态','文件'].map((h,i)=>
               <th key={i} style={{padding:'10px 12px',textAlign:'left',color:'var(--text2)',fontWeight:500,borderBottom:'1px solid var(--border)',fontSize:11,textTransform:'uppercase',letterSpacing:'.5px',whiteSpace:'nowrap'}}>{h}</th>
             )}
           </tr></thead>
@@ -1485,7 +1485,7 @@ function AdminBatchDownload(){
 
     <div style={{...parseStyle(css.card),marginTop:16,background:'rgba(116,185,255,.06)',border:'1px solid rgba(116,185,255,.2)'}}>
       <div style={{fontSize:12,color:'var(--text2)',lineHeight:1.7}}>
-        <strong style={{color:'var(--accent2)'}}>💡 批量下载包含:</strong> 音频文件(WAV/FLAC/MP3)、歌词 TXT、元数据 JSON(含 ISRC/版权编号/BPM/风格/Prompt 等)、代理发行授权凭证 PDF。<br/>
+        <strong style={{color:'var(--accent2)'}}>💡 批量下载包含:</strong> 音频文件(WAV/FLAC/MP3)、歌词 TXT、元数据 JSON(含 ISRC/作品编号/BPM/风格/Prompt 等)、代理发行授权凭证 PDF。<br/>
         <strong style={{color:'var(--orange)'}}>⚠️ 发行前检查:</strong> 系统会自动校验「已签代理协议 + 已实名认证 + 已绑定 ISRC」,缺失项将在下载报告中标红。
       </div>
     </div>
@@ -1625,7 +1625,7 @@ function AdminPublishConfirm(){
         <div><strong style={{color:'var(--text2)'}}>上架日期:</strong> {selectedRow.distribution?.liveDate||'—'}</div>
         <div><strong style={{color:'var(--text2)'}}>本期数据:</strong> {selectedRow.hasData?<span style={{color:'var(--green2)'}}>已回填</span>:<span style={{color:'var(--text3)'}}>等待下次对账</span>}</div>
         <div><strong style={{color:'var(--text2)'}}>ISRC:</strong> <span style={{fontFamily:'monospace'}}>{selectedRow.song.isrc||'未绑定'}</span></div>
-        <div><strong style={{color:'var(--text2)'}}>版权编号:</strong> <span style={{fontFamily:'monospace'}}>{selectedRow.song.copyrightCode}</span></div>
+        <div><strong style={{color:'var(--text2)'}}>作品编号:</strong> <span style={{fontFamily:'monospace'}}>{selectedRow.song.copyrightCode}</span></div>
       </div>}
     </Modal>
   </PageLayout>;
@@ -1778,7 +1778,7 @@ function AdminLogs(){
 function AdminISRC(){
   const {showToast,songs}=useApp();
   const pending=songs.filter(s=>s.status==='ready_to_publish'&&!s.isrc);
-  return <PageLayout title="ISRC批量管理" subtitle="版权编号申报与管理" actions={<Btn onClick={()=>showToast('已导出ISRC申报清单.xlsx')}>📥 导出申报清单</Btn>}>
+  return <PageLayout title="ISRC批量管理" subtitle="作品编号申报与管理" actions={<Btn onClick={()=>showToast('已导出ISRC申报清单.xlsx')}>📥 导出申报清单</Btn>}>
     <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:24}}>
       <StatCard icon="📋" label="待申报" value={pending.length} color="var(--orange)"/>
       <StatCard icon="⏳" label="申报中" value="2" color="var(--accent2)"/>

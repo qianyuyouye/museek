@@ -304,7 +304,7 @@ export default function PublishConfirmPage() {
       ['提交日期', detailTrack.submittedAt ? `${formatDate(detailTrack.submittedAt)}（已提交${days}天）` : '-'],
       ['上架日期', detailTrack.liveDate ? formatDate(detailTrack.liveDate) : '-'],
       ['本期数据', detailTrack.hasRevenue ? '有数据' : '未返回'],
-      ['版权编号', detailTrack.copyrightCode ?? '-'],
+      ['作品编号', detailTrack.copyrightCode ?? '-'],
     ]
 
     return (

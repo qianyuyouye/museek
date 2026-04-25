@@ -47,7 +47,7 @@ const DEFAULT_TEMPLATES: Record<TemplateKey, NotificationTemplate> = {
   'tpl.welcome': { type: 'system', title: '欢迎加入 Museek', content: '注册成功！请前往个人中心完成实名认证。', linkUrl: '/creator/profile' },
   'tpl.isrc_bound': {
     type: 'work',
-    title: '版权编号已分配：《{songTitle}》',
+    title: '作品编号已分配：《{songTitle}》',
     content: '平台已为作品分配 ISRC 编号：{isrc}。',
     linkUrl: '/creator/songs?id={songId}',
   },

@@ -19,7 +19,7 @@
 |--------|------|------|---------|
 | TC-E2E-001 | 前置：实名 | 创作者提交实名 → 管理员审核通过 | `real_name_status=verified` |
 | TC-E2E-002 | 前置：签协议 | 个人中心签代理协议 | `agency_contract=true` |
-| TC-E2E-003 | Phase 2 上传 | 3 步上传提交 | `platform_songs` 新增；状态 `pending_review`；版权编号 `AIMU-YYYY-NNNNNN` |
+| TC-E2E-003 | Phase 2 上传 | 3 步上传提交 | `platform_songs` 新增；状态 `pending_review`；作品编号 `AIMU-YYYY-NNNNNN` |
 | TC-E2E-004 | Phase 3 评审 | 评审员强推 + 85 分 | `status=ready_to_publish`；`score=85`；新增 reviews 记录 |
 | TC-E2E-005 | Phase 4 ISRC | 管理员在 ISRC 管理提交申报 → 回填 | `platform_songs.isrc` 填充 |
 | TC-E2E-006 | Phase 4 发行 | 歌曲库管理点"确认发行" | 三条件校验通过 → `status=published`；operation_logs `song.publish` |
@@ -134,7 +134,7 @@
 | TC-BD-018 | CSV 总收入校验异常 | col7 ≠ col5+col6 | 标记异常行，导入报告提示，不阻塞其他行 |
 | TC-BD-019 | 已发行作品评审异常 | 已 published 再打开评审（异常路径） | 阻断或返回 404 |
 | TC-BD-020 | 禁用管理员登录 | admin_users.status=false 持有 token | 下次请求 401，立即踢出 |
-| TC-BD-021 | 跨年版权编号 | 2026-12-31 23:59 提交 1 条，2027-01-01 00:01 提交 1 条 | 编号年份切换，NNNNNN 重新从 000001 开始 |
+| TC-BD-021 | 跨年作品编号 | 2026-12-31 23:59 提交 1 条，2027-01-01 00:01 提交 1 条 | 编号年份切换，NNNNNN 重新从 000001 开始 |
 | TC-BD-022 | 创作者删除后日志 | 创作者账号逻辑删除后查看 operation_logs | `operator_name` 冗余字段仍显示 |
 | TC-BD-023 | 超管降权 | 尝试删除或降级唯一超管 | 阻断，至少保留一位 |
 | TC-BD-024 | 权限即时生效 | 修改某管理员角色权限后，在该管理员页面上点击无权菜单 | 下次请求 403，菜单隐藏（前端可能需刷新） |

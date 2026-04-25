@@ -278,7 +278,7 @@ export default function CreatorSongsPage() {
           <div>
             <h1 className={textPageTitle}>{song.title}</h1>
             <p className="mt-1 text-sm text-[var(--text2)]">
-              版权编号：{song.copyrightCode}
+              作品编号：{song.copyrightCode}
             </p>
           </div>
           <button className={btnGhost} onClick={() => setDetail(null)}>

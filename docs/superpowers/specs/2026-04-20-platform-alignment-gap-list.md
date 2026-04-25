@@ -109,7 +109,7 @@
 
 **核心字段默认值未填充**：
 - `performer / lyricist / composer / albumName / albumArtist` PRD 要求默认实名/同标题，schema 无 `@default`，应用层 submit 也未填充（`GAP-SCHM-005 / GAP-CRTR-004`）
-- 版权编号 `Math.random()` 随机挑号，不保证 000001/000002 全年唯一递增（`GAP-ADMIN-029`）
+- 作品编号 `Math.random()` 随机挑号，不保证 000001/000002 全年唯一递增（`GAP-ADMIN-029`）
 
 → **补齐动作**：`src/types/api.ts` 全量梳理契约一致性；抽 `lib/song-defaults.ts` 统一处理 fallback；加一版权序号表 SELECT ... FOR UPDATE 自增
 
@@ -183,7 +183,7 @@
 | CMS 视频/字段 | GAP-ADMIN-068（videoUrl 输入）+ GAP-CRTR-012（无播放）+ GAP-SCHM-009（schema 缺 sections 等）+ GAP-CRTR-013（硬编码） + GAP-ADMIN-069（缺作者/时间/标签）| 一并补，扩 CmsContent schema + 后端 + 管理端 + 创作者端播放器 |
 | CMS 下架语义 | GAP-ADMIN-067 + GAP-SCHM-008 | 一并补，unpublish action 写 archived |
 | 课程/表单/分成/权限 缓存 | GAP-ADMIN-026 + GAP-ADMIN-041 + GAP-ADMIN-061 + GAP-ADMIN-072 + GAP-COMM-006 + GAP-COMM-007 | 一并补，PRD §10.2 六类 key 系统性落地 |
-| 版权编号 | GAP-ADMIN-029 | 加独立 copyright_sequence 表或 SystemSetting + SELECT FOR UPDATE |
+| 作品编号 | GAP-ADMIN-029 | 加独立 copyright_sequence 表或 SystemSetting + SELECT FOR UPDATE |
 | 实名驳回原因 + 通知 | GAP-ADMIN-049 + GAP-ADMIN-050 + GAP-CRTR-038 | 一并补，verify 路由接收 reason + 事务 create Notification |
 | Settlement 金额非空 | GAP-SCHM-002 + GAP-SCHM-003 | 一并补 |
 | 合同/协议 硬编码 | GAP-ADMIN-052 + GAP-ADMIN-053 + GAP-ADMIN-054 + GAP-CRTR-033 + GAP-CRTR-034 | 一并重构，加协议版本表 + 按实际 settlement 动态展示 |

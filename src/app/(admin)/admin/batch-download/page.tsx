@@ -355,7 +355,7 @@ export default function BatchDownloadPage() {
                 'BPM': s.bpm,
                 'AI工具': aiToolsText(s.aiTools),
                 '评分': s.score ?? '',
-                '版权编号': s.copyrightCode,
+                '作品编号': s.copyrightCode,
                 '状态': (SONG_STATUS_MAP[s.status] ?? { label: s.status }).label,
               }))
               downloadCSV(exportData, `作品元数据_${new Date().toISOString().slice(0, 10)}.csv`)
@@ -410,7 +410,7 @@ export default function BatchDownloadPage() {
                     className="w-4 h-4 accent-[var(--accent)] cursor-pointer"
                   />
                 </th>
-                {['封面', '歌曲名', '创作者', '风格', 'BPM', 'AI工具', '评分', '版权编号', '状态', '操作'].map(
+                {['封面', '歌曲名', '创作者', '风格', 'BPM', 'AI工具', '评分', '作品编号', '状态', '操作'].map(
                   (h) => (
                     <th
                       key={h}

@@ -191,7 +191,7 @@ export default function AdminSongsPage() {
     },
     {
       key: 'copyrightCode',
-      title: '版权编号',
+      title: '作品编号',
       render: (v) => (
         <span style={{ fontFamily: 'monospace', fontSize: 12 }}>{v as string}</span>
       ),
@@ -344,7 +344,7 @@ export default function AdminSongsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text3)]" />
           <input
             className={`${inputCls} w-full pl-9`}
-            placeholder="搜索歌名、创作者或版权编号"
+            placeholder="搜索歌名、创作者或作品编号"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
           />
@@ -400,7 +400,7 @@ export default function AdminSongsPage() {
                 })}
               </div>
               <div className="text-xs text-[var(--text3)] text-center pt-2">
-                版权编号：{channelData.copyrightCode}
+                作品编号：{channelData.copyrightCode}
                 {channelData.isrc && ` · ISRC：${channelData.isrc}`}
               </div>
             </div>

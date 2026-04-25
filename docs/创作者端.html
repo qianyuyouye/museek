@@ -785,7 +785,7 @@ function StudentUpload(){
             const now=new Date().toISOString().slice(0,10);
             const newSong={id:nextId,userId:1,title:form.title,lyricist:form.lyricist,composer:form.composer,aiTool:form.aiTool,prompt:form.prompt,genre:form.genre,bpm:+form.bpm||120,status:'pending_review',score:null,copyrightCode:nextCode,isrc:null,likeCount:0,createdAt:now,cover:'🎵',source:'upload'};
             setSongs(prev=>[...prev,newSong]);
-            showToast(`🎉 作品提交成功！版权编号：${nextCode}`);
+            showToast(`🎉 作品提交成功！作品编号：${nextCode}`);
             setTimeout(()=>nav('songs'),1500);
             setStep(1);setForm({title:'',lyricist:'',composer:'',aiTool:'Suno',prompt:'',genre:'Pop',bpm:'120',lyrics:'',contribution:'主导',creationDesc:'',originality:false});
           }}>✅ 提交作品</Btn>
@@ -807,7 +807,7 @@ function StudentSongs(){
     const song=songs.find(s=>s.id===detail);
     const review=MOCK.reviews.find(r=>r.songId===detail);
     const dists=MOCK.distributions.filter(d=>d.songId===detail);
-    return <PageLayout title={song.title} subtitle={`版权编号：${song.copyrightCode}`} actions={<Btn variant="ghost" onClick={()=>setDetail(null)}>← 返回列表</Btn>}>
+    return <PageLayout title={song.title} subtitle={`作品编号：${song.copyrightCode}`} actions={<Btn variant="ghost" onClick={()=>setDetail(null)}>← 返回列表</Btn>}>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
         <div style={parseStyle(css.card)}>
           <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:16}}>
@@ -1302,7 +1302,7 @@ function CreatorAssignments(){
               // 同步新增歌曲入库
               const newSong={id:nextSongId,userId:currentUser.id,title:formData.songTitle||'未命名作品',lyricist:formData.lyricist||currentUser.realName,composer:formData.composer||currentUser.realName,aiTool:(formData.aiTool||[]).join('+'),prompt:formData.styleDesc||'',genre:'Pop',bpm:120,status:'pending_review',score:null,copyrightCode:nextCode,isrc:null,likeCount:0,createdAt:now,cover:'🎵',source:'assignment',assignmentId:activeAssignment};
               setSongs(prev=>[...prev,newSong]);
-              showToast(`🎉 作业提交成功！版权编号 ${nextCode}，已进入评审队列`);
+              showToast(`🎉 作业提交成功！作品编号 ${nextCode}，已进入评审队列`);
               setActiveAssignment(null);setFormData({});setAudioUploaded(false);
             }}>✅ 提交作业</Btn>
           </div>
