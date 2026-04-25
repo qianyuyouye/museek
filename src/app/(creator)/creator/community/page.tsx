@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, Suspense } from 'react'
+import { useState, useMemo, useEffect, Suspense, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle } from '@/lib/ui-tokens'
@@ -27,6 +27,7 @@ interface PublishedSong {
   title: string
   genre: string
   coverUrl: string | null
+  audioUrl: string | null
   score: number | null
   likeCount: number
   copyrightCode: string
@@ -356,12 +357,51 @@ function CommunityContent({ initialViewId }: { initialViewId: number | null }) {
   )
 }
 
+function formatTime(sec: number): string {
+  if (!isFinite(sec) || sec <= 0) return '0:00'
+  const m = Math.floor(sec / 60)
+  const s = Math.floor(sec % 60)
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
+
 // ── 作品详情 Modal ────────────────────────────────────────────────
 
 function ViewModal({ songId, onClose }: { songId: number; onClose: () => void }) {
   const { data, loading } = useApi<{ list: PublishedSong[]; total: number }>(`/api/songs/published?pageSize=50`)
   const song = data?.list?.find((s) => s.id === songId) ?? null
   const authorName = song?.authorName ?? '未知作者'
+  const [playing, setPlaying] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  useEffect(() => {
+    const el = audioRef.current
+    if (!el) return
+    const onTime = () => { setProgress(el.currentTime / el.duration); setCurrentTime(el.currentTime) }
+    const onMeta = () => setDuration(el.duration)
+    const onEnd = () => { setPlaying(false); setProgress(0) }
+    el.addEventListener('timeupdate', onTime)
+    el.addEventListener('loadedmetadata', onMeta)
+    el.addEventListener('ended', onEnd)
+    return () => { el.removeEventListener('timeupdate', onTime); el.removeEventListener('loadedmetadata', onMeta); el.removeEventListener('ended', onEnd) }
+  }, [])
+
+  const togglePlay = () => {
+    const el = audioRef.current
+    if (!el) return
+    if (playing) { el.pause(); setPlaying(false) }
+    else { el.play().then(() => setPlaying(true)).catch(() => setPlaying(false)) }
+  }
+
+  const seek = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = audioRef.current
+    if (!el || !duration) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const ratio = (e.clientX - rect.left) / rect.width
+    el.currentTime = ratio * duration
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
@@ -399,6 +439,33 @@ function ViewModal({ songId, onClose }: { songId: number; onClose: () => void })
               <h4 className="text-lg font-bold">{song.title}</h4>
               <p className="text-sm text-[var(--text3)] mt-1">{authorName} · {song.genre}</p>
             </div>
+
+            {/* Audio Player */}
+            {song.audioUrl && (
+              <div className="p-3 bg-[var(--bg4)] rounded-xl">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={togglePlay}
+                    className="w-10 h-10 rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] text-white flex items-center justify-center cursor-pointer border-0 shadow-sm shrink-0"
+                  >
+                    {playing ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
+                  </button>
+                  <div
+                    className="flex-1 h-2 bg-[var(--bg3)] rounded-full cursor-pointer overflow-hidden"
+                    onClick={seek}
+                  >
+                    <div
+                      className="h-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] rounded-full transition-all"
+                      style={{ width: `${progress * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-[var(--text3)] font-mono w-16 text-right">
+                    {formatTime(currentTime)} / {formatTime(duration)}
+                  </span>
+                </div>
+                <audio ref={audioRef} src={song.audioUrl} preload="metadata" className="hidden" />
+              </div>
+            )}
 
             {/* Info grid */}
             <div className="grid grid-cols-2 gap-2 text-sm">

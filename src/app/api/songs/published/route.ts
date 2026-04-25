@@ -31,6 +31,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
       copyrightCode: s.copyrightCode,
       likeCount: s.likeCount,
       coverUrl: await toSignedUrl(s.coverUrl),
+      audioUrl: await toSignedUrl(s.audioUrl),
       authorName: s.user?.name || '未知',
       createdAt: s.createdAt,
     }))),
