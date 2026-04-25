@@ -374,7 +374,6 @@ export default function CreatorUploadPage() {
     if (!form.composer) missing.push('作曲署名')
     if (!form.prompt) missing.push('Prompt提示词')
     if (!form.lyrics) missing.push('歌词正文')
-    if (!form.creationDesc) missing.push('创作过程说明')
 
     if (missing.length > 0) {
       showToast(`请填写：${missing.join('、')}`)
@@ -388,7 +387,7 @@ export default function CreatorUploadPage() {
       showToast('歌词正文至少20个字')
       return
     }
-    if (form.creationDesc.length < 30) {
+    if (form.creationDesc.length > 0 && form.creationDesc.length < 30) {
       showToast('创作过程说明至少30个字')
       return
     }
@@ -830,13 +829,13 @@ export default function CreatorUploadPage() {
               {/* Creation description */}
               <div className="mb-3.5">
                 <label className={labelCls}>
-                  创作过程说明 <span className="text-[var(--red)]">*</span>
+                  创作过程说明 <span className="text-[var(--text3)]">（选填）</span>
                 </label>
                 <textarea
                   className={`${inputCls} h-[60px] resize-y`}
                   value={form.creationDesc}
                   onChange={(e) => upd('creationDesc', e.target.value)}
-                  placeholder="描述你在创作中的具体贡献（≥30字）"
+                  placeholder="描述你在创作中的具体贡献（选填，填写则≥30字）"
                 />
               </div>
 
