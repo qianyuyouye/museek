@@ -291,8 +291,12 @@ export default function CreatorSongsPage() {
           <div className={cardCls}>
             {/* Cover + status + title */}
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-20 h-20 bg-[var(--bg4)] rounded-xl flex items-center justify-center">
-                <Music size={36} className="text-[var(--text3)]" />
+              <div className="w-20 h-20 bg-[var(--bg4)] rounded-xl flex items-center justify-center overflow-hidden">
+                {song.coverUrl ? (
+                  <img src={song.coverUrl} alt={song.title} className="w-full h-full object-cover" />
+                ) : (
+                  <Music size={36} className="text-[var(--text3)]" />
+                )}
               </div>
               <div>
                 <Badge status={song.status} />

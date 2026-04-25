@@ -407,12 +407,22 @@ function ViewModal({ songId, onClose }: { songId: number; onClose: () => void })
   const [duration, setDuration] = useState(0)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
+  // 切换歌曲时重置状态
+  useEffect(() => {
+    setPlaying(false)
+    setProgress(0)
+    setCurrentTime(0)
+    setDuration(0)
+    const el = audioRef.current
+    if (el) el.src = ''
+  }, [songId])
+
   useEffect(() => {
     const el = audioRef.current
     if (!el) return
-    const onTime = () => { setProgress(el.currentTime / el.duration); setCurrentTime(el.currentTime) }
+    const onTime = () => { setProgress(el.duration > 0 ? el.currentTime / el.duration : 0); setCurrentTime(el.currentTime) }
     const onMeta = () => setDuration(el.duration)
-    const onEnd = () => { setPlaying(false); setProgress(0) }
+    const onEnd = () => { setPlaying(false); setProgress(0); setCurrentTime(0) }
     el.addEventListener('timeupdate', onTime)
     el.addEventListener('loadedmetadata', onMeta)
     el.addEventListener('ended', onEnd)
