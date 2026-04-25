@@ -12,6 +12,7 @@ const TABS = [
   { key: 'hot', label: '热门', icon: Flame },
   { key: 'featured', label: '精选', icon: Star },
   { key: 'all', label: '全部', icon: Music },
+  { key: 'favorites', label: '我的收藏', icon: Heart },
 ] as const
 
 type TabKey = (typeof TABS)[number]['key']
@@ -237,8 +238,12 @@ export default function CreatorCommunityPage() {
           .sort((a, b) => b.likeCount - a.likeCount)
       case 'all':
         return [...publishedSongs].sort((a, b) => b.likeCount - a.likeCount)
+      case 'favorites':
+        return publishedSongs
+          .filter((s) => likedSongs.has(s.id))
+          .sort((a, b) => b.likeCount - a.likeCount)
     }
-  }, [activeTab, publishedSongs])
+  }, [activeTab, publishedSongs, likedSongs])
 
   function showToast(msg: string) {
     setToast(msg)
