@@ -62,14 +62,20 @@ function parseSettingsData(raw: SettingsApiItem[] | null): SettingsData | null {
   const scoringWeights = map.get('scoring_weights') as Record<string, number> | undefined
   const DIMENSION_LABELS: Record<string, string> = {
     technique: '技术熟练度',
-    creativity: '创意立意',
+    lyrics: '词',
+    melody: '曲',
+    arrangement: '编曲',
+    styleCreativity: '风格创意',
     commercial: '商业传播潜力',
   }
   const weights = scoringWeights
     ? Object.entries(scoringWeights).map(([k, v]) => ({ label: DIMENSION_LABELS[k] ?? k, value: v }))
     : [
-        { label: '技术熟练度', value: 30 },
-        { label: '创意立意', value: 40 },
+        { label: '技术熟练度', value: 15 },
+        { label: '词', value: 15 },
+        { label: '曲', value: 15 },
+        { label: '编曲', value: 20 },
+        { label: '风格创意', value: 20 },
         { label: '商业传播潜力', value: 30 },
       ]
 
@@ -150,7 +156,10 @@ export default function AdminSettingsPage() {
     }
     const LABEL_TO_KEY: Record<string, string> = {
       '技术熟练度': 'technique',
-      '创意立意': 'creativity',
+      '词': 'lyrics',
+      '曲': 'melody',
+      '编曲': 'arrangement',
+      '风格创意': 'styleCreativity',
       '商业传播潜力': 'commercial',
     }
 
@@ -254,8 +263,11 @@ export default function AdminSettingsPage() {
 function ScoresTab({ showToast, onSave, initialData }: { showToast: (msg: string) => void; onSave: (s: Partial<SettingsData>) => void; initialData: SettingsData | null }) {
   const [weights, setWeights] = useState(
     initialData?.weights ?? [
-      { label: '技术熟练度', value: 30 },
-      { label: '创意立意', value: 40 },
+      { label: '技术熟练度', value: 15 },
+      { label: '词', value: 15 },
+      { label: '曲', value: 15 },
+      { label: '编曲', value: 20 },
+      { label: '风格创意', value: 20 },
       { label: '商业传播潜力', value: 30 },
     ]
   )
@@ -346,7 +358,7 @@ function ScoresTab({ showToast, onSave, initialData }: { showToast: (msg: string
           onClick={() => {
             const total = weights.reduce((sum, w) => sum + w.value, 0)
             if (total !== 100) {
-              showToast(`三个维度权重合计为 ${total}%，必须正好等于 100% 才能保存`)
+              showToast(`${weights.length}个维度权重合计为 ${total}%，必须正好等于 100% 才能保存`)
               return
             }
             onSave({ weights, threshold: { minScore: thresholdMinScore, recommendLevel: thresholdRecommendLevel } })

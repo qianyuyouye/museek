@@ -72,15 +72,15 @@ describe('系统设置 /admin/settings', () => {
       method: 'PUT',
       cookie: adminCookie,
       body: {
-        settings: [{ key: 'scoring_weights', value: { technique: 30, creativity: 40, commercial: 30 } }],
+        settings: [{ key: 'scoring_weights', value: { technique: 15, lyrics: 15, melody: 15, arrangement: 20, styleCreativity: 20, commercial: 30 } }],
       },
     })
     expectOk(r, 'weights')
     // 读回校验
     const get = await http('/api/admin/settings', { cookie: adminCookie })
-    const weights = (get.json.data as { key: string; value: { technique: number } }[])
+    const weights = (get.json.data as { key: string; value: Record<string, number> }[])
       .find((s) => s.key === 'scoring_weights')
-    expect(weights?.value.technique).toBe(30)
+    expect(weights?.value.technique).toBe(15)
   })
 
   it('TC-SET-006 非管理员访问 → 401/403', async () => {

@@ -54,11 +54,14 @@ test.describe('评审队列 → 评审页', () => {
     await page.goto('/review/assess')
     await page.waitForTimeout(1500)
     await expect(page.getByText('技术熟练度')).toBeVisible()
-    await expect(page.getByText('创意立意')).toBeVisible()
+    await expect(page.getByText('词')).toBeVisible()
+    await expect(page.getByText('曲')).toBeVisible()
+    await expect(page.getByText('编曲')).toBeVisible()
+    await expect(page.getByText('风格创意')).toBeVisible()
     await expect(page.getByText('商业传播潜力')).toBeVisible()
-    // 3 个 range input
+    // 6 个 range input
     const ranges = page.locator('input[type="range"]')
-    expect(await ranges.count()).toBe(3)
+    expect(await ranges.count()).toBe(6)
   })
 
   test('TC-UI-RA-004 拖滑块改变加权总分', async ({ page }) => {
@@ -73,7 +76,7 @@ test.describe('评审队列 → 评审页', () => {
     await page.waitForTimeout(1500)
     const ranges = page.locator('input[type="range"]')
     // 全部改成 90
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 6; i++) {
       await ranges.nth(i).fill('90')
     }
     await page.waitForTimeout(300)

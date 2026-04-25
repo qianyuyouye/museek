@@ -49,7 +49,10 @@ interface ReviewedDetail {
   copyrightCode: string
   songCreatedAt: string
   technique: number
-  creativity: number
+  lyricsScore: number
+  melody: number
+  arrangement: number
+  styleCreativity: number
   commercial: number
   totalScore: number
   recommendation: string
@@ -137,11 +140,14 @@ function DetailModal({ reviewId, onClose }: { reviewId: number; onClose: () => v
           )}
 
           {/* Scores */}
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-7 gap-3">
             {[
-              ['技术', data.technique, '30%'],
-              ['创意', data.creativity, '40%'],
-              ['商业', data.commercial, '30%'],
+              ['技术', data.technique, '15%'],
+              ['词', data.lyricsScore, '15%'],
+              ['曲', data.melody, '15%'],
+              ['编曲', data.arrangement, '20%'],
+              ['风格创意', data.styleCreativity, '20%'],
+              ['商业潜力', data.commercial, '30%'],
               ['总分', data.totalScore, ''],
             ].map(([label, val, weight]) => (
               <div key={label as string} className="text-center p-3 bg-[var(--bg4)] rounded-lg">

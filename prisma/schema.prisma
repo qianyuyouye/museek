@@ -226,9 +226,12 @@ model Review {
   songId          Int                  @map("song_id")
   reviewerId      Int                  @map("reviewer_id")
   version         Int                  @default(1) @db.TinyInt
-  technique       Int                  @db.TinyInt
-  creativity      Int                  @db.TinyInt
-  commercial      Int                  @db.TinyInt
+  technique        Int                  @db.TinyInt
+  lyrics           Int                  @db.TinyInt
+  melody           Int                  @db.TinyInt
+  arrangement      Int                  @db.TinyInt
+  styleCreativity  Int                  @map("creativity") @db.TinyInt
+  commercial       Int                  @db.TinyInt
   totalScore      Int                  @map("total_score") @db.TinyInt
   tags            Json?
   comment         String               @db.Text
@@ -646,9 +649,12 @@ model ReviewDraft {
   id         Int      @id @default(autoincrement())
   userId     Int      @map("user_id")
   songId     Int      @map("song_id")
-  technique  Int?     @db.TinyInt
-  creativity Int?     @db.TinyInt
-  commercial Int?     @db.TinyInt
+  technique        Int?     @db.TinyInt
+  lyrics           Int?     @db.TinyInt
+  melody           Int?     @db.TinyInt
+  arrangement      Int?     @db.TinyInt
+  styleCreativity  Int?     @map("creativity") @db.TinyInt
+  commercial       Int?     @db.TinyInt
   comment    String?  @db.Text
   tags       Json?    // { quick: string[], marks: {time:number, text:string}[] }
   recommendation String? @db.VarChar(30)

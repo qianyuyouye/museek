@@ -32,7 +32,10 @@ export interface SmsVerifyRequest {
 export interface ReviewSubmitRequest {
   songId: number
   technique: number
-  creativity: number
+  lyrics: number
+  melody: number
+  arrangement: number
+  styleCreativity: number
   commercial: number
   tags?: string[]
   comment: string

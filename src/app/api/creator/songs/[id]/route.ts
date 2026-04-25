@@ -21,7 +21,10 @@ export const GET = safeHandler(async function GET(
         select: {
           id: true,
           technique: true,
-          creativity: true,
+          lyrics: true,
+          melody: true,
+          arrangement: true,
+          styleCreativity: true,
           commercial: true,
           totalScore: true,
           comment: true,

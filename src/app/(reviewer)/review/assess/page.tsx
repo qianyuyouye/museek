@@ -35,7 +35,10 @@ interface ReviewDraftData {
   id: number
   songId: number
   technique: number | null
-  creativity: number | null
+  lyrics: number | null
+  melody: number | null
+  arrangement: number | null
+  styleCreativity: number | null
   commercial: number | null
   comment: string | null
   tags: { quick?: string[]; marks?: AudioMark[] } | null
@@ -177,7 +180,7 @@ export default function ReviewAssessPage() {
   )
 
   // 评分 / 评语 / 标签 / marks / 推荐
-  const [scores, setScores] = useState({ technique: 75, creativity: 80, commercial: 70 })
+  const [scores, setScores] = useState({ technique: 75, lyrics: 75, melody: 75, arrangement: 75, styleCreativity: 75, commercial: 75 })
   const [comment, setComment] = useState('')
   const [quickTags, setQuickTags] = useState<string[]>([])
   const [marks, setMarks] = useState<AudioMark[]>([])
@@ -190,7 +193,7 @@ export default function ReviewAssessPage() {
   const savingRef = useRef(false)
 
   const total = Math.round(
-    scores.technique * 0.3 + scores.creativity * 0.4 + scores.commercial * 0.3,
+    scores.technique * 0.15 + scores.lyrics * 0.15 + scores.melody * 0.15 + scores.arrangement * 0.20 + scores.styleCreativity * 0.20 + scores.commercial * 0.30,
   )
 
   // 歌曲加载后启动计时
@@ -209,7 +212,10 @@ export default function ReviewAssessPage() {
         if (json.code !== 200 || !json.data) return
         const d = json.data as ReviewDraftData
         if (d.technique != null) setScores((s) => ({ ...s, technique: d.technique! }))
-        if (d.creativity != null) setScores((s) => ({ ...s, creativity: d.creativity! }))
+        if (d.lyrics != null) setScores((s) => ({ ...s, lyrics: d.lyrics! }))
+        if (d.melody != null) setScores((s) => ({ ...s, melody: d.melody! }))
+        if (d.arrangement != null) setScores((s) => ({ ...s, arrangement: d.arrangement! }))
+        if (d.styleCreativity != null) setScores((s) => ({ ...s, styleCreativity: d.styleCreativity! }))
         if (d.commercial != null) setScores((s) => ({ ...s, commercial: d.commercial! }))
         if (d.comment) setComment(d.comment)
         if (d.recommendation) setRecommendation(d.recommendation)
@@ -233,7 +239,10 @@ export default function ReviewAssessPage() {
       const res = await apiCall('/api/review/drafts', 'POST', {
         songId: song.id,
         technique: scores.technique,
-        creativity: scores.creativity,
+        lyrics: scores.lyrics,
+        melody: scores.melody,
+        arrangement: scores.arrangement,
+        styleCreativity: scores.styleCreativity,
         commercial: scores.commercial,
         comment,
         tags: { quick: quickTags, marks },
@@ -263,7 +272,10 @@ export default function ReviewAssessPage() {
       const payload = JSON.stringify({
         songId: song.id,
         technique: scores.technique,
-        creativity: scores.creativity,
+        lyrics: scores.lyrics,
+        melody: scores.melody,
+        arrangement: scores.arrangement,
+        styleCreativity: scores.styleCreativity,
         commercial: scores.commercial,
         comment,
         tags: { quick: quickTags, marks },
@@ -337,7 +349,10 @@ export default function ReviewAssessPage() {
     const res = await apiCall('/api/review/submit', 'POST', {
       songId: song.id,
       technique: scores.technique,
-      creativity: scores.creativity,
+      lyrics: scores.lyrics,
+      melody: scores.melody,
+      arrangement: scores.arrangement,
+      styleCreativity: scores.styleCreativity,
       commercial: scores.commercial,
       tags: tagsPayload,
       comment,
@@ -474,8 +489,11 @@ export default function ReviewAssessPage() {
 
             {(
               [
-                { key: 'technique', label: '技术熟练度', weight: '30%' },
-                { key: 'creativity', label: '创意立意', weight: '40%' },
+                { key: 'technique', label: '技术熟练度', weight: '15%' },
+                { key: 'lyrics', label: '词', weight: '15%' },
+                { key: 'melody', label: '曲', weight: '15%' },
+                { key: 'arrangement', label: '编曲', weight: '20%' },
+                { key: 'styleCreativity', label: '风格创意', weight: '20%' },
                 { key: 'commercial', label: '商业传播潜力', weight: '30%' },
               ] as const
             ).map((dim) => (

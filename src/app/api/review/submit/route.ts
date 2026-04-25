@@ -9,14 +9,14 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   if (!userId || portal !== 'reviewer') return err('无权限', 403)
 
   const body = await request.json()
-  const { songId, technique, creativity, commercial, tags, comment, recommendation, durationSeconds } = body
+  const { songId, technique, lyrics, melody, arrangement, styleCreativity, commercial, tags, comment, recommendation, durationSeconds } = body
 
-  if (!songId || technique == null || creativity == null || commercial == null || !comment || !recommendation) {
+  if (!songId || technique == null || lyrics == null || melody == null || arrangement == null || styleCreativity == null || commercial == null || !comment || !recommendation) {
     return err('缺少必填字段')
   }
 
   // 校验分数范围（必须为 0-100 的整数）
-  if ([technique, creativity, commercial].some((v) => typeof v !== 'number' || !Number.isInteger(v) || v < 0 || v > 100)) {
+  if ([technique, lyrics, melody, arrangement, styleCreativity, commercial].some((v) => typeof v !== 'number' || !Number.isInteger(v) || v < 0 || v > 100)) {
     return err('评分必须为 0-100 的整数')
   }
 
@@ -32,7 +32,7 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     return err('无效的推荐类型')
   }
 
-  const totalScore = Math.round(technique * 0.3 + creativity * 0.4 + commercial * 0.3)
+  const totalScore = Math.round(technique * 0.15 + lyrics * 0.15 + melody * 0.15 + arrangement * 0.20 + styleCreativity * 0.20 + commercial * 0.30)
 
   // 根据推荐类型决定歌曲新状态
   let newSongStatus: SongStatus
@@ -79,7 +79,10 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
           reviewerId: userId,
           version: song.version,
           technique,
-          creativity,
+          lyrics,
+          melody,
+          arrangement,
+          styleCreativity,
           commercial,
           totalScore,
           tags: tags ?? undefined,

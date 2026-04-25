@@ -48,7 +48,7 @@ const DEFAULT_NOTIFICATION_TEMPLATES = {
 }
 
 const PRESET_KEYS: Record<string, unknown> = {
-  [SETTING_KEYS.SCORING_WEIGHTS]: { technique: 30, creativity: 40, commercial: 30 },
+  [SETTING_KEYS.SCORING_WEIGHTS]: { technique: 15, lyrics: 15, melody: 15, arrangement: 20, styleCreativity: 20, commercial: 30 },
   [SETTING_KEYS.AUTO_ARCHIVE_THRESHOLD]: 80,
   [SETTING_KEYS.REVENUE_RULES]: DEFAULT_REVENUE_RULES,
   [SETTING_KEYS.REVIEW_TEMPLATES]: [],
