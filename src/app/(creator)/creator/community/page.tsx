@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle } from '@/lib/ui-tokens'
 import { Flame, Star, Music, Play, Pause, Heart, Share2, Inbox } from 'lucide-react'
@@ -97,6 +97,7 @@ function MiniWaveform({ playing }: { playing: boolean }) {
 function SongCard({
   song,
   liked,
+  likeCount,
   onToggleLike,
   onShare,
   playing,
@@ -104,6 +105,7 @@ function SongCard({
 }: {
   song: PublishedSong
   liked: boolean
+  likeCount: number
   onToggleLike: () => void
   onShare: () => void
   playing: boolean
@@ -164,7 +166,7 @@ function SongCard({
             style={{ color: liked ? 'var(--red)' : 'var(--text3)' }}
             onClick={onToggleLike}
           >
-            <Heart size={13} fill={liked ? 'currentColor' : 'none'} /> {song.likeCount}
+            <Heart size={13} fill={liked ? 'currentColor' : 'none'} /> {likeCount}
           </button>
           <button
             className="flex items-center gap-1 text-[12px] text-[var(--text3)] border-0 bg-transparent cursor-pointer hover:text-[var(--accent)] transition-colors px-0"
@@ -183,12 +185,36 @@ function SongCard({
 export default function CreatorCommunityPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('hot')
   const [likedSongs, setLikedSongs] = useState<Set<number>>(new Set())
+  const [likeCounts, setLikeCounts] = useState<Record<number, number>>({})
   const [playingSongId, setPlayingSongId] = useState<number | null>(null)
   const [toast, setToast] = useState('')
 
   // Fetch published songs from API
-  const { data, loading, refetch } = useApi<{ list: PublishedSong[]; total: number }>('/api/songs/published?pageSize=50')
+  const { data, loading } = useApi<{ list: PublishedSong[]; total: number }>('/api/songs/published?pageSize=50')
   const publishedSongs = data?.list ?? []
+
+  // 初始化各歌曲的点赞数
+  useEffect(() => {
+    if (publishedSongs.length > 0) {
+      setLikeCounts((prev) => {
+        const next = { ...prev }
+        for (const s of publishedSongs) next[s.id] = s.likeCount
+        return next
+      })
+    }
+  }, [publishedSongs])
+
+  // 加载已点赞的歌曲列表
+  useEffect(() => {
+    fetch('/api/songs/likes', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.code === 200 && Array.isArray(j.data?.ids)) {
+          setLikedSongs(new Set(j.data.ids))
+        }
+      })
+      .catch(() => { /* ignore */ })
+  }, [])
 
   // Filter by tab
   const filteredSongs = useMemo(() => {
@@ -211,36 +237,34 @@ export default function CreatorCommunityPage() {
 
   async function toggleLike(songId: number) {
     const currentlyLiked = likedSongs.has(songId)
-    // 乐观更新本地状态
+    const oldLiked = likedSongs
+    const oldCount = likeCounts[songId] ?? 0
+
+    // 乐观更新
     setLikedSongs((prev) => {
       const next = new Set(prev)
-      if (next.has(songId)) {
-        next.delete(songId)
-      } else {
-        next.add(songId)
-      }
+      if (next.has(songId)) next.delete(songId)
+      else next.add(songId)
       return next
     })
+    setLikeCounts((prev) => ({ ...prev, [songId]: currentlyLiked ? oldCount - 1 : oldCount + 1 }))
+
     // 调用 API 持久化
     const res = await apiCall(`/api/songs/${songId}/like`, 'POST', { liked: currentlyLiked })
-    if (res.ok) {
-      refetch()
-    } else {
-      // 回滚本地状态
-      setLikedSongs((prev) => {
-        const next = new Set(prev)
-        if (currentlyLiked) {
-          next.add(songId)
-        } else {
-          next.delete(songId)
-        }
-        return next
-      })
+    if (!res.ok) {
+      // 回滚
+      setLikedSongs(oldLiked)
+      setLikeCounts((prev) => ({ ...prev, [songId]: oldCount }))
     }
   }
 
   function handleShare(song: PublishedSong) {
-    showToast(`分享链接已复制：/s/${song.copyrightCode}`)
+    const url = `${window.location.origin}/creator/songs?id=${song.id}`
+    navigator.clipboard?.writeText(url).then(() => {
+      showToast('分享链接已复制')
+    }).catch(() => {
+      showToast(`分享链接：${url}`)
+    })
   }
 
   function togglePlay(songId: number) {
@@ -298,6 +322,7 @@ export default function CreatorCommunityPage() {
             key={song.id}
             song={song}
             liked={likedSongs.has(song.id)}
+            likeCount={likeCounts[song.id] ?? song.likeCount}
             onToggleLike={() => toggleLike(song.id)}
             onShare={() => handleShare(song)}
             playing={playingSongId === song.id}
