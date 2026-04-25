@@ -20,7 +20,6 @@ export const GET = safeHandler(async function GET(
       reviews: {
         select: {
           id: true,
-          technique: true,
           lyrics: true,
           melody: true,
           arrangement: true,

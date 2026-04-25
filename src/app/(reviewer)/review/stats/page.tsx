@@ -12,8 +12,10 @@ interface ReviewHistoryApi {
   songId: number
   songTitle: string
   creatorName: string
-  technique: number | null
-  creativity: number | null
+  lyricsScore: number | null
+  melody: number | null
+  arrangement: number | null
+  styleCreativity: number | null
   commercial: number | null
   totalScore: number | null
   recommendation: string | null

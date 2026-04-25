@@ -38,7 +38,7 @@ describe('评审端', () => {
       method: 'POST',
       cookie: reviewerCookie,
       body: {
-        songId: 1, technique: 150, lyrics: 80, melody: 80, arrangement: 80, styleCreativity: 80, commercial: 80,
+        songId: 1, lyrics: 150, melody: 80, arrangement: 80, styleCreativity: 80, commercial: 80,
         comment: 'x', recommendation: 'strongly_recommend',
       },
     })
@@ -50,7 +50,7 @@ describe('评审端', () => {
       method: 'POST',
       cookie: reviewerCookie,
       body: {
-        songId: 1, technique: 80, lyrics: 80, melody: 80, arrangement: 80, styleCreativity: 80, commercial: 80,
+        songId: 1, lyrics: 80, melody: 80, arrangement: 80, styleCreativity: 80, commercial: 80,
         comment: '', recommendation: 'strongly_recommend',
       },
     })
@@ -62,7 +62,7 @@ describe('评审端', () => {
       method: 'POST',
       cookie: reviewerCookie,
       body: {
-        songId: 1, technique: 80, lyrics: 80, melody: 80, arrangement: 80, styleCreativity: 80, commercial: 80,
+        songId: 1, lyrics: 80, melody: 80, arrangement: 80, styleCreativity: 80, commercial: 80,
         comment: 'valid comment here longer than 20 chars',
         recommendation: 'unknown',
       },
@@ -75,7 +75,7 @@ describe('评审端', () => {
       method: 'POST',
       cookie: reviewerCookie,
       body: {
-        songId: 99999, technique: 80, creativity: 80, commercial: 80,
+        songId: 99999, lyrics: 80, melody: 80, arrangement: 80, styleCreativity: 80, commercial: 80,
         comment: 'valid comment here longer than 20 chars',
         recommendation: 'strongly_recommend',
       },
@@ -117,7 +117,7 @@ describe('评审端', () => {
     const r = await http('/api/review/submit', {
       method: 'POST',
       cookie: revCookie,
-      body: { songId: song.id, technique: 85, lyrics: 85, melody: 85, arrangement: 85, styleCreativity: 85, commercial: 85, recommendation: 'not_recommend', comment: '不错不错不错不错不错' },
+      body: { songId: song.id, lyrics: 85, melody: 85, arrangement: 85, styleCreativity: 85, commercial: 85, recommendation: 'not_recommend', comment: '不错不错不错不错不错' },
     })
     expectOk(r, 'review submit')
 

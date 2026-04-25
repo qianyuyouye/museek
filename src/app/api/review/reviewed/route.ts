@@ -53,7 +53,6 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
       audioUrl: await toSignedUrl(r.song.audioUrl, userId),
       coverUrl: await toSignedUrl(r.song.coverUrl, userId),
       studentName: r.song.user.realName || r.song.user.name || r.song.user.phone || '未命名',
-      technique: r.technique,
       lyricsScore: r.lyrics,
       melody: r.melody,
       arrangement: r.arrangement,

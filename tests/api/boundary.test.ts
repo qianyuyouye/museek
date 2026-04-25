@@ -97,7 +97,7 @@ describe('边界 · 并发冲突', () => {
 
     const payload = {
       songId: song.id,
-      technique: 80, lyrics: 80, melody: 80, arrangement: 85, styleCreativity: 85, commercial: 75,
+      lyrics: 80, melody: 80, arrangement: 85, styleCreativity: 85, commercial: 75,
       comment: '并发测试评语超过二十字保证通过',
       recommendation: 'strongly_recommend',
     }

@@ -68,7 +68,6 @@ export const GET = safeHandler(async function GET(request: NextRequest, { params
     contribution: review.song.contribution,
     copyrightCode: review.song.copyrightCode,
     songCreatedAt: review.song.createdAt,
-    technique: review.technique,
     lyricsScore: review.lyrics,
     melody: review.melody,
     arrangement: review.arrangement,

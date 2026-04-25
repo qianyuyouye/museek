@@ -61,7 +61,6 @@ function parseSettingsData(raw: SettingsApiItem[] | null): SettingsData | null {
 
   const scoringWeights = map.get('scoring_weights') as Record<string, number> | undefined
   const DIMENSION_LABELS: Record<string, string> = {
-    technique: '技术熟练度',
     lyrics: '词',
     melody: '曲',
     arrangement: '编曲',
@@ -71,7 +70,6 @@ function parseSettingsData(raw: SettingsApiItem[] | null): SettingsData | null {
   const weights = scoringWeights
     ? Object.entries(scoringWeights).map(([k, v]) => ({ label: DIMENSION_LABELS[k] ?? k, value: v }))
     : [
-        { label: '技术熟练度', value: 15 },
         { label: '词', value: 15 },
         { label: '曲', value: 15 },
         { label: '编曲', value: 20 },
@@ -155,7 +153,6 @@ export default function AdminSettingsPage() {
       inviteLinkDomain: 'invite_link_domain',
     }
     const LABEL_TO_KEY: Record<string, string> = {
-      '技术熟练度': 'technique',
       '词': 'lyrics',
       '曲': 'melody',
       '编曲': 'arrangement',
@@ -263,7 +260,6 @@ export default function AdminSettingsPage() {
 function ScoresTab({ showToast, onSave, initialData }: { showToast: (msg: string) => void; onSave: (s: Partial<SettingsData>) => void; initialData: SettingsData | null }) {
   const [weights, setWeights] = useState(
     initialData?.weights ?? [
-      { label: '技术熟练度', value: 15 },
       { label: '词', value: 15 },
       { label: '曲', value: 15 },
       { label: '编曲', value: 20 },

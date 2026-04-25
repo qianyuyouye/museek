@@ -31,7 +31,6 @@ export interface SmsVerifyRequest {
 
 export interface ReviewSubmitRequest {
   songId: number
-  technique: number
   lyrics: number
   melody: number
   arrangement: number

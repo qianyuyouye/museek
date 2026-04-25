@@ -37,10 +37,9 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
 
   const body = await request.json()
   const {
-    songId, technique, lyrics, melody, arrangement, styleCreativity, commercial, comment, tags, recommendation,
+    songId, lyrics, melody, arrangement, styleCreativity, commercial, comment, tags, recommendation,
   } = body as {
     songId: number
-    technique?: number
     lyrics?: number
     melody?: number
     arrangement?: number
@@ -68,7 +67,6 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     return Math.max(0, Math.min(100, Math.round(n)))
   }
 
-  const techniqueVal = clampScore(technique)
   const lyricsVal = clampScore(lyrics)
   const melodyVal = clampScore(melody)
   const arrangementVal = clampScore(arrangement)
@@ -82,7 +80,6 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   const createData = {
     userId,
     songId: Number(songId),
-    technique: techniqueVal,
     lyrics: lyricsVal,
     melody: melodyVal,
     arrangement: arrangementVal,
@@ -93,7 +90,6 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
     recommendation: recommendationVal,
   }
   const updateData = {
-    technique: techniqueVal,
     lyrics: lyricsVal,
     melody: melodyVal,
     arrangement: arrangementVal,

@@ -48,7 +48,6 @@ interface ReviewedDetail {
   contribution?: string
   copyrightCode: string
   songCreatedAt: string
-  technique: number
   lyricsScore: number
   melody: number
   arrangement: number
@@ -140,9 +139,8 @@ function DetailModal({ reviewId, onClose }: { reviewId: number; onClose: () => v
           )}
 
           {/* Scores */}
-          <div className="grid grid-cols-7 gap-3">
+          <div className="grid grid-cols-6 gap-3">
             {[
-              ['技术', data.technique, '15%'],
               ['词', data.lyricsScore, '15%'],
               ['曲', data.melody, '15%'],
               ['编曲', data.arrangement, '20%'],

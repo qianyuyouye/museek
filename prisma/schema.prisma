@@ -226,7 +226,7 @@ model Review {
   songId          Int                  @map("song_id")
   reviewerId      Int                  @map("reviewer_id")
   version         Int                  @default(1) @db.TinyInt
-  technique        Int                  @db.TinyInt
+  technique          Int?                  @db.TinyInt
   lyrics           Int                  @db.TinyInt
   melody           Int                  @db.TinyInt
   arrangement      Int                  @db.TinyInt

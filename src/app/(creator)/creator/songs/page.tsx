@@ -30,7 +30,6 @@ interface Song {
 
 interface ReviewData {
   id: number
-  technique: number
   lyricsScore: number
   melody: number
   arrangement: number
@@ -346,11 +345,10 @@ export default function CreatorSongsPage() {
               <div className={`${cardCls} mb-4`}>
                 <h3 className="text-[15px] font-semibold mb-3.5">📊 评分成绩单</h3>
 
-                {/* 6 dimension scores */}
-                <div className="grid grid-cols-6 gap-3 mb-4">
+                {/* 5 dimension scores */}
+                <div className="grid grid-cols-5 gap-3 mb-4">
                   {(
                     [
-                      ['技术', review.technique, '15%'],
                       ['词', review.lyricsScore, '15%'],
                       ['曲', review.melody, '15%'],
                       ['编曲', review.arrangement, '20%'],

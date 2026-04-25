@@ -56,7 +56,6 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     songId: r.songId,
     songTitle: r.song.title,
     creatorName: r.song.user.name,
-    technique: r.technique,
     lyricsScore: r.lyrics,
     melody: r.melody,
     arrangement: r.arrangement,
