@@ -314,10 +314,53 @@ export const POST = safeHandler(async function POST(request: NextRequest) {
   })
   const duplicateRows = rowsToCreate.length - created.count
 
+  // 补零：不同汽水后台上传的歌曲分散在多个 CSV 中，
+  // 需要确保当月所有已映射歌曲都有收益记录（缺失的补 0）
+  const csvSongIds = new Set(parsed.map((p) => p.qishuiSongId))
+  const allConfirmedMappings = await prisma.songMapping.findMany({
+    where: { status: 'confirmed' },
+    select: { id: true, qishuiSongId: true, qishuiSongName: true, creatorId: true, platformSongId: true },
+  })
+  const missingConfirmedSongIds = allConfirmedMappings
+    .filter((m) => !csvSongIds.has(m.qishuiSongId))
+    .map((m) => m.qishuiSongId)
+
+  // 查这些 songId 在本周期是否已有 RevenueRow（可能来自之前的其他批次导入）
+  const existingRowsForPeriod = await prisma.revenueRow.findMany({
+    where: {
+      qishuiSongId: { in: missingConfirmedSongIds },
+      period: firstPeriod,
+    },
+    select: { qishuiSongId: true },
+  })
+  const alreadyHasRow = new Set(existingRowsForPeriod.map((r) => r.qishuiSongId))
+
+  const zeroRows: Prisma.RevenueRowCreateManyInput[] = []
+  for (const m of allConfirmedMappings) {
+    if (csvSongIds.has(m.qishuiSongId)) continue
+    if (alreadyHasRow.has(m.qishuiSongId)) continue
+    zeroRows.push({
+      importId: imp.id,
+      qishuiSongId: m.qishuiSongId,
+      songName: m.qishuiSongName,
+      period: firstPeriod,
+      douyinRevenue: 0,
+      qishuiRevenue: 0,
+      totalRevenue: 0,
+      mappingId: m.id,
+      matchStatus: 'matched',
+    })
+    matched++
+  }
+
+  if (zeroRows.length > 0) {
+    await prisma.revenueRow.createMany({ data: zeroRows, skipDuplicates: true })
+  }
+
   const final = await prisma.revenueImport.update({
     where: { id: imp.id },
     data: {
-      totalRows: rowsToCreate.length,
+      totalRows: rowsToCreate.length + zeroRows.length,
       matchedRows: matched,
       suspectRows: suspect,
       unmatchedRows: unmatched,
