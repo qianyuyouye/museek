@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle } from '@/lib/ui-tokens'
-import { Flame, Star, Music, Play, Pause, Heart, Share2, Inbox, X, CheckCircle2, Hourglass } from 'lucide-react'
+import { Flame, Star, Music, Play, Pause, Heart, Share2, Inbox, X } from 'lucide-react'
 
 // ── Constants ───────────────────────────────────────────────────
 
@@ -16,21 +16,6 @@ const TABS = [
 ] as const
 
 type TabKey = (typeof TABS)[number]['key']
-
-const COVER_GRADIENTS: Record<string, string> = {
-  '🌌': 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)',
-  '🏙️': 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)',
-  '🌸': 'linear-gradient(135deg, #fbc2eb, #a6c1ee)',
-  '🌈': 'linear-gradient(135deg, #f093fb, #f5576c)',
-  '🌊': 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)',
-  '🌅': 'linear-gradient(135deg, #f12711, #f5af19)',
-  '💫': 'linear-gradient(135deg, #4a00e0, #8e2de2)',
-  '🎵': 'linear-gradient(135deg, #6366f1, #818cf8)',
-  '👨‍👦': 'linear-gradient(135deg, #f59e0b, #fbbf24)',
-  '🤵': 'linear-gradient(135deg, #1f1c2c, #928dab)',
-  '💪': 'linear-gradient(135deg, #373b44, #4286f4)',
-  '🌃': 'linear-gradient(135deg, #141e30, #243b55)',
-}
 
 const DEFAULT_GRADIENT = 'linear-gradient(135deg, #1a1a2e, #3a3a5e)'
 
@@ -46,14 +31,6 @@ interface PublishedSong {
   likeCount: number
   copyrightCode: string
   authorName?: string
-  audioUrl?: string | null
-  aiTools?: string[] | null
-  lyricist?: string | null
-  composer?: string | null
-  lyrics?: string | null
-  styleDesc?: string | null
-  creationDesc?: string | null
-  createdAt?: string
 }
 
 // ── Toast Component ─────────────────────────────────────────────
@@ -193,12 +170,31 @@ function SongCard({
 // ── Main Page ───────────────────────────────────────────────────
 
 export default function CreatorCommunityPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center py-20"><div className="text-sm text-[var(--text3)]">加载中...</div></div>}>
+      <CommunityInner />
+    </Suspense>
+  )
+}
+
+function CommunityInner() {
+  const searchParams = useSearchParams()
+  const initialViewId = (() => {
+    const v = searchParams.get('view')
+    return v && !isNaN(parseInt(v, 10)) ? parseInt(v, 10) : null
+  })()
+  return <CommunityContent initialViewId={initialViewId} />
+}
+
+function CommunityContent({ initialViewId }: { initialViewId: number | null }) {
   const [activeTab, setActiveTab] = useState<TabKey>('hot')
   const [likedSongs, setLikedSongs] = useState<Set<number>>(new Set())
   const [likeCounts, setLikeCounts] = useState<Record<number, number>>({})
   const [playingSongId, setPlayingSongId] = useState<number | null>(null)
   const [toast, setToast] = useState('')
-  const [viewModalId, setViewModalId] = useState<number | null>(null)
+  const [viewModalId, setViewModalId] = useState<number | null>(initialViewId)
+
+  const router = useRouter()
 
   // Fetch published songs from API
   const { data, loading } = useApi<{ list: PublishedSong[]; total: number }>('/api/songs/published?pageSize=50')
@@ -281,16 +277,6 @@ export default function CreatorCommunityPage() {
       showToast(`分享链接：${url}`)
     })
   }
-
-  // 从 URL ?view=xxx 自动弹出作品详情
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  useEffect(() => {
-    const viewId = searchParams.get('view')
-    if (viewId && !isNaN(parseInt(viewId, 10))) {
-      setViewModalId(parseInt(viewId, 10))
-    }
-  }, [searchParams])
 
   function togglePlay(songId: number) {
     setPlayingSongId((prev) => (prev === songId ? null : songId))
