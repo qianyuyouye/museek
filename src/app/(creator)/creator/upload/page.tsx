@@ -536,7 +536,7 @@ export default function CreatorUploadPage() {
             <h3 className="text-base font-semibold mb-5">上传音频文件与封面</h3>
 
             {/* Audio upload area */}
-            <input ref={audioRef} type="file" accept=".wav,.mp3,audio/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f, 'audio') }} />
+            <input ref={audioRef} type="file" accept=".wav" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f, 'audio') }} />
             <div
               className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors ${
                 form.audioUploaded
@@ -574,7 +574,7 @@ export default function CreatorUploadPage() {
             </div>
 
             {/* Cover upload area */}
-            <input ref={coverRef} type="file" accept=".jpg,.jpeg,.png,image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f, 'image') }} />
+            <input ref={coverRef} type="file" accept=".jpg,.jpeg,.png,.webp" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f, 'image') }} />
             <div
               className={`mt-4 border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
                 form.coverUploaded

@@ -326,7 +326,7 @@ export default function CreatorAssignmentsPage() {
           <input
             ref={audioRef}
             type="file"
-            accept=".wav,.mp3,audio/*"
+            accept=".wav"
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0]

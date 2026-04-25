@@ -342,7 +342,7 @@ export default function CreatorProfile() {
             <input
               ref={avatarInputRef}
               type="file"
-              accept=".jpg,.jpeg,.png,.webp,image/*"
+              accept=".jpg,.jpeg,.png,.webp"
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0]

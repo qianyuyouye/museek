@@ -2,7 +2,7 @@ import crypto from 'crypto'
 import path from 'path'
 import { signPutUrl } from './signature'
 
-const AUDIO_EXTS = ['.wav', '.mp3']
+const AUDIO_EXTS = ['.wav']
 const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.webp']
 const MAX_AUDIO = 200 * 1024 * 1024
 const MAX_IMAGE = 5 * 1024 * 1024
@@ -15,7 +15,7 @@ export interface UploadTokenResult {
 }
 
 function generateKey(originalName: string, type: 'audio' | 'image'): string {
-  const ext = path.extname(originalName).toLowerCase() || (type === 'audio' ? '.mp3' : '.jpg')
+  const ext = path.extname(originalName).toLowerCase() || (type === 'audio' ? '.wav' : '.jpg')
   const hash = crypto.randomBytes(8).toString('hex')
   const date = new Date().toISOString().slice(0, 10).replace(/-/g, '')
   const dir = type === 'audio' ? 'audio' : 'images'

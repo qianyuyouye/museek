@@ -28,8 +28,8 @@ export function FileUploader({
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
 
-  const defaultAccept = type === 'image' ? '.jpg,.jpeg,.png,.webp,image/*' : '.wav,.mp3,audio/*'
-  const defaultPlaceholder = type === 'image' ? '上传封面图 (JPG/PNG, ≤5MB)' : '上传音频文件 (WAV/MP3, ≤50MB)'
+  const defaultAccept = type === 'image' ? '.jpg,.jpeg,.png,.webp' : '.wav'
+  const defaultPlaceholder = type === 'image' ? '上传封面图 (JPG/PNG, ≤5MB)' : '上传音频文件 (WAV, ≤200MB)'
 
   async function handleFile(file: File) {
     setError('')
