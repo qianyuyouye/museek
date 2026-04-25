@@ -17,7 +17,7 @@ interface FileUploaderProps {
 export function FileUploader({
   type,
   accept,
-  maxSizeMB = 5,
+  maxSizeMB = 10,
   value,
   onChange,
   label,
@@ -29,7 +29,7 @@ export function FileUploader({
   const [error, setError] = useState('')
 
   const defaultAccept = type === 'image' ? '.jpg,.jpeg,.png,.webp' : '.wav'
-  const defaultPlaceholder = type === 'image' ? '上传封面图 (JPG/PNG, ≤5MB)' : '上传音频文件 (WAV, ≤200MB)'
+  const defaultPlaceholder = type === 'image' ? '上传封面图 (JPG/PNG, ≤10MB)' : '上传音频文件 (WAV, ≤200MB)'
 
   async function handleFile(file: File) {
     setError('')

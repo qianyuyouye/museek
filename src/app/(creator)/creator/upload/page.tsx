@@ -290,8 +290,8 @@ export default function CreatorUploadPage() {
         showToast('仅支持 JPG、JPEG、PNG、WEBP 格式')
         return
       }
-      if (file.size > 5 * 1024 * 1024) {
-        showToast('封面图片不能超过 5MB')
+      if (file.size > 10 * 1024 * 1024) {
+        showToast('封面图片不能超过 10MB')
         return
       }
     }
