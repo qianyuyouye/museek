@@ -1,7 +1,7 @@
 'use client'
 
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
-import { X } from 'lucide-react'
+import { X, Play, Pause } from 'lucide-react'
 import { PromptModal } from '@/components/ui/confirm-modal'
 
 export interface AudioMark {
@@ -173,7 +173,7 @@ const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(function Aud
             }`}
             onClick={togglePlay}
           >
-            {isPlaying ? '⏸' : '▶'}
+            {isPlaying ? <Pause size={16} /> : <Play size={16} />}
           </button>
           <button
             type="button"

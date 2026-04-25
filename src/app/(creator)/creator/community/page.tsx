@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, Suspense, useRef } from 'react'
+import { useState, useMemo, useEffect, Suspense, useRef, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle } from '@/lib/ui-tokens'
@@ -143,7 +143,7 @@ function SongCard({
           onClick={onTogglePlay}
         >
           <button className="w-7 h-7 rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] text-white flex items-center justify-center cursor-pointer border-0 shadow-sm shrink-0">
-            {playing ? <Pause size={11} /> : <Play size={11} className="ml-0.5" />}
+            {playing ? <Pause size={11} /> : <Play size={11} />}
           </button>
           <div className="flex-1 min-w-0">
             <MiniWaveform playing={playing} />
@@ -197,6 +197,7 @@ function CommunityContent({ initialViewId }: { initialViewId: number | null }) {
   const [playingSongId, setPlayingSongId] = useState<number | null>(null)
   const [toast, setToast] = useState('')
   const [viewModalId, setViewModalId] = useState<number | null>(initialViewId)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const router = useRouter()
 
@@ -282,9 +283,32 @@ function CommunityContent({ initialViewId }: { initialViewId: number | null }) {
     })
   }
 
+  // 获取歌曲的 audioUrl
+  const songMap = useMemo(() => {
+    const m: Record<number, string | null> = {}
+    for (const s of publishedSongs) m[s.id] = s.audioUrl
+    return m
+  }, [publishedSongs])
+
   function togglePlay(songId: number) {
-    setPlayingSongId((prev) => (prev === songId ? null : songId))
+    const el = audioRef.current
+    if (!el) return
+    const audioUrl = songMap[songId]
+    if (!audioUrl) return
+
+    if (playingSongId === songId) {
+      el.pause()
+      setPlayingSongId(null)
+    } else {
+      el.src = audioUrl
+      el.play().then(() => setPlayingSongId(songId)).catch(() => setPlayingSongId(null))
+    }
   }
+
+  // 播放结束时重置状态
+  const onAudioEnd = useCallback(() => {
+    setPlayingSongId(null)
+  }, [])
 
   if (loading) {
     return (
@@ -357,6 +381,9 @@ function CommunityContent({ initialViewId }: { initialViewId: number | null }) {
 
       {/* 作品详情弹窗 */}
       {viewModalId !== null && <ViewModal songId={viewModalId} onClose={() => { setViewModalId(null); router.replace('/creator/community') }} />}
+
+      {/* Global audio player */}
+      <audio ref={audioRef} preload="auto" className="hidden" onEnded={onAudioEnd} />
     </div>
   )
 }
@@ -452,7 +479,7 @@ function ViewModal({ songId, onClose }: { songId: number; onClose: () => void })
                     onClick={togglePlay}
                     className="w-10 h-10 rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] text-white flex items-center justify-center cursor-pointer border-0 shadow-sm shrink-0"
                   >
-                    {playing ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
+                    {playing ? <Pause size={16} /> : <Play size={16} />}
                   </button>
                   <div
                     className="flex-1 h-2 bg-[var(--bg3)] rounded-full cursor-pointer overflow-hidden"

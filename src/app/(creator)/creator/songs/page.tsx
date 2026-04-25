@@ -6,7 +6,7 @@ import { useApi } from '@/lib/use-api'
 import { SONG_STATUS_MAP } from '@/lib/constants'
 import { pageWrap, textPageTitle, cardCls, btnPrimary, btnGhost } from '@/lib/ui-tokens'
 import { formatDateTime } from '@/lib/format'
-import { CheckCircle2, Hourglass, Heart, Music, Search, AlertCircle } from 'lucide-react'
+import { CheckCircle2, Hourglass, Heart, Music, Search, AlertCircle, Play, Pause } from 'lucide-react'
 import { Waveform } from '@/components/audio/waveform'
 
 // ── Types ──────────────────────────────────────────────────────
@@ -135,7 +135,7 @@ function WaveformPlayer({
           onClick={toggle}
           className="w-10 h-10 rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] text-white flex items-center justify-center text-lg border-0 cursor-pointer shadow-[0_2px_8px_rgba(99,102,241,0.3)]"
         >
-          {playing ? '⏸' : '▶'}
+          {playing ? <Pause size={16} /> : <Play size={16} />}
         </button>
         <div className="flex-1">
           <div className="text-sm font-medium text-[var(--text)]">{title || 'audio.mp3'}</div>
