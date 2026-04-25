@@ -212,9 +212,7 @@ export default function AdminStudentsPage() {
     return (
       <div className={pageWrap}>
         {toast && (
-          <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-[var(--bg3)] border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">
-            {toast}
-          </div>
+          <div className="fixed top-5 right-5 z-[9999] px-6 py-3 rounded-xl bg-[var(--bg3)] border border-[var(--green)] text-[var(--green)] text-sm font-medium shadow-lg">{toast}</div>
         )}
 
         <PageHeader
@@ -245,7 +243,7 @@ export default function AdminStudentsPage() {
 
             {/* Real name auth section */}
             <div style={{ marginTop: 12 }}>
-              <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 8, color: 'var(--text2)' }}>
+              <div className="text-[13px] font-medium mb-2" style={{ color: 'var(--text2)' }}>
                 实名认证状态
               </div>
 
@@ -269,11 +267,11 @@ export default function AdminStudentsPage() {
 
               {s.realNameStatus === 'verified' && (
                 <div>
-                  <span style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, background: 'rgba(85,239,196,.12)', color: 'var(--green2)', display: 'inline-block', marginBottom: 10 }}>
+                  <span className="text-xs inline-block px-3 py-1 rounded-full mb-2.5" style={{ background: 'rgba(85,239,196,.12)', color: 'var(--green2)' }}>
                     <CheckCircle2 className="inline w-3.5 h-3.5 mr-1" />已认证
                   </span>
                   {s.realName && (
-                    <div style={{ fontSize: 12, display: 'grid', gap: 4 }}>
+                    <div className="text-xs grid gap-1">
                       {([['真实姓名', s.realName], ['身份证号', s.idCard || '—']] as [string, string][]).map(([k, v]) => (
                         <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', background: 'var(--bg)', borderRadius: 4 }}>
                           <span style={{ color: 'var(--text3)' }}>{k}</span>
@@ -308,14 +306,14 @@ export default function AdminStudentsPage() {
 
             {/* Agency agreement section */}
             <div style={{ marginTop: 12 }}>
-              <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 8, color: 'var(--text2)' }}>代理协议签署状态</div>
+              <div className="text-[13px] font-medium mb-2" style={{ color: 'var(--text2)' }}>代理协议签署状态</div>
 
               {s.agencyContract && (
                 <div>
-                  <span style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, background: 'rgba(85,239,196,.12)', color: 'var(--green2)', display: 'inline-block', marginBottom: 10 }}>
+                  <span className="text-xs inline-block px-3 py-1 rounded-full mb-2.5" style={{ background: 'rgba(85,239,196,.12)', color: 'var(--green2)' }}>
                     <CheckCircle2 className="inline w-3.5 h-3.5 mr-1" />已签署
                   </span>
-                  {s.agencySignedAt && <div style={{ fontSize: 12, color: 'var(--text3)' }}>签署于 {new Date(s.agencySignedAt).toLocaleDateString('zh-CN')}</div>}
+                  {s.agencySignedAt && <div className="text-xs" style={{ color: 'var(--text3)' }}>签署于 {new Date(s.agencySignedAt).toLocaleDateString('zh-CN')}</div>}
                 </div>
               )}
 
@@ -376,12 +374,12 @@ export default function AdminStudentsPage() {
           <div className={cardCls}>
             <h3 className="text-base font-semibold mb-4">作品列表（{userSongs.length}首）</h3>
             {userSongs.length === 0 ? (
-              <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text3)', fontSize: 14 }}>📭 暂无作品</div>
+              <div className="py-10 text-center text-sm" style={{ color: 'var(--text3)' }}>📭 暂无作品</div>
             ) : (
               userSongs.map((sg) => {
                 const statusInfo = SONG_STATUS_MAP[sg.status]
                 return (
-                  <div key={sg.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
+                  <div key={sg.id} className="text-[13px] flex justify-between items-center py-2 border-b border-[var(--border)]">
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span>{sg.cover || <Music className="w-4 h-4 text-[var(--text3)]" />}</span>
                       <span>{sg.title}</span>
@@ -421,7 +419,7 @@ export default function AdminStudentsPage() {
   }
 
   const listColumns: Column<Student>[] = [
-    { key: 'avatarUrl', title: '', render: (v) => <span style={{ fontSize: 20 }}>{(v as string) || <User className="w-5 h-5 text-[var(--text3)]" />}</span> },
+    { key: 'avatarUrl', title: '', render: (v) => <span className="text-[20px]">{(v as string) || <User className="w-5 h-5 text-[var(--text3)]" />}</span> },
     {
       key: 'name', title: '姓名',
       render: (v, row) => { const u = row as unknown as Student; return <span style={{ fontWeight: 600 }}>{u.realName || (v as string) || '—'}</span> },
@@ -433,32 +431,32 @@ export default function AdminStudentsPage() {
         const roleLabels: Record<string, string> = { creator: '创作者', reviewer: '评审', admin: '管理员' }
         const role = v as string; const r = row as Student
         const suffix = r.adminLevel === 'group_admin' ? ' · 组管理员' : ''
-        return <span style={{ fontSize: 12, color: roleColors[role] ?? 'var(--text2)' }}>{roleLabels[role] ?? '创作者'}{suffix}</span>
+        return <span className="text-xs" style={{ color: roleColors[role] ?? 'var(--text2)' }}>{roleLabels[role] ?? '创作者'}{suffix}</span>
       },
     },
     { key: 'phone', title: '手机号' },
     {
       key: 'realNameStatus', title: '实名',
-      render: (v) => <span style={{ fontSize: 12, color: realNameColorMap[v as string] ?? 'var(--text3)' }}>{realNameLabelMap[v as string] ?? '未认证'}</span>,
+      render: (v) => <span className="text-xs" style={{ color: realNameColorMap[v as string] ?? 'var(--text3)' }}>{realNameLabelMap[v as string] ?? '未认证'}</span>,
     },
     {
       key: 'groups', title: '用户组',
-      render: (v) => <span style={{ fontSize: 11, color: 'var(--text3)' }}>{((v as { id: number; name: string }[]) || []).map((g) => g.name).join(', ') || '—'}</span>,
+      render: (v) => <span className="text-[11px]" style={{ color: 'var(--text3)' }}>{((v as { id: number; name: string }[]) || []).map((g) => g.name).join(', ') || '—'}</span>,
     },
     {
       key: 'agencyContract', title: '代理协议',
       render: (_v, row) => {
         const s = row as Student
-        if (s.agencyContract) return <span style={{ color: 'var(--green2)', fontSize: 12 }}>已签署</span>
-        if (s.agencyApplied) return <span style={{ color: 'var(--orange)', fontSize: 12 }}>申请中</span>
-        if (s.agencyRejectReason) return <span style={{ color: 'var(--red)', fontSize: 12 }} title={s.agencyRejectReason}>已驳回</span>
-        return <span style={{ color: 'var(--text3)', fontSize: 12 }}>未申请</span>
+        if (s.agencyContract) return <span className="text-xs" style={{ color: 'var(--green2)' }}>已签署</span>
+        if (s.agencyApplied) return <span className="text-xs" style={{ color: 'var(--orange)' }}>申请中</span>
+        if (s.agencyRejectReason) return <span className="text-xs" style={{ color: 'var(--red)' }} title={s.agencyRejectReason}>已驳回</span>
+        return <span className="text-xs" style={{ color: 'var(--text3)' }}>未申请</span>
       },
     },
     { key: 'songCount', title: '作品数' },
     {
       key: 'lastLoginAt', title: '最后登录',
-      render: (v) => <span style={{ fontSize: 12, color: 'var(--text3)' }}>{v ? formatDateTime(v as string) : '—'}</span>,
+      render: (v) => <span className="text-xs" style={{ color: 'var(--text3)' }}>{v ? formatDateTime(v as string) : '—'}</span>,
     },
     {
       key: 'actions', title: '操作',
