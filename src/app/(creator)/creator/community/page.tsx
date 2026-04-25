@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useApi, apiCall } from '@/lib/use-api'
 import { pageWrap, textPageTitle } from '@/lib/ui-tokens'
-import { Flame, Star, Music, Play, Pause, Heart, Share2, Inbox } from 'lucide-react'
+import { Flame, Star, Music, Play, Pause, Heart, Share2, Inbox, X, CheckCircle2, Hourglass } from 'lucide-react'
 
 // ── Constants ───────────────────────────────────────────────────
 
@@ -44,6 +45,14 @@ interface PublishedSong {
   likeCount: number
   copyrightCode: string
   authorName?: string
+  audioUrl?: string | null
+  aiTools?: string[] | null
+  lyricist?: string | null
+  composer?: string | null
+  lyrics?: string | null
+  styleDesc?: string | null
+  creationDesc?: string | null
+  createdAt?: string
 }
 
 // ── Toast Component ─────────────────────────────────────────────
@@ -188,6 +197,7 @@ export default function CreatorCommunityPage() {
   const [likeCounts, setLikeCounts] = useState<Record<number, number>>({})
   const [playingSongId, setPlayingSongId] = useState<number | null>(null)
   const [toast, setToast] = useState('')
+  const [viewModalId, setViewModalId] = useState<number | null>(null)
 
   // Fetch published songs from API
   const { data, loading } = useApi<{ list: PublishedSong[]; total: number }>('/api/songs/published?pageSize=50')
@@ -259,13 +269,23 @@ export default function CreatorCommunityPage() {
   }
 
   function handleShare(song: PublishedSong) {
-    const url = `${window.location.origin}/creator/songs?id=${song.id}`
+    const url = `${window.location.origin}/creator/community?view=${song.id}`
     navigator.clipboard?.writeText(url).then(() => {
       showToast('分享链接已复制')
     }).catch(() => {
       showToast(`分享链接：${url}`)
     })
   }
+
+  // 从 URL ?view=xxx 自动弹出作品详情
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  useEffect(() => {
+    const viewId = searchParams.get('view')
+    if (viewId && !isNaN(parseInt(viewId, 10))) {
+      setViewModalId(parseInt(viewId, 10))
+    }
+  }, [searchParams])
 
   function togglePlay(songId: number) {
     setPlayingSongId((prev) => (prev === songId ? null : songId))
@@ -338,6 +358,79 @@ export default function CreatorCommunityPage() {
           <p className="text-sm">暂无作品</p>
         </div>
       )}
+
+      {/* 作品详情弹窗 */}
+      {viewModalId !== null && <ViewModal songId={viewModalId} onClose={() => { setViewModalId(null); router.replace('/creator/community') }} />}
+    </div>
+  )
+}
+
+// ── 作品详情 Modal ────────────────────────────────────────────────
+
+function ViewModal({ songId, onClose }: { songId: number; onClose: () => void }) {
+  const { data, loading } = useApi<{ list: PublishedSong[]; total: number }>(`/api/songs/published?pageSize=50`)
+  const song = data?.list?.find((s) => s.id === songId) ?? null
+  const authorName = song?.authorName ?? '未知作者'
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+      <div
+        className="bg-[var(--bg3)] border border-[var(--border)] rounded-xl max-w-lg w-full mx-4 max-h-[85vh] overflow-y-auto shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-[var(--border)]">
+          <h3 className="text-base font-semibold">{loading ? '加载中...' : song?.title || '作品详情'}</h3>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--bg4)] cursor-pointer border-0 bg-transparent">
+            <X size={18} />
+          </button>
+        </div>
+
+        {loading && (
+          <div className="py-12 text-center text-sm text-[var(--text3)]">加载中...</div>
+        )}
+
+        {!loading && song && (
+          <div className="p-4 space-y-4">
+            {/* Cover */}
+            <div className="w-full aspect-square bg-[var(--bg4)] rounded-xl overflow-hidden">
+              {song.coverUrl ? (
+                <img src={song.coverUrl} alt={song.title} className="w-full h-full object-cover" />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <Music size={48} className="text-[var(--text3)]" />
+                </div>
+              )}
+            </div>
+
+            {/* Title + Author */}
+            <div>
+              <h4 className="text-lg font-bold">{song.title}</h4>
+              <p className="text-sm text-[var(--text3)] mt-1">{authorName} · {song.genre}</p>
+            </div>
+
+            {/* Info grid */}
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="p-2 bg-[var(--bg4)] rounded-md">
+                <span className="text-[var(--text3)]">流派：</span>{song.genre || '—'}
+              </div>
+              <div className="p-2 bg-[var(--bg4)] rounded-md">
+                <span className="text-[var(--text3)]">评分：</span>{song.score != null ? `${song.score}分` : '—'}
+              </div>
+              <div className="p-2 bg-[var(--bg4)] rounded-md">
+                <span className="text-[var(--text3)]">点赞：</span>{song.likeCount}
+              </div>
+              <div className="p-2 bg-[var(--bg4)] rounded-md">
+                <span className="text-[var(--text3)]">作品编号：</span>{song.copyrightCode}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!loading && !song && (
+          <div className="py-12 text-center text-sm text-[var(--text3)]">该作品已下架或不存在</div>
+        )}
+      </div>
     </div>
   )
 }

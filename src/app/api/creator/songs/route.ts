@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, ok, err, parsePagination, safeHandler} from '@/lib/api-utils'
+import { toSignedUrl } from '@/lib/signed-url'
 import { SongStatus } from '@prisma/client'
 
 const VALID_STATUSES: Set<string> = new Set(Object.values(SongStatus))
@@ -58,12 +59,12 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     prisma.platformSong.count({ where }),
   ])
 
-  const list = songs.map((s) => ({
+  const list = await Promise.all(songs.map(async (s) => ({
     id: s.id,
     copyrightCode: s.copyrightCode,
     title: s.title,
-    audioUrl: s.audioUrl,
-    coverUrl: s.coverUrl,
+    audioUrl: await toSignedUrl(s.audioUrl, userId),
+    coverUrl: await toSignedUrl(s.coverUrl, userId),
     aiTools: s.aiTools,
     genre: s.genre,
     bpm: s.bpm,
@@ -77,7 +78,7 @@ export const GET = safeHandler(async function GET(request: NextRequest) {
     distributions: s.distributions,
     createdAt: s.createdAt,
     updatedAt: s.updatedAt,
-  }))
+  })))
 
   return ok({ list, total, page, pageSize })
 })
