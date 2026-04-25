@@ -90,6 +90,7 @@ function SongCard({
   onShare,
   playing,
   onTogglePlay,
+  onView,
 }: {
   song: PublishedSong
   liked: boolean
@@ -98,15 +99,17 @@ function SongCard({
   onShare: () => void
   playing: boolean
   onTogglePlay: () => void
+  onView: () => void
 }) {
   const authorName = song.authorName ?? '未知作者'
 
   return (
     <div className="rounded-xl overflow-hidden bg-[var(--bg3)] border border-[var(--border)] shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(99,102,241,0.15)] group">
-      {/* Cover */}
+      {/* Cover (clickable to detail) */}
       <div
-        className="relative h-[140px] flex items-center justify-center overflow-hidden"
+        className="relative h-[140px] flex items-center justify-center overflow-hidden cursor-pointer"
         style={song.coverUrl ? undefined : { background: DEFAULT_GRADIENT }}
+        onClick={onView}
       >
         {song.coverUrl ? (
           <img src={song.coverUrl} alt={song.title} className="w-full h-full object-cover" />
@@ -127,7 +130,7 @@ function SongCard({
 
       {/* Info */}
       <div className="p-3.5">
-        <h3 className="text-[13px] font-semibold text-[var(--text)] leading-snug mb-1 truncate">
+        <h3 className="text-[13px] font-semibold text-[var(--text)] leading-snug mb-1 truncate cursor-pointer hover:text-[var(--accent)]" onClick={onView}>
           {song.title}
         </h3>
         <p className="text-[11px] text-[var(--text3)] mb-3 truncate">
@@ -339,6 +342,7 @@ function CommunityContent({ initialViewId }: { initialViewId: number | null }) {
             onShare={() => handleShare(song)}
             playing={playingSongId === song.id}
             onTogglePlay={() => togglePlay(song.id)}
+            onView={() => setViewModalId(song.id)}
           />
         ))}
       </div>
