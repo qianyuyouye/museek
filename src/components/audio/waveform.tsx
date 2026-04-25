@@ -9,6 +9,7 @@ interface WaveformProps {
   barColor?: string
   playedColor?: string
   progress?: number // 0~1
+  animate?: boolean // 播放时动态跳动
 }
 
 /**
@@ -22,6 +23,7 @@ export function Waveform({
   barColor = 'var(--border2)',
   playedColor = 'var(--accent, #6366f1)',
   progress = 0,
+  animate = false,
 }: WaveformProps) {
   const [heights, setHeights] = useState<number[]>(() =>
     // 初始占位（装饰），解码完成后替换
@@ -85,7 +87,16 @@ export function Waveform({
           height={h}
           rx={3}
           fill={i < playedIdx ? playedColor : barColor}
-        />
+        >
+          {animate && (
+            <animate
+              attributeName="height"
+              values={`${h};${Math.max(2, h * (0.3 + Math.random() * 0.7))};${h}`}
+              dur={`${0.3 + Math.random() * 0.5}s`}
+              repeatCount="indefinite"
+            />
+          )}
+        </rect>
       ))}
     </svg>
   )

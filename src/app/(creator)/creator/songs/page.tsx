@@ -143,7 +143,7 @@ function WaveformPlayer({
         </div>
       </div>
       <div className="relative">
-        <Waveform src={audioUrl} progress={progress} />
+        <Waveform src={audioUrl} progress={progress} animate={playing} />
         {/* 评审时间轴标记（只读） */}
         {validMarks.length > 0 && duration > 0 && (
           <div className="absolute inset-0 pointer-events-none">
