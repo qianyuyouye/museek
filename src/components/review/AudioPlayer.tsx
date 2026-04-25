@@ -315,12 +315,13 @@ const AudioPlayer = forwardRef<AudioPlayerHandle, AudioPlayerProps>(function Aud
                 <button
                   type="button"
                   aria-label="删除"
-                  className="text-[var(--text3)] hover:text-[var(--red)] cursor-pointer"
+                  className="text-[var(--text3)] hover:text-[var(--red)] hover:bg-red-50 cursor-pointer px-1.5 py-0.5 rounded flex items-center gap-1 transition-colors"
                   onClick={() =>
                     onMarksChange(marks.filter((_, idx) => idx !== i))
                   }
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-3 h-3" />
+                  <span className="text-[11px]">删除</span>
                 </button>
               </div>
             ))}
