@@ -316,7 +316,7 @@ export default function CreatorCommunityPage() {
       </div>
 
       {/* Song Grid */}
-      <div className="grid grid-cols-3 gap-5">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-5">
         {filteredSongs.map((song) => (
           <SongCard
             key={song.id}

@@ -26,6 +26,7 @@ interface Song {
   likeCount: number
   createdAt: string
   audioUrl?: string | null
+  coverUrl?: string | null
 }
 
 interface ReviewData {
@@ -488,8 +489,14 @@ export default function CreatorSongsPage() {
             className={`${cardCls} cursor-pointer transition-all duration-200 overflow-hidden hover:border-[var(--accent)] hover:-translate-y-0.5`}
           >
             {/* Cover */}
-            <div className="text-center py-4 bg-[var(--bg4)] rounded-[10px] mb-2.5">
-              <Music size={32} className="text-[var(--text3)] mx-auto" />
+            <div className="w-full aspect-square bg-[var(--bg4)] rounded-[10px] mb-2.5 overflow-hidden">
+              {s.coverUrl ? (
+                <img src={s.coverUrl} alt={s.title} className="w-full h-full object-cover" />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <Music size={32} className="text-[var(--text3)]" />
+                </div>
+              )}
             </div>
 
             {/* Badge */}
