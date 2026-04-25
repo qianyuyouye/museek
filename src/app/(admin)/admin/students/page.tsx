@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { CheckCircle2, XCircle, Circle, Ban, Music, User, Pencil } from 'lucide-react'
+import { CheckCircle2, XCircle, Circle, Ban, Music, User, Pencil, Pencil as PencilIcon, Users } from 'lucide-react'
 import { useConfirm } from '@/components/ui/confirm-dialog'
 import { PageHeader } from '@/components/ui/page-header'
 import { AdminModal } from '@/components/ui/modal'
@@ -65,6 +65,19 @@ export default function AdminStudentsPage() {
     avatarUrl: '',
   })
   const [editError, setEditError] = useState('')
+  // Group editing states
+  const [groupModalOpen, setGroupModalOpen] = useState(false)
+  const [groupModalUserId, setGroupModalUserId] = useState<number | null>(null)
+  const [groupModalUserName, setGroupModalUserName] = useState('')
+  const [selectedGroupIds, setSelectedGroupIds] = useState<number[]>([])
+  const [groupError, setGroupError] = useState('')
+
+  // Fetch all groups for dropdown
+  const { data: groupsData } = useApi<{ list: { id: number; name: string }[] }>(
+    '/api/admin/groups?pageSize=200',
+    [],
+  )
+  const allGroups = groupsData?.list ?? []
 
   const statusFilterMap: Record<string, string> = {
     已认证: 'verified',
@@ -150,6 +163,30 @@ export default function AdminStudentsPage() {
     }
   }
 
+  // ── Group editing ───────────────────────────────────────────
+  function openGroupModal(userId: number, userName: string, currentGroupIds: number[]) {
+    setGroupModalUserId(userId)
+    setGroupModalUserName(userName)
+    setSelectedGroupIds(currentGroupIds)
+    setGroupError('')
+    setGroupModalOpen(true)
+  }
+
+  async function saveGroupChange() {
+    if (groupModalUserId === null) return
+    const res = await apiCall(`/api/admin/students/${groupModalUserId}`, 'PUT', {
+      groupIds: selectedGroupIds,
+    })
+    if (res.ok) {
+      setGroupModalOpen(false)
+      showToast('用户分组已更新')
+      refetch()
+      if (detail !== null) refetchDetail()
+    } else {
+      setGroupError(res.message ?? '更新失败')
+    }
+  }
+
   // ── Detail view ──────────────────────────────────────────────
   if (detail !== null) {
     if (detailLoading) {
@@ -196,6 +233,7 @@ export default function AdminStudentsPage() {
           : '无'
 
     const groupNames = s.groups.map((g) => g.name).join(', ') || '无'
+    const currentGroupIds = s.groups.map((g) => g.id)
 
     const basicInfo: [string, string | number][] = [
       ['姓名', s.realName || s.name || '—'],
@@ -203,7 +241,6 @@ export default function AdminStudentsPage() {
       ['邮箱', s.email || '—'],
       ['用户属性', roleLabel[s.type] ?? '创作者'],
       ['管理权限', adminLevelLabel],
-      ['所属用户组', groupNames],
       ['作品数', s.songCount],
       ['总收益', `¥${s.totalRevenue ?? 0}`],
       ['最后登录', s.lastLoginAt ? formatDateTime(s.lastLoginAt) : '—'],
@@ -240,6 +277,23 @@ export default function AdminStudentsPage() {
                 <span>{v}</span>
               </div>
             ))}
+
+            {/* Group assignment */}
+            <div style={{ marginTop: 12 }}>
+              <div className="text-[13px] font-medium mb-2" style={{ color: 'var(--text2)' }}>
+                所属用户组
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-[var(--text2)]">{groupNames}</span>
+                <button
+                  type="button"
+                  className="text-[11px] text-[var(--accent)] hover:underline cursor-pointer bg-transparent border-0 p-0"
+                  onClick={() => openGroupModal(s.id, s.realName || s.name || s.phone || '未命名', currentGroupIds)}
+                >
+                  <PencilIcon className="inline w-3 h-3 mr-0.5" />调整
+                </button>
+              </div>
+            </div>
 
             {/* Real name auth section */}
             <div style={{ marginTop: 12 }}>
@@ -395,6 +449,10 @@ export default function AdminStudentsPage() {
         <AdminModal open={editing} onClose={() => setEditing(false)} title={`编辑用户信息 · ${editForm.name || '未命名'}`}>
           <EditForm editForm={editForm} setEditForm={setEditForm} editError={editError} setEditing={setEditing} saveEdit={saveEdit} />
         </AdminModal>
+
+        <AdminModal open={groupModalOpen} onClose={() => setGroupModalOpen(false)} title={`调整用户组 · ${groupModalUserName}`}>
+          <GroupSelector allGroups={allGroups} selectedGroupIds={selectedGroupIds} setSelectedGroupIds={setSelectedGroupIds} groupError={groupError} setGroupModalOpen={setGroupModalOpen} saveGroupChange={saveGroupChange} />
+        </AdminModal>
       </div>
     )
   }
@@ -465,6 +523,7 @@ export default function AdminStudentsPage() {
         return (
           <div style={{ display: 'flex', gap: 6 }}>
             <button className={btnSmall} style={{ color: 'var(--accent)' }} onClick={(e) => { e.stopPropagation(); openEditFromList(s) }}>编辑</button>
+            <button className={btnSmall} style={{ color: 'var(--green)' }} onClick={(e) => { e.stopPropagation(); openGroupModal(s.id, s.realName || s.name || s.phone || '未命名', (s.groups || []).map((g) => g.id)) }}>调整分组</button>
           </div>
         )
       },
@@ -498,6 +557,10 @@ export default function AdminStudentsPage() {
 
       <AdminModal open={editing} onClose={() => setEditing(false)} title={`编辑用户信息 · ${editForm.name || '未命名'}`}>
         <EditForm editForm={editForm} setEditForm={setEditForm} editError={editError} setEditing={setEditing} saveEdit={saveEdit} />
+      </AdminModal>
+
+      <AdminModal open={groupModalOpen} onClose={() => setGroupModalOpen(false)} title={`调整用户组 · ${groupModalUserName}`}>
+        <GroupSelector allGroups={allGroups} selectedGroupIds={selectedGroupIds} setSelectedGroupIds={setSelectedGroupIds} groupError={groupError} setGroupModalOpen={setGroupModalOpen} saveGroupChange={saveGroupChange} />
       </AdminModal>
     </div>
   )
@@ -542,6 +605,58 @@ function EditForm({
       <div className="flex gap-2">
         <button className={`${btnGhost} flex-1 justify-center`} onClick={() => setEditing(false)}>取消</button>
         <button className={`${btnPrimary} flex-1 justify-center`} onClick={saveEdit}>保存</button>
+      </div>
+    </div>
+  )
+}
+
+// ── Group selector sub-component ─────────────────────────────────
+
+function GroupSelector({
+  allGroups, selectedGroupIds, setSelectedGroupIds, groupError, setGroupModalOpen, saveGroupChange,
+}: {
+  allGroups: { id: number; name: string }[]
+  selectedGroupIds: number[]
+  setSelectedGroupIds: (v: number[]) => void
+  groupError: string
+  setGroupModalOpen: (v: boolean) => void
+  saveGroupChange: () => Promise<void>
+}) {
+  const toggleGroup = (gid: number) => {
+    setSelectedGroupIds(selectedGroupIds.includes(gid) ? selectedGroupIds.filter((id) => id !== gid) : [...selectedGroupIds, gid])
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {groupError && (
+        <div className="p-3 rounded-md text-[13px] bg-[rgba(255,107,107,.08)] border border-[rgba(255,107,107,.15)] text-[var(--red)]">{groupError}</div>
+      )}
+      <div>
+        <label className={labelCls}>选择用户组</label>
+        {allGroups.length === 0 ? (
+          <div className="text-xs text-[var(--text3)] py-2">暂无可用用户组</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+            {allGroups.map((g) => (
+              <label
+                key={g.id}
+                className="flex items-center gap-2 text-[13px] text-[var(--text2)] cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedGroupIds.includes(g.id)}
+                  onChange={() => toggleGroup(g.id)}
+                  className="accent-[var(--accent)]"
+                />
+                {g.name}
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="flex gap-2">
+        <button className={`${btnGhost} flex-1 justify-center`} onClick={() => setGroupModalOpen(false)}>取消</button>
+        <button className={`${btnPrimary} flex-1 justify-center`} onClick={saveGroupChange}>保存</button>
       </div>
     </div>
   )

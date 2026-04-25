@@ -88,7 +88,7 @@ export const PUT = safeHandler(async function PUT(request: NextRequest, context:
   if (!existing) return err('用户不存在', 404)
 
   const body = await request.json()
-  const { name, email, status, adminLevel, phone, realName, avatarUrl } = body
+  const { name, email, status, adminLevel, phone, realName, avatarUrl, groupIds } = body
 
   // Check phone uniqueness before applying changes
   if (phone !== undefined) {
@@ -128,6 +128,19 @@ export const PUT = safeHandler(async function PUT(request: NextRequest, context:
     where: { id: userId },
     data,
   })
+
+  // Update group assignments if groupIds provided
+  if (groupIds !== undefined) {
+    if (!Array.isArray(groupIds)) return err('groupIds 必须是数组')
+    const groups = await prisma.group.findMany({ where: { id: { in: groupIds } } })
+    if (groups.length !== groupIds.length) return err('部分用户组不存在')
+    await prisma.userGroup.deleteMany({ where: { userId } })
+    if (groupIds.length > 0) {
+      await prisma.userGroup.createMany({
+        data: groupIds.map((gid: number) => ({ userId, groupId: gid })),
+      })
+    }
+  }
 
   await logAdminAction(request, {
     action: 'update_student',
