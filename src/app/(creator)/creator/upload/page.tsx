@@ -273,6 +273,28 @@ export default function CreatorUploadPage() {
   )
 
   async function handleFileUpload(file: File, type: 'audio' | 'image') {
+    // 前端格式校验
+    if (type === 'audio') {
+      if (!file.name.toLowerCase().endsWith('.wav')) {
+        showToast('仅支持 WAV 格式，请上传 .wav 文件')
+        return
+      }
+      if (file.size > 200 * 1024 * 1024) {
+        showToast('音频文件不能超过 200MB')
+        return
+      }
+    } else {
+      const allowedImage = ['.jpg', '.jpeg', '.png', '.webp']
+      const ext = '.' + file.name.split('.').pop()?.toLowerCase()
+      if (!allowedImage.includes(ext)) {
+        showToast('仅支持 JPG、JPEG、PNG、WEBP 格式')
+        return
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('封面图片不能超过 5MB')
+        return
+      }
+    }
     setUploading(true)
     try {
       // 1. 获取上传凭证

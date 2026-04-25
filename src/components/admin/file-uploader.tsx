@@ -33,6 +33,13 @@ export function FileUploader({
 
   async function handleFile(file: File) {
     setError('')
+    const ext = '.' + file.name.split('.').pop()?.toLowerCase()
+    const allowed = type === 'audio' ? ['.wav'] : ['.jpg', '.jpeg', '.png', '.webp']
+    if (!allowed.includes(ext)) {
+      const label = type === 'audio' ? 'WAV' : 'JPG、PNG、WEBP'
+      setError(`仅支持 ${label} 格式`)
+      return
+    }
     const maxBytes = maxSizeMB * 1024 * 1024
     if (file.size > maxBytes) {
       setError(`文件超过 ${maxSizeMB}MB`)

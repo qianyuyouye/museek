@@ -113,6 +113,14 @@ export default function CreatorAssignmentsPage() {
   }, [profile, activeAssignment, formFields, formData.songTitle])
 
   async function handleAudioUpload(file: File) {
+    if (!file.name.toLowerCase().endsWith('.wav')) {
+      showToast('仅支持 WAV 格式，请上传 .wav 文件')
+      return
+    }
+    if (file.size > 200 * 1024 * 1024) {
+      showToast('音频文件不能超过 200MB')
+      return
+    }
     setUploading(true)
     try {
       const tokenRes = await fetch('/api/upload/token', {
